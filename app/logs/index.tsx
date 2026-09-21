@@ -52,7 +52,7 @@ export default function LogsScreen() {
   const narrowed = filterSummary(filters);
 
   return (
-    <View className="gap-lg">
+    <View className="gap-xl">
       <PageHeader
         title="Logs"
         subtitle="ὑπομνήματα · every prompt, every answer"
@@ -74,7 +74,7 @@ export default function LogsScreen() {
       </Scroll>
 
       {groups.map((group) => (
-        <View key={group.key} className="gap-sm">
+        <View key={group.key} className="gap-md">
           <Text variant="h3" className="text-lg">
             {group.label}
           </Text>

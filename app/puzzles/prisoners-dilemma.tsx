@@ -147,7 +147,7 @@ export default function PrisonersDilemmaScreen() {
   }
 
   return (
-    <View className="gap-lg">
+    <View className="gap-xl">
       <PageHeader
         title="Prisoner's Dilemma"
         subtitle="πίστις · two rooms, one bargain, and no way to check"
@@ -186,7 +186,7 @@ export default function PrisonersDilemmaScreen() {
         }
       >
         {setup.relationshipsEnabled ? (
-          <View className="gap-md">
+          <View className="gap-lg">
             {(["a", "b"] as const).map((side, index) => (
               <View key={side} className="gap-xs">
                 <Label>{`${SLOT_LABELS[index]} is told…`}</Label>

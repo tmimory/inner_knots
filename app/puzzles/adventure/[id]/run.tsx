@@ -65,7 +65,7 @@ export default function AdventureRunScreen() {
 
   if (loading || !adventure) {
     return (
-      <View className="gap-lg">
+      <View className="gap-xl">
         <PageHeader title="Opening the tree" subtitle="ὁδός · branching paths, recorded" />
         {error ? (
           <Scroll>
@@ -82,7 +82,7 @@ export default function AdventureRunScreen() {
   }
 
   return (
-    <View className="gap-lg">
+    <View className="gap-xl">
       <PageHeader
         title={adventure.name}
         subtitle="ὁδός · branching paths, recorded"
@@ -122,7 +122,7 @@ export default function AdventureRunScreen() {
         description="What every character is told before every node, and what they are allowed to remember."
       >
         <View className="flex-row items-center justify-between gap-md">
-          <View className="flex-1 gap-xxs">
+          <View className="flex-1 gap-xs">
             <Label nativeID="amnesia">Amnesia Switch</Label>
             <Text variant="muted">
               {amnesia

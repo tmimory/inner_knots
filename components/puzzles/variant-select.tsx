@@ -51,7 +51,7 @@ export function VariantSelect<Id extends string = string>({
             accessibilityHint={option.description}
             onPress={() => onChange(option.id)}
             className={cn(
-              "min-w-menu flex-1 gap-xxs rounded-md border-hairline p-md transition-colors duration-fast",
+              "min-w-menu flex-1 gap-xs rounded-md border-hairline p-md transition-colors duration-fast",
               selected
                 ? "border-thick border-ring bg-muted"
                 : "border-border bg-transparent active:bg-muted web:hover:bg-muted",

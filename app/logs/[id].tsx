@@ -29,7 +29,7 @@ import { formatDateTime, formatElapsed } from "@/lib/format";
 /** A labelled figure in the run's vital-statistics row. */
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <View className="gap-xxs">
+    <View className="gap-xs">
       <Text variant="muted" className="text-xs">
         {label}
       </Text>
@@ -73,7 +73,7 @@ export default function RunDetailScreen() {
 
   if (!run) {
     return (
-      <View className="gap-lg">
+      <View className="gap-xl">
         <PageHeader title="Run" subtitle="ὑπόμνημα · one run, in full" />
         <Scroll>
           <Text variant="lead">
@@ -90,7 +90,7 @@ export default function RunDetailScreen() {
   }
 
   return (
-    <View className="gap-lg">
+    <View className="gap-xl">
       <PageHeader
         title={run.puzzle}
         subtitle={run.id}

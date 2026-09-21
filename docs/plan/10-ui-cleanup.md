@@ -70,10 +70,10 @@ badges keep their width.
 | Chip / badge rows | `gap-xs` |
 | `gap-xxs` | only inside a control (stepper, chip), never between lines of text |
 
-- [ ] Shell, header, panel, section, field, card, dialog primitives carry the rhythm.
-- [ ] Every screen and `components/**` audited against the table; `min-w-menu` wraps
+- [x] Shell, header, panel, section, field, card, dialog primitives carry the rhythm.
+- [x] Every screen and `components/**` audited against the table; `min-w-menu` wraps
       stay, `max-w-content` stays at 1120.
-- [ ] Narrow header no longer crushes the title; verified at 420px and 1440px.
+- [x] Narrow header no longer crushes the title; verified at 420px and 1440px.
 
 ## 4. Rosters live on the puzzle page
 

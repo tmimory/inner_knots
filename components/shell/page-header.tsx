@@ -17,15 +17,15 @@ export function PageHeader({ title, subtitle, right, className }: PageHeaderProp
   return (
     <View
       className={cn(
-        "flex-row items-end justify-between gap-lg border-b-hairline border-border pb-lg",
+        "gap-md border-b-hairline border-border pb-lg wide:flex-row wide:items-end wide:justify-between",
         className,
       )}
     >
-      <View className="flex-1 gap-xxs">
+      <View className="flex-1 gap-xs">
         <Text variant="h1">{title}</Text>
         {subtitle ? <Text variant="greek">{subtitle}</Text> : null}
       </View>
-      {right ? <View className="flex-row items-center gap-sm">{right}</View> : null}
+      {right ? <View className="flex-row flex-wrap items-center gap-sm">{right}</View> : null}
     </View>
   );
 }

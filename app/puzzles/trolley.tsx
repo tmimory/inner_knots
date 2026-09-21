@@ -219,7 +219,7 @@ export default function TrolleyScreen() {
   const total = board.roster.reduce((sum, entry) => sum + entry.runs, 0);
 
   return (
-    <View className="gap-lg">
+    <View className="gap-xl">
       <PageHeader
         title="Trolley Problems"
         subtitle="ἁμαξοστοιχία · the lever and the lesser evil"

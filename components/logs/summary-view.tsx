@@ -82,7 +82,7 @@ type TableRow = { key: string; label: ReactNode; values: string[] };
 function Table({ headers, rows }: { headers: string[]; rows: TableRow[] }) {
   const [first, ...rest] = headers;
   return (
-    <View className="gap-xxs">
+    <View className="gap-xs">
       <View className="flex-row items-center gap-sm border-b-hairline border-border pb-xs">
         <Text variant="muted" className="flex-1 text-xs">
           {first}

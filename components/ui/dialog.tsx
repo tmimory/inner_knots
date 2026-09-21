@@ -24,7 +24,7 @@ export function DialogContent({
       >
         <DialogPrimitive.Content
           className={cn(
-            "w-full max-w-menu gap-md rounded-lg border-hairline border-border bg-popover p-xl shadow-ink-lifted",
+            "w-full max-w-menu gap-lg rounded-lg border-hairline border-border bg-popover p-xl shadow-ink-lifted",
             className,
           )}
           {...props}

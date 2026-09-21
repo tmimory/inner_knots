@@ -84,7 +84,7 @@ export default function AdventureBuilderScreen() {
 
   if (loading) {
     return (
-      <View className="gap-lg">
+      <View className="gap-xl">
         <PageHeader title="Opening the tree" subtitle="ὁδός · branching paths, recorded" />
       </View>
     );
@@ -92,7 +92,7 @@ export default function AdventureBuilderScreen() {
 
   if (!draft) {
     return (
-      <View className="gap-lg">
+      <View className="gap-xl">
         <PageHeader title="No such adventure" subtitle="ὁδός · branching paths, recorded" />
         <Scroll>
           <Text variant="lead">{error ?? "That adventure is not on the shelf any more."}</Text>
@@ -112,7 +112,7 @@ export default function AdventureBuilderScreen() {
   const selected = draft.nodes.find((node) => node.id === selectedNodeId);
 
   return (
-    <View className="gap-lg">
+    <View className="gap-xl">
       <PageHeader
         title={draft.name}
         subtitle="ὁδός · branching paths, recorded"

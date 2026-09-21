@@ -47,7 +47,7 @@ export default function AssetsScreen() {
   const iconTint = tintIcons ? resolveAvatarColor(theme, color) : undefined;
 
   return (
-    <View className="gap-lg">
+    <View className="gap-xl">
       <PageHeader
         title="Assets"
         subtitle="ὕλη · the drawings, laid out flat"

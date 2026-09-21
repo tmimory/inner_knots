@@ -30,7 +30,7 @@ export default function EditCharacterScreen() {
   }
 
   return (
-    <View className="gap-lg">
+    <View className="gap-xl">
       <PageHeader
         title={character ? characterDisplayName(character) : "Character"}
         subtitle="διόρθωσις · a mask, revised"

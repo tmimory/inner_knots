@@ -32,7 +32,7 @@ export function Card({ className, pressable = false, ...props }: CardProps) {
 }
 
 export function CardHeader({ className, ...props }: ComponentProps<typeof View>) {
-  return <View className={cn("gap-xs p-lg", className)} {...props} />;
+  return <View className={cn("gap-sm p-lg", className)} {...props} />;
 }
 
 export function CardTitle({ className, ...props }: ComponentProps<typeof Text>) {

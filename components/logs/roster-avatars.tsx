@@ -94,7 +94,7 @@ export function RosterList({ config, characters }: Omit<RosterAvatarsProps, "siz
       {rosterOf(config).map((seat, index) => (
         <View key={`${seat.slot ?? ""}${seat.characterId}-${index}`} className="flex-row items-center gap-sm">
           <CharacterFace character={characters.get(seat.characterId)} size="md" />
-          <View className="flex-1 gap-xxs">
+          <View className="flex-1 gap-xs">
             <Text variant="small" className="font-display">
               {seat.slot ? `${seat.slot} · ` : ""}
               {nameOf(seat.characterId, characters)}

@@ -125,18 +125,19 @@ function EmptySlot({
   enabled,
   onPress,
 }: {
-  label: string;
+  /** The seat's name; without one the slot reads simply "Add". */
+  label?: string;
   enabled: boolean;
   onPress: () => void;
 }) {
   return (
     <View className="w-avatar-xl items-center gap-xs">
       <Text variant="muted" className="font-display text-xs" numberOfLines={1}>
-        {label}
+        {label ?? "Add"}
       </Text>
       <Pressable
         role="button"
-        accessibilityLabel={`Add a character to ${label}`}
+        accessibilityLabel={label ? `Add a character to ${label}` : "Add a character"}
         disabled={!enabled}
         onPress={onPress}
         className={cn(
@@ -271,7 +272,7 @@ export function RosterBar({
           return (
             <EmptySlot
               key={`empty-${index}`}
-              label={label ?? "Add character"}
+              label={label}
               // Seats fill left to right, so only the next free one accepts a pick.
               enabled={index === value.length && value.length < max && candidates.length > 0}
               onPress={() => openPicker(index)}

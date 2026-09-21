@@ -18,7 +18,7 @@ export default function NewCharacterScreen() {
   }
 
   return (
-    <View className="gap-lg">
+    <View className="gap-xl">
       <PageHeader title="New character" subtitle="πλάσις · the shaping of a mask" />
       <CharacterForm
         characters={characters}

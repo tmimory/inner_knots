@@ -52,7 +52,7 @@ function Step({
   const weights = step.weights ? Object.entries(step.weights) : [];
 
   return (
-    <View className="gap-xxs border-l-thick border-border pl-md">
+    <View className="gap-xs border-l-thick border-border pl-md">
       <View className="flex-row items-center gap-sm">
         <Text variant="muted" className="font-mono text-xs">
           {index + 1}

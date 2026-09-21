@@ -61,7 +61,7 @@ export default function CharactersScreen() {
   );
 
   return (
-    <View className="gap-lg">
+    <View className="gap-xl">
       <PageHeader
         title="Characters"
         subtitle="πρόσωπα · the masks that will answer"
@@ -107,7 +107,7 @@ export default function CharactersScreen() {
       ) : null}
 
       {characters.length > 0 ? (
-        <View className="gap-md">
+        <View className="gap-lg">
           <Input
             value={search}
             onChangeText={setSearch}

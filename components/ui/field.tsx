@@ -61,7 +61,7 @@ export type SectionHeadingProps = {
 export function SectionHeading({ title, description, right, className }: SectionHeadingProps) {
   return (
     <View className={cn("flex-row items-start justify-between gap-lg", className)}>
-      <View className="flex-1 gap-xxs">
+      <View className="flex-1 gap-xs">
         <Text variant="h3">{title}</Text>
         {description ? <Text variant="muted">{description}</Text> : null}
       </View>
@@ -83,7 +83,7 @@ export function FormSection({
   className,
 }: FormSectionProps) {
   return (
-    <View className={cn("gap-md", className)}>
+    <View className={cn("gap-lg", className)}>
       <SectionHeading title={title} description={description} right={right} />
       {children}
     </View>

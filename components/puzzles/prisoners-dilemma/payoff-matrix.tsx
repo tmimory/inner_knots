@@ -92,7 +92,7 @@ function Toggle({
 }) {
   return (
     <View className="flex-row items-start gap-md">
-      <View className="flex-1 gap-xxs">
+      <View className="flex-1 gap-xs">
         <Label>{label}</Label>
         <Text variant="muted">{description}</Text>
       </View>

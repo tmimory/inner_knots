@@ -98,7 +98,7 @@ export default function AdventureListScreen() {
   }
 
   return (
-    <View className="gap-lg">
+    <View className="gap-xl">
       <PageHeader
         title="Choose Your Own Adventure"
         subtitle="ὁδός · branching paths, recorded"

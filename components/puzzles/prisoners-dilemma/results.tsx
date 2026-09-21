@@ -35,7 +35,7 @@ export type PrisonersDilemmaResultsProps = {
 /** One count of the outcomes strip. */
 function StatTile({ label, value }: { label: string; value: number }) {
   return (
-    <View className="min-w-menu flex-1 gap-xxs rounded-md border-hairline border-border bg-muted p-md">
+    <View className="min-w-menu flex-1 gap-xs rounded-md border-hairline border-border bg-muted p-md">
       <Text className="font-mono text-xl">{value}</Text>
       <Text variant="muted" numberOfLines={2}>
         {label}

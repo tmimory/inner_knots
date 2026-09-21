@@ -37,7 +37,7 @@ export function Textarea({
   }
 
   return (
-    <View className="gap-xxs">
+    <View className="gap-xs">
       <TextInput
         multiline
         numberOfLines={rows}

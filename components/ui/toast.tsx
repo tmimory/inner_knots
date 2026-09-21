@@ -90,7 +90,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <View
               key={item.id}
               className={cn(
-                "max-w-menu gap-xxs rounded-md border-hairline p-lg shadow-ink-lifted",
+                "max-w-menu gap-xs rounded-md border-hairline p-lg shadow-ink-lifted",
                 toneClasses[tone],
               )}
             >

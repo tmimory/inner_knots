@@ -31,7 +31,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Wordmark className="flex-1" />
         </View>
 
-        <ScrollView contentContainerClassName="p-xl gap-lg" className="flex-1">
+        <ScrollView contentContainerClassName="p-lg wide:p-xl" className="flex-1">
           <View className="w-full max-w-content self-center">{children}</View>
         </ScrollView>
       </View>

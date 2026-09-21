@@ -18,7 +18,7 @@ export function Scroll({ className, children, ...props }: ScrollProps) {
       )}
       {...props}
     >
-      <View className="gap-md p-xl">{children}</View>
+      <View className="gap-lg p-lg wide:p-xl">{children}</View>
     </View>
   );
 }

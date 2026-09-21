@@ -282,7 +282,7 @@ export function CharacterForm({
   );
 
   return (
-    <View className="gap-lg">
+    <View className="gap-xl">
       <Scroll>
         <FormSection
           title="Identity"

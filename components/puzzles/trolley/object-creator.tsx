@@ -112,7 +112,7 @@ function ManageList({
     return <Text variant="muted">You have not made any objects yet.</Text>;
   }
   return (
-    <View className="gap-xxs">
+    <View className="gap-xs">
       {custom.map((item) => {
         return (
           <View key={item.id} className="flex-row items-center gap-sm rounded-md p-xs">
