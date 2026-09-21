@@ -5,13 +5,12 @@ import { View } from "react-native";
 import {
   CHARACTER_SEARCH_PLACEHOLDER,
   CharacterCard,
-  CharactersHeader,
   FilterChips,
   matchesCharacterQuery,
   OUTPUT_MODE_LABELS,
   STEERING_MODE_LABELS,
 } from "@/components/characters";
-import { Scroll } from "@/components/shell";
+import { PageHeader, Scroll } from "@/components/shell";
 import { Badge, Button, Input, Separator, Text } from "@/components/ui";
 import { useCharacters } from "@/lib/client/use-characters";
 import { useProviders } from "@/lib/client/use-providers";
@@ -63,7 +62,7 @@ export default function CharactersScreen() {
 
   return (
     <View className="gap-lg">
-      <CharactersHeader
+      <PageHeader
         title="Characters"
         subtitle="πρόσωπα · the masks that will answer"
         right={
@@ -82,7 +81,7 @@ export default function CharactersScreen() {
       </Text>
 
       {error ? (
-        <Scroll ornament={false}>
+        <Scroll>
           <Text variant="h3">The characters would not load</Text>
           <Text variant="small" className="text-destructive">
             {error}
@@ -91,7 +90,7 @@ export default function CharactersScreen() {
       ) : null}
 
       {noProviders ? (
-        <Scroll ornament={false}>
+        <Scroll>
           <Text variant="h3">No provider is configured</Text>
           <Text variant="muted">
             A character needs somewhere to think. Add a key to .env for one of these and restart the

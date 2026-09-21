@@ -168,7 +168,7 @@ export default function AdventureBuilderScreen() {
       </View>
 
       {showIssues ? (
-        <Scroll ornament={false}>
+        <Scroll>
           <Text variant="h4">What the graph says</Text>
           {issues.length === 0 ? (
             <Text variant="muted">
@@ -211,7 +211,7 @@ export default function AdventureBuilderScreen() {
           </Text>
         </View>
 
-        <Scroll className="w-full wide:w-inspector" ornament={false}>
+        <Scroll className="w-full wide:w-inspector">
           <Text variant="h3">The tree</Text>
           <Input
             maxLength={ADVENTURE_LIMITS.name}

@@ -40,13 +40,13 @@ Characters and Adventure screens, along the top of every `Scroll` panel) are dis
 on the Characters and Adventure shelves two of them sit one above the other.
 
 **Fix.** Retire the ornament rather than tune it.
-- [ ] Delete `components/shell/greek-key.tsx`; drop the `ornament` prop from `Scroll` and
+- [x] Delete `components/shell/greek-key.tsx`; drop the `ornament` prop from `Scroll` and
       `PageHeader`; delete `CharactersHeader`, which only existed to pass `ornament`.
-- [ ] `Wordmark`: a short gilt rule (`h-xxs w-3xl bg-accent`) under the name.
-- [ ] `PageHeader`: a hairline rule under the title block, on every screen alike.
-- [ ] `Scroll`: no ornament strip; hairline edge and the soft shadow, so a panel weighs
+- [x] `Wordmark`: a short gilt rule (`h-xxs w-3xl bg-accent`) under the name.
+- [x] `PageHeader`: a hairline rule under the title block, on every screen alike.
+- [x] `Scroll`: no ornament strip; hairline edge and the soft shadow, so a panel weighs
       the same as a `Card`.
-- [ ] `docs/architecture.md` stops naming the ornament.
+- [x] `docs/architecture.md` stops naming the ornament.
 
 ## 3. Spacing and widths
 

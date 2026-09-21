@@ -34,7 +34,7 @@ app/                     Expo Router routes
 components/
   ui/                    shadcn-style primitives (+ index.ts barrel)
   shell/                 app shell, left menu, nav-items, page header, Scroll surface,
-                         GreekKey ornament, wordmark, roster bar
+                         wordmark, roster bar
   avatars/               15 SVG avatars + color swatches
   charts/                histogram
   flow/                  React Flow nodes/edges (.web.tsx) with .native.tsx fallbacks
@@ -180,7 +180,7 @@ Adventures use a `node` span per step in place of the innermost `iteration`. The
 
 ## Theme (theme/)
 
-`theme/tokens.ts` is the only place a color, font family, radius, shadow, or duration literal appears. Base theme "scroll": parchment surfaces, iron-gall-ink foreground, rubric red accent, verdigris secondary, gilt highlight. A "nightScroll" dark variant shares the same token keys, so `prefers-color-scheme: dark` is intentional rather than inverted. Display font Cinzel, body font Cormorant Garamond, GFS Neohellenic for Greek subtitles, Greek-key ornament components.
+`theme/tokens.ts` is the only place a color, font family, radius, shadow, or duration literal appears. Base theme "scroll": parchment surfaces, iron-gall-ink foreground, rubric red accent, verdigris secondary, gilt highlight. A "nightScroll" dark variant shares the same token keys, so `prefers-color-scheme: dark` is intentional rather than inverted. Display font Cinzel, body font Cormorant Garamond, GFS Neohellenic for Greek subtitles.
 
 `npm run theme:css` (run automatically by `predev` / `prestart` / `prebuild`) derives two files from the tokens so they cannot drift: `theme/global.css` (CSS variables for `:root`, `.dark` and the dark media query) and `theme/tailwind-tokens.cjs` (the `theme.extend` object). Colors reach Tailwind as `rgb(var(--color-x) / <alpha-value>)`; native gets the same variables through NativeWind `vars()`. The Tailwind scales are named rather than numeric (`p-md`, `rounded-lg`, `text-base`, `h-control-md`, `shadow-ink-soft`, `duration-fast`, `z-overlay`, `w-menu`, `opacity-disabled`, `bg-foreground/scrim`), so an off-scale class stands out in review. A second theme is a second token object.
 

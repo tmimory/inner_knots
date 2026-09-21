@@ -11,6 +11,5 @@ export {
   STEERING_MODE_HINTS,
   STEERING_MODE_LABELS,
 } from "./labels";
-export { CharactersHeader, type CharactersHeaderProps } from "./screen-header";
 export { CHARACTER_SEARCH_PLACEHOLDER, matchesCharacterQuery } from "./search";
 export { Segmented, type SegmentedOption, type SegmentedProps } from "./segmented";

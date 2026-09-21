@@ -122,11 +122,10 @@ export default function AdventureListScreen() {
             </Button>
           </>
         }
-        ornament
       />
 
       {error ? (
-        <Scroll ornament={false}>
+        <Scroll>
           <Text variant="h3">The shelf would not open</Text>
           <Text variant="small" className="text-destructive">
             {error}

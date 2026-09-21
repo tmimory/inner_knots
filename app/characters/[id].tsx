@@ -1,8 +1,8 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { View } from "react-native";
 
-import { CharacterForm, CharactersHeader } from "@/components/characters";
-import { Scroll } from "@/components/shell";
+import { CharacterForm } from "@/components/characters";
+import { PageHeader, Scroll } from "@/components/shell";
 import { Badge, Button, Text, useToast } from "@/components/ui";
 import { useCharacters } from "@/lib/client/use-characters";
 import { characterDisplayName, type CharacterInput } from "@/lib/domain";
@@ -31,7 +31,7 @@ export default function EditCharacterScreen() {
 
   return (
     <View className="gap-lg">
-      <CharactersHeader
+      <PageHeader
         title={character ? characterDisplayName(character) : "Character"}
         subtitle="διόρθωσις · a mask, revised"
         right={

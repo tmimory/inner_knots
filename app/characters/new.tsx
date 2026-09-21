@@ -1,7 +1,8 @@
 import { router } from "expo-router";
 import { View } from "react-native";
 
-import { CharacterForm, CharactersHeader } from "@/components/characters";
+import { CharacterForm } from "@/components/characters";
+import { PageHeader } from "@/components/shell";
 import { useToast } from "@/components/ui";
 import { useCharacters } from "@/lib/client/use-characters";
 import type { CharacterInput } from "@/lib/domain";
@@ -18,7 +19,7 @@ export default function NewCharacterScreen() {
 
   return (
     <View className="gap-lg">
-      <CharactersHeader title="New character" subtitle="πλάσις · the shaping of a mask" />
+      <PageHeader title="New character" subtitle="πλάσις · the shaping of a mask" />
       <CharacterForm
         characters={characters}
         onSave={handleSave}
