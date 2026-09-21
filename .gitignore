@@ -39,3 +39,19 @@ coverage/
 .claude/
 CLAUDE.md
 CLAUDE.local.md
+
+# Local run data (JSONL stores created on first run)
+data/
+
+# Expo / Metro generated
+expo-env.d.ts
+.metro-health-check*
+*.tsbuildinfo
+.kotlin/
+*.orig.*
+*.pem
+*.key
+
+# Generated native folders
+/ios
+/android

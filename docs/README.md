@@ -8,7 +8,7 @@ Phases
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Scaffold, theme, shell](plan/01-scaffold.md) | planned |
+| 1 | [Scaffold, theme, shell](plan/01-scaffold.md) | done |
 | 2 | [Domain, storage, prompts](plan/02-domain-storage-prompts.md) | planned |
 | 3 | [Provider layer](plan/03-providers.md) | planned |
 | 4 | [Characters](plan/04-characters.md) | planned |

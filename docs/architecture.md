@@ -12,11 +12,18 @@ inner_knots is a local research bench for running AI "characters" (model + confi
 
 Single-command run: `cp .env.example .env`, fill in keys, `npm install`, `npm run dev`.
 
+Requires **Node >= 22.18**: the theme generator imports `theme/tokens.ts` directly and relies on Node's native TypeScript type stripping. Tailwind is pinned to 3.4.x because NativeWind 4 does not support Tailwind 4.
+
 ## Directory layout
 
 ```
+app.config.ts            Expo config in TS, so splash/icon colors come from the tokens
+tailwind.config.js       requires theme/tailwind-tokens.cjs; holds no literals
+metro.config.js          withNativeWind(input: theme/global.css)
+scripts/
+  build-theme-css.mjs    generates theme/global.css + theme/tailwind-tokens.cjs from tokens.ts
 app/                     Expo Router routes
-  _layout.tsx            fonts, theme provider, left menu shell
+  _layout.tsx            fonts, theme provider, toast provider, portal host, app shell
   index.tsx              redirect to /characters
   characters/            list + editor
   puzzles/trolley.tsx
@@ -25,8 +32,9 @@ app/                     Expo Router routes
   logs/                  run list, run detail (spans + logs)
   api/                   server routes (characters, objects, adventures, runs, providers, prompts)
 components/
-  ui/                    shadcn-style primitives
-  shell/                 left menu, page header, roster bar
+  ui/                    shadcn-style primitives (+ index.ts barrel)
+  shell/                 app shell, left menu, nav-items, page header, Scroll surface,
+                         GreekKey ornament, wordmark, roster bar
   avatars/               15 SVG avatars + color swatches
   charts/                histogram
   flow/                  React Flow nodes/edges (.web.tsx) with .native.tsx fallbacks
@@ -40,9 +48,14 @@ lib/
   puzzles/               puzzle definitions: prompt assembly, option sets, result reducers
   client/                typed fetch helpers used by screens
 theme/
-  tokens.ts              single source of truth (colors, fonts, spacing, radii, shadows, motion)
-  index.ts               NativeWind vars(), ThemeProvider, useTheme
-  global.css             CSS variables generated from tokens for web/Tailwind
+  tokens.ts              single source of truth (colors, fonts, spacing, control sizes,
+                         layout measures, radii, shadows, motion, z-index, avatar palette)
+  color.ts               hex -> "r g b" and camel -> kebab helpers (shared with the generator)
+  provider.tsx           ThemeProvider, useTheme, useThemeName
+  vars.ts                NativeWind vars() per theme, for native (reads scalarTokenGroups)
+  index.ts               public surface of the theme module
+  global.css             GENERATED CSS variables for web/Tailwind
+  tailwind-tokens.cjs    GENERATED theme.extend object for tailwind.config.js
 prompts/                 markdown prompt fragments (editable without touching code)
   characters/            bio.md, principles.md, values.md
   trolley/               thought-experiment.md, employee.md, bystander.md, decision.md
@@ -112,7 +125,9 @@ Every provider call is wrapped in a span that records the exact request body and
 
 ## Theme (theme/)
 
-`theme/tokens.ts` is the only place a color, font family, radius, shadow, or duration literal appears. Base theme "scroll": parchment surfaces, iron-gall-ink foreground, rubric red accent, verdigris secondary, gilt highlight. Display font Cinzel, body font Cormorant Garamond, Greek-key ornament components. Tokens feed Tailwind via CSS variables in `theme/global.css` and NativeWind `vars()`, so a second theme is a second token object.
+`theme/tokens.ts` is the only place a color, font family, radius, shadow, or duration literal appears. Base theme "scroll": parchment surfaces, iron-gall-ink foreground, rubric red accent, verdigris secondary, gilt highlight. A "nightScroll" dark variant shares the same token keys, so `prefers-color-scheme: dark` is intentional rather than inverted. Display font Cinzel, body font Cormorant Garamond, GFS Neohellenic for Greek subtitles, Greek-key ornament components.
+
+`npm run theme:css` (run automatically by `predev` / `prestart` / `prebuild`) derives two files from the tokens so they cannot drift: `theme/global.css` (CSS variables for `:root`, `.dark` and the dark media query) and `theme/tailwind-tokens.cjs` (the `theme.extend` object). Colors reach Tailwind as `rgb(var(--color-x) / <alpha-value>)`; native gets the same variables through NativeWind `vars()`. The Tailwind scales are named rather than numeric (`p-md`, `rounded-lg`, `text-base`, `h-control-md`, `shadow-ink-soft`, `duration-fast`, `z-overlay`, `w-menu`, `opacity-disabled`, `bg-foreground/scrim`), so an off-scale class stands out in review. A second theme is a second token object.
 
 ## Platform notes
 
