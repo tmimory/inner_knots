@@ -41,8 +41,9 @@ components/
   puzzles/               puzzle-specific UI
 lib/
   domain/                types + zod schemas (Character, TrolleyObject, Adventure, Run, Span, LogEvent)
-  storage/               JSONL store (server only)
-  prompts/               markdown loader + composer
+  storage/               JSONL store (server only): paths, jsonl, collections, runs
+  prompts/               markdown loader + template engine + composer (server only)
+  api/                   shared API-route helpers: http responses, CRUD route factory
   providers/             provider factory + adapters
   engine/                run engine (executes a run, emits spans/logs, updates progress)
   puzzles/               puzzle definitions: prompt assembly, option sets, result reducers
@@ -58,10 +59,13 @@ theme/
   tailwind-tokens.cjs    GENERATED theme.extend object for tailwind.config.js
 prompts/                 markdown prompt fragments (editable without touching code)
   characters/            bio.md, principles.md, values.md
-  trolley/               thought-experiment.md, employee.md, bystander.md, decision.md
-  prisoners-dilemma/     thought-experiment.md, interrogation.md, payoffs.md, history.md
-  adventure/             briefing.md, node.md, history.md
-  shared/                output-instructions.md
+  trolley/               variant-{thought-experiment,employee,bystander}.md,
+                         situation.md, question.md
+  prisoners-dilemma/     variant-{thought-experiment,interrogation}.md, crime.md,
+                         relationship.md, payoffs-symmetric.md,
+                         payoffs-asymmetric-{aware,own}.md, history.md, question.md
+  adventure/             briefing.md, history.md, node.md
+  shared/                decision-instructions.md
 data/                    local JSONL data (gitignored). Created on first run.
 docs/                    this documentation
 ```
@@ -72,8 +76,8 @@ All entities carry `id`, `createdAt`, `updatedAt`.
 
 - **Character**: `id` (user identifier, no spaces, unique; defaults to UUID), `avatar: { shape, color }`, `provider`, `model`, `outputMode: "structured" | "tool"`, `effort?`, `steering: { mode: "raw" | "bio" | "full", bio?, principles: string[], values: string[] }`. The composed steering prompt is derived, never stored.
 - **TrolleyObject**: `id`, `label`, `prompt` (≤250 chars), `icon` (key into the SVG set), `builtIn: boolean`, `tags`.
-- **Adventure**: `id`, `name`, `briefing` (≤1000), `nodes[]`, `edges[]`, `startNodeId`. Node = `{ id, context ≤1000, decision ≤500, options: [{ id, label, outcome ≤500, nextNodeId | null }] }`. Stored with React Flow positions.
-- **Run**: `id`, `puzzle: "trolley" | "prisoners-dilemma" | "adventure"`, `config` (full puzzle configuration snapshot incl. roster and per-character run counts), `status`, `progress: { done, total }`, `startedAt`, `finishedAt`, `summary` (puzzle-specific reducer output: histogram counts, per-node frequencies).
+- **Adventure**: `id`, `name`, `briefing` (≤1000), `startNodeId`, `nodes[]`. Node = `{ id, position: {x,y}, context ≤1000, decision ≤500, options: [{ id, label ≤100, outcome? ≤500, nextNodeId | null }] }` (max 5 options). There is no separate `edges[]`: an option *is* the edge, and React Flow derives its edges from `nextNodeId`. `validateAdventure(adventure)` reports the structural problems a graph can have — missing start, unreachable node, dangling `nextNodeId`, node without options, duplicate node id — so the builder can show them without refusing to store a half-built graph.
+- **Run**: `id`, `puzzle: "trolley" | "prisoners-dilemma" | "adventure"`, `config` (full puzzle configuration snapshot incl. roster and per-character run counts, a discriminated union on `puzzle`), `status`, `progress: { done, total }`, `startedAt`, `finishedAt`, `summary` (puzzle-specific reducer output: histogram counts, per-node frequencies). Prisoner's-dilemma payoffs are free text ("5 years", "walk free"), symmetric or per-player.
 - **Span**: `runId`, `spanId`, `parentSpanId`, `name` (run / character / iteration / provider-call), `characterId`, `iteration`, `startedAt`, `endedAt`, `status`, `input` (exact system + messages + tool/schema sent), `output` (raw provider response), `decision` (normalized: `choice`, `weights?` for Jev probabilities, `usage`, `latencyMs`), `error?`.
 - **LogEvent**: `runId`, `ts`, `level`, `message`, `data?`.
 
@@ -81,21 +85,49 @@ All entities carry `id`, `createdAt`, `updatedAt`.
 
 Server-only JSONL under `data/`:
 
-- `data/characters.jsonl`, `data/objects.jsonl`, `data/adventures.jsonl`: append-only event logs of `{ op: "upsert" | "delete", entity }`. Reading replays the file; the last op per id wins. A `compact()` helper rewrites the file.
-- `data/runs/index.jsonl`: one line per run status change (created, progress, finished, failed). Replay gives current state.
-- `data/runs/<runId>/spans.jsonl` and `data/runs/<runId>/logs.jsonl`: append-only.
+- `data/characters.jsonl`, `data/objects.jsonl`, `data/adventures.jsonl`: append-only event logs of `{ op: "upsert" | "delete", entity }`. Reading replays the file; the last op per id wins, and first-write order is preserved so lists stay stable as entities are edited. A `compact()` helper rewrites the file as one line per surviving entity (via a temp file and a rename, so a crash mid-compaction leaves the original intact). `createCollection(name, schema)` builds one typed repository — `list`, `get`, `has`, `upsert`, `remove`, `compact` — and `upsert` validates with zod and stamps `createdAt` / `updatedAt` itself, so a client cannot backdate an entity.
+- `data/runs/index.jsonl`: one `RunEvent` per status change — `created` (carrying the whole run), then `progress`, `finished`, `failed` or `cancelled` (carrying only what changed). Replay gives current state; the result is cached in memory and updated in place as events are appended, so polling the logs screen never re-reads the file.
+- `data/runs/<runId>/spans.jsonl` and `data/runs/<runId>/logs.jsonl`: append-only. A span may be written more than once — `updateSpan` appends a patch with the same `spanId`, and readers merge by `spanId`, last write wins per field — so a span can be opened before a provider call and closed after it without ever rewriting a line.
 
-Everything is human-readable and can be reviewed with `cat` or `jq`.
+`DATA_DIR` (default `./data`) is read in `lib/storage/paths.ts` and nowhere else, and it is read per call rather than at import time, so tests can point a temporary directory at the store. Writes to one file are serialized by an in-process promise chain, so two concurrent API requests cannot interleave halves of a line. Everything is human-readable and can be reviewed with `cat` or `jq`.
 
 ## Prompts (prompts/, lib/prompts)
 
-Prompt fragments are markdown files with YAML frontmatter (`id`, `description`, `variables`). Bodies use `{{variable}}` placeholders and `{{#if x}}...{{/if}}` blocks. `lib/prompts/compose.ts` loads a fragment by id, validates that all declared variables are provided, and renders it. Puzzle definitions in `lib/puzzles/*` assemble the final prompt from fragments. Nothing in code contains prompt prose.
+Prompt fragments are markdown files with YAML frontmatter (`id`, `description`, `variables`), parsed with `gray-matter`. The `id` must equal the path under `prompts/` without the extension, so a fragment can be found from its id and vice versa. Fragments are cached by id and re-read when their mtime changes, so editing a prompt during `npm run dev` takes effect on the next request without a restart.
+
+The template language (`lib/prompts/template.ts`, hand-written, no Handlebars dependency) is deliberately tiny — prompt fragments are prose with holes in them, not programs:
+
+```
+{{name}}                        plain substitution, never HTML-escaped
+{{#if name}}…{{/if}}            included when the value is truthy and non-empty
+{{#if name}}…{{else}}…{{/if}}   the alternative when it is not
+{{#each list}}…{{/each}}        repeated per item; {{this}} is the item
+{{this.field}}                  a field of the current item
+```
+
+A block tag alone on its line takes the line with it, so an omitted section leaves no blank lines behind. Empty strings, empty arrays, `0` and `false` are all falsy, which is what lets `characters/principles.md` render as nothing rather than as a dangling heading.
+
+`lib/prompts/compose.ts` renders a fragment by id and is strict in both directions: a declared variable that was not supplied is an error, and a fragment that reads a variable it did not declare fails to load at all. `checkFragments()` parses every fragment on disk, so a malformed template surfaces on startup rather than mid-run. Puzzle definitions in `lib/puzzles/*` assemble the final prompt from fragments. Nothing in code contains prompt prose.
 
 The character steering prompt is composed from `prompts/characters/*`:
 
 - raw → no system prompt from the character.
 - bio → "You are {{bio}}".
 - full → bio, then "You are guided by the following principles:" list (omitted when empty), then "Your values are as follows:" list (omitted when empty).
+
+## Puzzle prompts (lib/puzzles)
+
+Each puzzle exports a pure `build…Prompt` function that returns `{ system?, user, options }` — the puzzle side of a call only. The character's steering prompt is prepended as the system message by the run engine, so the same builder serves both a run and the Prompt View, where no character is attached yet.
+
+- **Trolley** — `buildTrolleyPrompt({ variant, track1, track2, outputMode })`. Track contents arrive already resolved to objects, so the builder is testable without the store. `joinNaturalLanguage` produces "a, b and c"; an empty track renders as an empty string and `trolley/situation.md` supplies the wording, so the phrase for a bare track stays in markdown.
+- **Prisoner's dilemma** — `buildPrisonersDilemmaPrompt({ config, player, outputMode, round?, history? })`. Each player gets their own prompt: relationships are per side, and the stored `a`/`b` payoff matrix is re-keyed as "you" / "your partner". When `playersAware` is false a player is shown only their own consequences.
+- **Adventure** — `buildAdventurePrompt({ briefing, node, history?, amnesia, outputMode })`. Each node call is stateless, so the briefing is repeated every time; amnesia simply omits the history section.
+
+## API routes (app/api, lib/api)
+
+Routes are thin. Responses follow one envelope so the typed clients in `lib/client/` need one shape each: `{ items }` for a list, `{ item }` for a single entity, `{ error: string }` for every 4xx and 5xx. `lib/api/http.ts` holds the response helpers and a `handle()` wrapper that turns a `ZodError` into a 400 with a readable message, a `PromptError` into a 400, and anything else into a 500. `lib/api/collection-routes.ts` builds the CRUD handlers once; characters, objects and adventures are each a two-line route file over it. `POST` creates (409 on a taken id) and `PUT` updates (404 when absent), so a typo in an id can never silently overwrite a character.
+
+Prompt previews (`/api/prompts/*`) compose with the same builders a run uses. The trolley preview takes **object ids** and resolves them through the objects collection, answering 400 with the offending ids rather than rendering a prompt with a silent hole in it.
 
 ## Provider layer (lib/providers)
 

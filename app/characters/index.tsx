@@ -3,26 +3,26 @@ import { View } from "react-native";
 
 import { PageHeader, Scroll } from "@/components/shell";
 import { Badge, Text } from "@/components/ui";
-import type { HealthResponse } from "@/app/api/health+api";
-import { apiFetch } from "@/lib/client/api";
+import { charactersApi } from "@/lib/client/characters";
 
-type HealthState =
-  | { status: "checking" }
-  | { status: "ok"; time: string }
+type RosterState =
+  | { status: "loading" }
+  | { status: "ready"; count: number }
   | { status: "error"; message: string };
 
 export default function CharactersScreen() {
-  const [health, setHealth] = useState<HealthState>({ status: "checking" });
+  const [roster, setRoster] = useState<RosterState>({ status: "loading" });
 
   useEffect(() => {
     let cancelled = false;
-    apiFetch<HealthResponse>("/api/health")
-      .then((result) => {
-        if (!cancelled) setHealth({ status: "ok", time: result.time });
+    charactersApi
+      .list()
+      .then((characters) => {
+        if (!cancelled) setRoster({ status: "ready", count: characters.length });
       })
       .catch((error: unknown) => {
         if (!cancelled) {
-          setHealth({ status: "error", message: error instanceof Error ? error.message : "unknown" });
+          setRoster({ status: "error", message: error instanceof Error ? error.message : "unknown" });
         }
       });
     return () => {
@@ -36,13 +36,13 @@ export default function CharactersScreen() {
         title="Characters"
         subtitle="πρόσωπα · the masks that will answer"
         right={
-          <Badge variant={health.status === "ok" ? "secondary" : "muted"}>
+          <Badge variant={roster.status === "ready" ? "secondary" : "muted"}>
             <Text>
-              {health.status === "ok"
-                ? "backend: ok"
-                : health.status === "checking"
-                  ? "backend: checking…"
-                  : `backend: ${health.message}`}
+              {roster.status === "ready"
+                ? `${roster.count} on the roster`
+                : roster.status === "loading"
+                  ? "reading the roster…"
+                  : `roster: ${roster.message}`}
             </Text>
           </Badge>
         }
@@ -50,11 +50,12 @@ export default function CharactersScreen() {
       <Scroll>
         <Text variant="lead">
           A character is a model plus a configuration plus whatever convictions we talk it into.
-          The roster and the character editor arrive in phase 3.
+          The roster and the character editor arrive in phase 4.
         </Text>
-        {health.status === "ok" ? (
-          <Text variant="muted">Server time: {health.time}</Text>
-        ) : null}
+        <Text variant="muted">
+          Characters are stored as JSONL in the local data directory and served from
+          /api/characters.
+        </Text>
       </Scroll>
     </View>
   );
