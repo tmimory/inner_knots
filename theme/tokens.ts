@@ -220,6 +220,18 @@ export const controlSizes = {
   "control-icon": 40,
 } as const;
 
+/**
+ * Avatar medallion diameters, in px. Named so a character avatar reads
+ * `h-avatar-md` rather than a magic number, and so the SVG art can be handed the
+ * same number through `useTheme().avatarSizes`.
+ */
+export const avatarSizes = {
+  "avatar-sm": 32,
+  "avatar-md": 40,
+  "avatar-lg": 64,
+  "avatar-xl": 96,
+} as const;
+
 /** Layout measures, in px: the left menu column and the readable content width. */
 export const layout = {
   menu: 264,
@@ -262,7 +274,7 @@ export const lineHeights = {
  * The Tailwind sizing scale: spacing steps, control heights and hairline widths all
  * answer `h-*` / `w-*` / `p-*`, so they share one namespace.
  */
-export const sizes = { ...spacing, ...controlSizes, ...borderWidths } as const;
+export const sizes = { ...spacing, ...controlSizes, ...avatarSizes, ...borderWidths } as const;
 
 export type TokenGroup = {
   /** CSS variable prefix: `--<prefix>-<key>`. */
@@ -333,6 +345,7 @@ export type Theme = {
   fonts: typeof fonts;
   spacing: typeof spacing;
   controlSizes: typeof controlSizes;
+  avatarSizes: typeof avatarSizes;
   layout: typeof layout;
   radii: typeof radii;
   shadows: typeof shadows;
@@ -352,6 +365,7 @@ function buildTheme(name: ThemeName): Theme {
     fonts,
     spacing,
     controlSizes,
+    avatarSizes,
     layout,
     radii,
     shadows,

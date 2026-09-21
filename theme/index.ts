@@ -12,6 +12,7 @@ export { ThemeProvider, useTheme, useThemeName } from "./provider";
 export { themeVars } from "./vars";
 export {
   avatarPalette,
+  avatarSizes,
   borderWidths,
   controlSizes,
   durations,
