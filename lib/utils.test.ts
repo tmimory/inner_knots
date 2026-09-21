@@ -15,6 +15,12 @@ describe("cn", () => {
     expect(cn("bg-card", "bg-primary")).toBe("bg-primary");
   });
 
+  it("lets a named layout width replace another", () => {
+    expect(cn("w-full max-w-menu", "max-w-content")).toBe("w-full max-w-content");
+    expect(cn("min-w-menu", "min-w-content")).toBe("min-w-content");
+    expect(cn("w-menu", "w-content")).toBe("w-content");
+  });
+
   it("supports conditional objects and arrays", () => {
     expect(cn(["text-foreground", { "opacity-50": true, hidden: false }])).toBe(
       "text-foreground opacity-50",

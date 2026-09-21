@@ -128,6 +128,7 @@ export function PromptView({
             </View>
           ) : null}
         </ScrollView>
+        <Separator />
 
         <View className="flex-row justify-end">
           <Button variant="outline" onPress={() => onOpenChange(false)}>

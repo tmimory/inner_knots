@@ -118,6 +118,20 @@ ${colorBlock(themeColors.nightScroll, "      ")}
     color: rgb(var(${cssVarNames.color("foreground")}) / 1);
     font-family: var(${cssVarNames.font("body")});
   }
+
+  /*
+   * On web, @rn-primitives/dialog wraps DialogContent in an unstyled Radix
+   * <div role="dialog">. A percentage max-height on the content then resolves
+   * against that auto-height block and does nothing, so a tall dialog overflows
+   * the viewport instead of scrolling. Making the wrapper a shrinkable flex item
+   * of the overlay gives it a definite height for \`max-h-full\` to resolve against.
+   */
+  [role="dialog"] {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-height: 100%;
+  }
 }
 `;
 
