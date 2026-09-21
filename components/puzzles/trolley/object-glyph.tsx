@@ -1,20 +1,8 @@
-import { createElement } from "react";
-
-import { objectIcon, type ObjectIconProps } from "@/components/icons/objects";
-
-export type ObjectGlyphProps = ObjectIconProps & {
-  /** Icon id from the object set; an unknown one draws the question mark. */
-  icon: string;
-};
-
 /**
- * One object glyph, chosen by id.
+ * Moved to `components/icons/objects/object-glyph.tsx`.
  *
- * `objectIcon(id)` hands back a component, and calling it as `<Glyph />` would
- * declare a new component type on every render — new type, new tree, lost state.
- * Creating the element instead keeps the identity the icon module already owns,
- * which is why every screen that draws a glyph from data goes through here.
+ * Drawing a glyph from an id is not a trolley idea — the assets bench wants it
+ * too — so it lives with the glyphs now. This file keeps
+ * `@/components/puzzles/trolley` answering for it.
  */
-export function ObjectGlyph({ icon, ...props }: ObjectGlyphProps) {
-  return createElement(objectIcon(icon), props);
-}
+export { ObjectGlyph, type ObjectGlyphProps } from "@/components/icons/objects/object-glyph";

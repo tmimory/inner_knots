@@ -4,7 +4,7 @@ import { View } from "react-native";
 
 import { AdventureOutcomes } from "@/components/flow";
 import { PathList, issueBadge, pathKey, splitIssues } from "@/components/puzzles/adventure";
-import { PromptView, type PromptPanel } from "@/components/puzzles/prompt-view";
+import { PromptView } from "@/components/puzzles/prompt-view";
 import { RosterBar } from "@/components/puzzles/roster-bar";
 import { RunProgress } from "@/components/puzzles/run-progress";
 import { Section } from "@/components/puzzles/section";
@@ -14,6 +14,7 @@ import { describeApiError } from "@/lib/client/errors";
 import { previewAdventurePrompt } from "@/lib/client/prompts";
 import { useAdventure } from "@/lib/client/use-adventures";
 import { useCharacters } from "@/lib/client/use-characters";
+import { usePromptPreview } from "@/lib/client/use-prompt-preview";
 import { useRun, useRunStarter } from "@/lib/client/use-run";
 import { validateAdventure } from "@/lib/domain/adventure";
 import { RUN_LIMITS, type RosterEntry } from "@/lib/domain/run";
@@ -31,10 +32,11 @@ export default function AdventureRunScreen() {
   const [selectedPath, setSelectedPath] = useState<{ runId: string; key: string } | null>(null);
   const [fitSignal, setFitSignal] = useState(0);
 
-  const [promptOpen, setPromptOpen] = useState(false);
-  const [promptPanels, setPromptPanels] = useState<PromptPanel[]>([]);
-  const [promptLoading, setPromptLoading] = useState(false);
-  const [promptError, setPromptError] = useState<string | null>(null);
+  const prompt = usePromptPreview(async () => {
+    if (!adventure) return [];
+    const { prompt: composed } = await previewAdventurePrompt(adventure.id, amnesia);
+    return [{ system: composed.system, user: composed.user, options: composed.options }];
+  });
 
   const starter = useRunStarter();
   const { run, summary } = useRun(starter.runId);
@@ -59,22 +61,6 @@ export default function AdventureRunScreen() {
       : !runnable
         ? `${blocking.length} ${blocking.length === 1 ? "problem" : "problems"} in the tree stop a run.`
         : null;
-
-  async function showPrompt() {
-    if (!adventure) return;
-    setPromptOpen(true);
-    setPromptLoading(true);
-    setPromptError(null);
-    setPromptPanels([]);
-    try {
-      const { prompt } = await previewAdventurePrompt(adventure.id, amnesia);
-      setPromptPanels([{ system: prompt.system, user: prompt.user, options: prompt.options }]);
-    } catch (caught) {
-      setPromptError(describeApiError(caught));
-    } finally {
-      setPromptLoading(false);
-    }
-  }
 
   if (loading || !adventure) {
     return (
@@ -163,7 +149,7 @@ export default function AdventureRunScreen() {
         description="The first node, exactly as it would be sent, and then the walk itself."
         right={
           <>
-            <Button variant="outline" size="sm" onPress={() => void showPrompt()}>
+            <Button variant="outline" size="sm" onPress={() => void prompt.show()}>
               <Text>Prompt View</Text>
             </Button>
             <Button
@@ -233,13 +219,13 @@ export default function AdventureRunScreen() {
       ) : null}
 
       <PromptView
-        open={promptOpen}
-        onOpenChange={setPromptOpen}
+        open={prompt.open}
+        onOpenChange={prompt.setOpen}
         title="The first node, as sent"
         description="The briefing and the start node. A character's own steering prompt is prepended by the engine."
-        panels={promptPanels}
-        loading={promptLoading}
-        error={promptError}
+        panels={prompt.panels}
+        loading={prompt.loading}
+        error={prompt.error}
       />
     </View>
   );

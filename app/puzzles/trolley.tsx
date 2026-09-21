@@ -3,7 +3,7 @@ import { useCallback, useMemo, useState } from "react";
 import { View } from "react-native";
 
 import { PageHeader } from "@/components/shell";
-import { PromptView, type PromptPanel } from "@/components/puzzles/prompt-view";
+import { PromptView } from "@/components/puzzles/prompt-view";
 import { RosterBar } from "@/components/puzzles/roster-bar";
 import { RunProgress } from "@/components/puzzles/run-progress";
 import { Section } from "@/components/puzzles/section";
@@ -24,9 +24,9 @@ import { VariantSelect, type VariantOption } from "@/components/puzzles/variant-
 import { Badge, Button, Text } from "@/components/ui";
 import { previewTrolleyPrompt } from "@/lib/client/prompts";
 import { useCatalogue } from "@/lib/client/use-catalogue";
-import { describeApiError } from "@/lib/client/errors";
 import { useCharacters } from "@/lib/client/use-characters";
 import { usePersistedState } from "@/lib/client/use-persisted-state";
+import { usePromptPreview } from "@/lib/client/use-prompt-preview";
 import { useRun, useRunStarter } from "@/lib/client/use-run";
 import { RUN_LIMITS, TROLLEY_VARIANTS, type RosterEntry, type TrolleyVariant } from "@/lib/domain/run";
 import type { TrolleySummary } from "@/lib/domain/summary";
@@ -108,10 +108,15 @@ export default function TrolleyScreen() {
   const [board, setBoard] = usePersistedState<Board>("puzzles.trolley", EMPTY_BOARD, parseBoard);
   const [hovered, setHovered] = useState<TrackId | null>(null);
   const [creatorOpen, setCreatorOpen] = useState(false);
-  const [promptOpen, setPromptOpen] = useState(false);
-  const [promptPanels, setPromptPanels] = useState<PromptPanel[]>([]);
-  const [promptLoading, setPromptLoading] = useState(false);
-  const [promptError, setPromptError] = useState<string | null>(null);
+
+  const prompt = usePromptPreview(async () => {
+    const { prompt: composed } = await previewTrolleyPrompt({
+      variant: board.variant,
+      track1: board.track1,
+      track2: board.track2,
+    });
+    return [{ system: composed.system, user: composed.user, options: composed.options }];
+  });
 
   const starter = useRunStarter();
   const { run, summary } = useRun(starter.runId);
@@ -193,25 +198,6 @@ export default function TrolleyScreen() {
 
   const clearTracks = useCallback(() => patch({ track1: [], track2: [] }), [patch]);
 
-  async function showPrompt() {
-    setPromptOpen(true);
-    setPromptLoading(true);
-    setPromptError(null);
-    setPromptPanels([]);
-    try {
-      const { prompt } = await previewTrolleyPrompt({
-        variant: board.variant,
-        track1: board.track1,
-        track2: board.track2,
-      });
-      setPromptPanels([{ system: prompt.system, user: prompt.user, options: prompt.options }]);
-    } catch (caught) {
-      setPromptError(describeApiError(caught));
-    } finally {
-      setPromptLoading(false);
-    }
-  }
-
   const blocked =
     board.roster.length === 0
       ? "Put at least one character on the roster."
@@ -277,7 +263,7 @@ export default function TrolleyScreen() {
         title="The framing"
         description="The same tracks, asked three different ways."
         right={
-          <Button variant="outline" size="sm" onPress={() => void showPrompt()}>
+          <Button variant="outline" size="sm" onPress={() => void prompt.show()}>
             <Text>Prompt View</Text>
           </Button>
         }
@@ -364,13 +350,13 @@ export default function TrolleyScreen() {
       />
 
       <PromptView
-        open={promptOpen}
-        onOpenChange={setPromptOpen}
+        open={prompt.open}
+        onOpenChange={prompt.setOpen}
         title="Trolley prompt"
         description="The puzzle's own words. A character's steering prompt is prepended by the engine and is not shown here."
-        panels={promptPanels}
-        loading={promptLoading}
-        error={promptError}
+        panels={prompt.panels}
+        loading={prompt.loading}
+        error={prompt.error}
       />
     </View>
   );

@@ -4,17 +4,20 @@
  * The engine persists progress and a partial summary after every decision, so
  * polling `GET /api/runs/:id` once a second is enough to animate a run: the
  * summary that comes back mid-run has the same shape as the final one, with
- * fewer decisions in it. Polling stops by itself when the run reaches a terminal
- * status, so a finished screen costs nothing.
+ * fewer decisions in it. The polling itself is {@link usePolled}, which every
+ * screen that watches a run shares; this hook only says what to read and when it
+ * has settled.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
-import { isTerminalRunStatus, type Run, type RunConfig } from "../domain/run";
+import type { Run, RunConfig } from "../domain/run";
 import { parseRunSummary, type RunSummary } from "../domain/summary";
+import { errorMessage } from "../errors";
 import { fetchRun, startRun } from "./runs";
+import { DEFAULT_POLL_MS, usePolled } from "./use-polled";
+import { isRunActive } from "./use-runs";
 
-/** How often a running run is re-read, unless the caller says otherwise. */
-export const DEFAULT_POLL_INTERVAL_MS = 1000;
+export { DEFAULT_POLL_MS } from "./use-polled";
 
 export type UseRunOptions = {
   intervalMs?: number;
@@ -27,12 +30,12 @@ export type UseRunResult = {
   /** True while the run exists and has not settled. */
   isRunning: boolean;
   error: Error | undefined;
-  /** Reads the run once, out of band with the poll. */
+  /** Asks for an immediate read, out of band with the poll. */
   refresh: () => Promise<void>;
 };
 
 function asError(value: unknown): Error {
-  return value instanceof Error ? value : new Error(String(value));
+  return value instanceof Error ? value : new Error(errorMessage(value));
 }
 
 /**
@@ -40,69 +43,48 @@ function asError(value: unknown): Error {
  * different run shows nothing rather than the previous run's last state, without
  * an effect that resets state and re-renders for it.
  */
-type PollState = { id: string | null; run?: Run; error?: Error };
+type RunSnapshot = { id: string | null; run?: Run };
+
+const NO_RUN: RunSnapshot = { id: null };
 
 /** Watches one run until it settles. Pass `null` to watch nothing. */
 export function useRun(runId: string | null, options: UseRunOptions = {}): UseRunResult {
-  const intervalMs = options.intervalMs ?? DEFAULT_POLL_INTERVAL_MS;
-  const [state, setState] = useState<PollState>({ id: runId });
-  const live = useRef(true);
+  const intervalMs = options.intervalMs ?? DEFAULT_POLL_MS;
 
-  useEffect(() => {
-    live.current = true;
-    return () => {
-      live.current = false;
-    };
-  }, []);
-
-  const refresh = useCallback(async () => {
-    if (runId === null) return;
-    try {
-      const run = await fetchRun(runId);
-      if (live.current) setState({ id: runId, run });
-    } catch (caught) {
-      if (live.current) setState((previous) => ({ ...previous, id: runId, error: asError(caught) }));
-    }
+  const load = useCallback(async (): Promise<RunSnapshot> => {
+    if (runId === null) return NO_RUN;
+    return { id: runId, run: await fetchRun(runId) };
   }, [runId]);
 
-  useEffect(() => {
-    if (runId === null) return;
-
-    let stopped = false;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-
-    const poll = async (): Promise<void> => {
-      try {
-        const run = await fetchRun(runId);
-        if (stopped) return;
-        setState({ id: runId, run });
-        // A settled run never changes again, so this is the last read.
-        if (isTerminalRunStatus(run.status)) return;
-      } catch (caught) {
-        if (stopped) return;
-        setState((previous) => ({ ...previous, id: runId, error: asError(caught) }));
-      }
-      timer = setTimeout(() => void poll(), intervalMs);
-    };
-
-    void poll();
-
-    return () => {
-      stopped = true;
-      if (timer !== undefined) clearTimeout(timer);
-    };
-  }, [runId, intervalMs]);
+  const polled = usePolled(
+    `run:${runId ?? ""}`,
+    // Watching nothing is a poll of nothing: one read that resolves empty.
+    runId === null ? 0 : intervalMs,
+    NO_RUN,
+    load,
+    (snapshot) => snapshot.run !== undefined && isRunActive(snapshot.run),
+  );
 
   // Anything read before the first poll of a new id belongs to the previous one.
-  const current: PollState = state.id === runId ? state : { id: runId };
-  const summary = useMemo(() => parseRunSummary(current.run?.summary), [current.run?.summary]);
+  const run = polled.data.id === runId ? polled.data.run : undefined;
+  const summary = useMemo(() => parseRunSummary(run?.summary), [run?.summary]);
+  const error = useMemo(
+    () => (polled.error === undefined ? undefined : new Error(polled.error)),
+    [polled.error],
+  );
+
+  const { refresh } = polled;
+  const askForRead = useCallback((): Promise<void> => {
+    refresh();
+    return Promise.resolve();
+  }, [refresh]);
 
   return {
-    run: current.run,
+    run,
     summary,
-    isRunning: current.run !== undefined && !isTerminalRunStatus(current.run.status),
-    error: current.error,
-    refresh,
+    isRunning: run !== undefined && isRunActive(run),
+    error,
+    refresh: askForRead,
   };
 }
 

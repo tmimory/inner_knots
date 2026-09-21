@@ -17,6 +17,7 @@ import { newId } from "@/lib/domain/id";
 import type { Run } from "@/lib/domain/run";
 import type { LogLevel, SpanStatus } from "@/lib/domain/span";
 import type { RunSummary } from "@/lib/domain/summary";
+import { errorMessage } from "@/lib/errors";
 import { createAdventureRunner } from "@/lib/puzzles/adventure/runner";
 import { createPrisonersDilemmaRunner } from "@/lib/puzzles/prisoners-dilemma/runner";
 import { createTrolleyRunner } from "@/lib/puzzles/trolley/runner";
@@ -56,10 +57,6 @@ export type ExecuteRunOptions = {
   signal?: AbortSignal;
 };
 
-function messageOf(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
 /** A span's status from what happened underneath it: an error only if nothing worked. */
 function statusOf(span: OpenSpan): SpanStatus {
   return span.ok > 0 || span.failed === 0 ? "ok" : "error";
@@ -90,7 +87,7 @@ export async function executeRun(run: Run, options: ExecuteRunOptions = {}): Pro
   try {
     plan = await prepareRun(run.config);
   } catch (error) {
-    const message = messageOf(error);
+    const message = errorMessage(error);
     await updateSpan(run.id, rootSpanId, {
       status: "error",
       endedAt: new Date().toISOString(),
@@ -157,7 +154,7 @@ async function drive<TData, TSummary extends RunSummary>(
       if (stop.signal.aborted) break;
     }
   } catch (error) {
-    failure = messageOf(error);
+    failure = errorMessage(error);
   }
 
   const endedAt = new Date().toISOString();

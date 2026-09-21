@@ -3,6 +3,7 @@
  * `?refresh=1` bypasses the cache, which is what the picker's refresh control uses.
  */
 import type { ProviderId } from "@/lib/domain/enums";
+import { errorMessage } from "@/lib/errors";
 import { getModels, isProviderId, refreshModels } from "@/lib/providers/factory";
 import { isProviderEnabled } from "@/lib/providers/env";
 import type { ModelInfo } from "@/lib/providers/types";
@@ -40,6 +41,6 @@ export async function GET(request: Request, params: Record<string, string>): Pro
     const models = await (refresh === null || refresh === "0" ? getModels(id) : refreshModels(id));
     return Response.json({ models } satisfies ModelsResponse);
   } catch (error) {
-    return fail(503, error instanceof Error ? error.message : String(error));
+    return fail(503, errorMessage(error));
   }
 }

@@ -5,6 +5,7 @@
  * route in `app/api/**` is `{ error: string }`. That sentence is what belongs on
  * screen — "API request failed with 400" is not.
  */
+import { errorMessage } from "../errors";
 import { ApiError } from "./api";
 
 /** A readable message for anything thrown by the typed clients. */
@@ -21,7 +22,7 @@ export function describeApiError(error: unknown): string {
     }
     return error.body.trim() === "" ? error.message : error.body;
   }
-  return error instanceof Error ? error.message : String(error);
+  return errorMessage(error);
 }
 
 /** True when a thrown error is the store refusing an identifier that is taken. */

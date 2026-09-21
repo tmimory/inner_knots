@@ -5,12 +5,7 @@ import { Avatar, ColorPicker, DEFAULT_AVATAR_SHAPE, ShapePicker } from "@/compon
 import { Scroll } from "@/components/shell";
 import {
   Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  ConfirmDialog,
   Input,
   Select,
   SelectContent,
@@ -582,24 +577,17 @@ export function CharacterForm({
         </Button>
       </View>
 
-      <Dialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete this character?</DialogTitle>
-            <DialogDescription>
-              {`"${draft.id}" leaves the roster. Runs it has already answered keep their record.`}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onPress={() => setConfirmingDelete(false)}>
-              <Text>Keep</Text>
-            </Button>
-            <Button variant="destructive" disabled={deleting} onPress={() => void handleDelete()}>
-              <Text>{deleting ? "Deleting…" : "Delete"}</Text>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={confirmingDelete}
+        onOpenChange={setConfirmingDelete}
+        title="Delete this character?"
+        description={`"${draft.id}" leaves the roster. Runs it has already answered keep their record.`}
+        confirmLabel="Delete"
+        cancelLabel="Keep"
+        destructive
+        loading={deleting}
+        onConfirm={() => void handleDelete()}
+      />
     </View>
   );
 }

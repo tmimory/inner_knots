@@ -3,7 +3,7 @@ import { useState } from "react";
 import { View } from "react-native";
 
 import { issueBadge } from "@/components/puzzles/adventure";
-import { GreekKey, PageHeader, Scroll } from "@/components/shell";
+import { PageHeader, Scroll } from "@/components/shell";
 import {
   Badge,
   Button,
@@ -11,11 +11,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  ConfirmDialog,
   Text,
 } from "@/components/ui";
 import { describeApiError } from "@/lib/client/errors";
@@ -23,9 +19,6 @@ import { useAdventures } from "@/lib/client/use-adventures";
 import { validateAdventure, type Adventure } from "@/lib/domain/adventure";
 import { formatDateTime } from "@/lib/format";
 import { starterAdventure } from "@/lib/puzzles/adventure/edits";
-
-/** How wide the meander under the title is drawn. */
-const ORNAMENT_REPEATS = 24;
 
 /** One saved tree: what it is called, how big it is, and whether it would run. */
 function AdventureCard({
@@ -128,8 +121,8 @@ export default function AdventureListScreen() {
             </Button>
           </>
         }
+        ornament
       />
-      <GreekKey repeats={ORNAMENT_REPEATS} tone="border" />
 
       {error ? (
         <Scroll ornament={false}>
@@ -178,34 +171,25 @@ export default function AdventureListScreen() {
         ))}
       </View>
 
-      <Dialog open={deleting !== null} onOpenChange={(open) => setDeleting(open ? deleting : null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete this adventure?</DialogTitle>
-          </DialogHeader>
-          <Text variant="muted">
-            {deleting
-              ? `“${deleting.name}” and its ${deleting.nodes.length} nodes go for good. Runs already recorded keep their own copy of the configuration.`
-              : ""}
-          </Text>
-          <DialogFooter>
-            <Button variant="outline" onPress={() => setDeleting(null)}>
-              <Text>Keep it</Text>
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={busy}
-              onPress={() => {
-                const target = deleting;
-                setDeleting(null);
-                if (target) void act(() => remove(target.id));
-              }}
-            >
-              <Text>Delete</Text>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={deleting !== null}
+        onOpenChange={(open) => setDeleting(open ? deleting : null)}
+        title="Delete this adventure?"
+        description={
+          deleting
+            ? `“${deleting.name}” and its ${deleting.nodes.length} nodes go for good. Runs already recorded keep their own copy of the configuration.`
+            : undefined
+        }
+        confirmLabel="Delete"
+        cancelLabel="Keep it"
+        destructive
+        loading={busy}
+        onConfirm={() => {
+          const target = deleting;
+          setDeleting(null);
+          if (target) void act(() => remove(target.id));
+        }}
+      />
     </View>
   );
 }

@@ -11,7 +11,7 @@ import {
 } from "@/components/logs";
 import { PageHeader, Scroll } from "@/components/shell";
 import { Badge, Text } from "@/components/ui";
-import { useCharacterIndex, useRuns } from "@/lib/client/use-runs";
+import { LOGS_POLL_MS, useCharacterIndex, useRuns } from "@/lib/client/use-runs";
 import type { Run } from "@/lib/domain/run";
 import { dayKey, formatDay } from "@/lib/format";
 
@@ -35,11 +35,14 @@ export default function LogsScreen() {
 
   // Puzzle, status and character narrow the query; the free text is a local
   // sieve, because a run id is not something the store indexes.
-  const { runs, loading, error } = useRuns({
-    puzzle: filters.puzzle,
-    status: filters.status,
-    characterId: filters.characterId,
-  });
+  const { runs, loading, error } = useRuns(
+    {
+      puzzle: filters.puzzle,
+      status: filters.status,
+      characterId: filters.characterId,
+    },
+    { pollMs: LOGS_POLL_MS },
+  );
 
   const shown = useMemo(
     () => runs.filter((run) => matchesSearch(run.id, filters.search)),

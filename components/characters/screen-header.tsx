@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 
-import { GreekKey, PageHeader } from "@/components/shell";
-
-/** How many meander repeats the rule under the title is drawn with. */
-const ORNAMENT_REPEATS = 24;
+import { PageHeader } from "@/components/shell";
 
 export type CharactersHeaderProps = {
   title: string;
@@ -13,14 +10,11 @@ export type CharactersHeaderProps = {
 };
 
 /**
- * The title block the three Characters screens share: the page header with a
- * meander rule ruled under it, the way a scribe would head a new section.
+ * The title block the three Characters screens share.
+ *
+ * The meander rule under the title is `PageHeader`'s own `ornament`; this is the
+ * name the Characters screens call it by, kept so they read as one family.
  */
 export function CharactersHeader({ title, subtitle, right }: CharactersHeaderProps) {
-  return (
-    <>
-      <PageHeader title={title} subtitle={subtitle} right={right} />
-      <GreekKey repeats={ORNAMENT_REPEATS} tone="border" />
-    </>
-  );
+  return <PageHeader title={title} subtitle={subtitle} right={right} ornament />;
 }

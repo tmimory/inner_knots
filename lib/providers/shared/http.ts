@@ -6,6 +6,7 @@
  * as "could not reach" rather than an unhandled `TypeError: fetch failed`.
  */
 import type { ProviderId } from "../../domain/enums";
+import { errorMessage } from "../../errors";
 import { ProviderError, type DecisionUsage } from "../types";
 
 /** Removes trailing slashes so `${base}/models` never doubles up. */
@@ -43,7 +44,7 @@ export async function fetchJson<T>(provider: ProviderId, url: string, init?: Req
   try {
     response = await fetch(url, init);
   } catch (error) {
-    throw new ProviderError(provider, `Could not reach ${url}: ${error instanceof Error ? error.message : String(error)}`, {
+    throw new ProviderError(provider, `Could not reach ${url}: ${errorMessage(error)}`, {
       retryable: true,
       cause: error,
     });

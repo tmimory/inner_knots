@@ -16,12 +16,14 @@ import { PageHeader, Scroll } from "@/components/shell";
 import { Button, Progress, Separator, Tabs, TabsContent, TabsList, TabsTrigger, Text, useToast } from "@/components/ui";
 import { cancelRun } from "@/lib/client/runs";
 import {
+  LOGS_POLL_MS,
   isRunActive,
   useAdventureName,
   useCharacterIndex,
   useObjectIndex,
   useRunDetail,
 } from "@/lib/client/use-runs";
+import { errorMessage } from "@/lib/errors";
 import { formatDateTime, formatElapsed } from "@/lib/format";
 import { layout } from "@/theme";
 
@@ -46,7 +48,7 @@ export default function RunDetailScreen() {
   const wide = width >= layout.wideBreakpoint;
   const { toast } = useToast();
 
-  const { run, spans, logs, loading, error, refresh } = useRunDetail(runId);
+  const { run, spans, logs, loading, error, refresh } = useRunDetail(runId, { pollMs: LOGS_POLL_MS });
   const characters = useCharacterIndex();
   const objects = useObjectIndex();
   const adventureName = useAdventureName(
@@ -66,7 +68,7 @@ export default function RunDetailScreen() {
     } catch (failure) {
       toast({
         title: "The run could not be cancelled",
-        description: failure instanceof Error ? failure.message : String(failure),
+        description: errorMessage(failure),
         tone: "destructive",
       });
     }

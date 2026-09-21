@@ -6,6 +6,7 @@
  * shaping, clamping and parsing a puzzle run would use is what gets verified.
  */
 import type { OutputMode } from "@/lib/domain/enums";
+import { errorMessage } from "@/lib/errors";
 import { createProvider, isProviderId } from "@/lib/providers/factory";
 import { isProviderEnabled } from "@/lib/providers/env";
 import type { DecisionOption, DecisionRecord, DecisionRequest, ProviderCallRecord } from "@/lib/providers/types";
@@ -70,6 +71,6 @@ export async function POST(request: Request, params: Record<string, string>): Pr
     });
     return Response.json({ decision, calls } satisfies TestProviderResponse);
   } catch (error) {
-    return fail(503, error instanceof Error ? error.message : String(error), calls);
+    return fail(503, errorMessage(error), calls);
   }
 }

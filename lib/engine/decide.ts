@@ -11,6 +11,7 @@
  * of the run.
  */
 import type { Character } from "@/lib/domain/character";
+import { errorMessage } from "@/lib/errors";
 import { defaultEffort } from "@/lib/providers/env";
 import { createProvider } from "@/lib/providers/factory";
 import {
@@ -57,10 +58,6 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function messageOf(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
 /** Asks one character to make one decision. Resolves with the failure rather than throwing. */
 export async function decideForCharacter(input: DecideInput): Promise<DecideOutcome> {
   const { character, prompt, ctx, signal } = input;
@@ -83,7 +80,7 @@ export async function decideForCharacter(input: DecideInput): Promise<DecideOutc
       return { record: await provider.decide(request, ctx) };
     } catch (error) {
       const retryable = error instanceof ProviderError && error.retryable;
-      if (!retryable || attempt > 1 || signal?.aborted) return { error: messageOf(error) };
+      if (!retryable || attempt > 1 || signal?.aborted) return { error: errorMessage(error) };
       await input.onRetry?.(error, attempt);
       await sleep(RETRY_DELAY_MS);
     }

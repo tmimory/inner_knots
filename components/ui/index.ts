@@ -8,8 +8,10 @@ export {
   CardFooter,
   CardHeader,
   CardTitle,
+  type CardProps,
 } from "./card";
 export { Checkbox, type CheckboxProps } from "./checkbox";
+export { ConfirmDialog, type ConfirmDialogProps } from "./confirm-dialog";
 export {
   Dialog,
   DialogClose,
@@ -20,6 +22,14 @@ export {
   DialogTitle,
   DialogTrigger,
 } from "./dialog";
+export {
+  Field,
+  FormSection,
+  SectionHeading,
+  type FieldProps,
+  type FormSectionProps,
+  type SectionHeadingProps,
+} from "./field";
 export { Input, type InputProps } from "./input";
 export { Label, type LabelProps } from "./label";
 export { overlayStyle, type PortalledProps } from "./overlay";

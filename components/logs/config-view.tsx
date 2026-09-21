@@ -1,7 +1,6 @@
-import { createElement } from "react";
 import { View } from "react-native";
 
-import { objectIcon } from "@/components/icons/objects";
+import { ObjectGlyph } from "@/components/icons/objects";
 import { Badge, Separator, Text } from "@/components/ui";
 import type { Character } from "@/lib/domain/character";
 import type { Payoffs, RunConfig } from "@/lib/domain/run";
@@ -10,17 +9,12 @@ import type { ObjectEntry } from "@/lib/client/use-runs";
 import { Field, FieldText } from "./field";
 import { RosterList } from "./roster-avatars";
 
-/**
- * One thing on a track: its glyph and the label the catalogue gives it. The
- * glyph is instantiated with `createElement` because `objectIcon` looks a
- * component up rather than defining one, which JSX on a local capitalized
- * binding cannot express without tripping the compiler's render rule.
- */
+/** One thing on a track: its glyph and the label the catalogue gives it. */
 function TrackItem({ id, objects }: { id: string; objects: ReadonlyMap<string, ObjectEntry> }) {
   const entry = objects.get(id);
   return (
     <View className="flex-row items-center gap-xs rounded-md border-hairline border-border bg-muted px-sm py-xxs">
-      {createElement(objectIcon(entry?.icon ?? "question"))}
+      <ObjectGlyph icon={entry?.icon ?? "question"} />
       <Text variant="small">{entry?.label ?? id}</Text>
     </View>
   );

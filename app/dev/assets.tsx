@@ -9,7 +9,7 @@ import { useMemo, useState } from "react";
 import { View } from "react-native";
 
 import { Avatar, AVATAR_SHAPES, ColorPicker, DEFAULT_AVATAR_SHAPE, ShapePicker, resolveAvatarColor } from "@/components/avatars";
-import { OBJECT_ICON_IDS, objectIcon } from "@/components/icons/objects";
+import { OBJECT_ICON_IDS, ObjectGlyph } from "@/components/icons/objects";
 import { PageHeader, Scroll } from "@/components/shell";
 import { Badge, Button, Separator, Switch, Text } from "@/components/ui";
 import {
@@ -108,20 +108,17 @@ export default function AssetsScreen() {
         </View>
         <Text variant="muted">{OBJECT_ICON_IDS.length} glyphs, drawn at 24 px.</Text>
         <View className="flex-row flex-wrap gap-md">
-          {OBJECT_ICON_IDS.map((id) => {
-            const Glyph = objectIcon(id);
-            return (
-              <View
-                key={id}
-                className="w-3xl items-center gap-xxs rounded-md border-hairline border-border bg-background p-xs"
-              >
-                <Glyph tint={iconTint} />
-                <Text variant="muted" className="text-xs">
-                  {id}
-                </Text>
-              </View>
-            );
-          })}
+          {OBJECT_ICON_IDS.map((id) => (
+            <View
+              key={id}
+              className="w-3xl items-center gap-xxs rounded-md border-hairline border-border bg-background p-xs"
+            >
+              <ObjectGlyph icon={id} tint={iconTint} />
+              <Text variant="muted" className="text-xs">
+                {id}
+              </Text>
+            </View>
+          ))}
         </View>
       </Scroll>
 
@@ -147,23 +144,20 @@ export default function AssetsScreen() {
           </Text>
         </View>
         <View className="gap-xs">
-          {selection.map((item) => {
-            const Glyph = objectIcon(item.icon);
-            return (
-              <View key={item.id} className="flex-row items-center gap-sm">
-                <Glyph />
-                <Text variant="small" className="flex-1">
-                  {item.label}
-                </Text>
-                <Text variant="muted" className="text-xs">
-                  {item.prompt}
-                </Text>
-                <Badge variant="muted">
-                  <Text>{familyOf(item)}</Text>
-                </Badge>
-              </View>
-            );
-          })}
+          {selection.map((item) => (
+            <View key={item.id} className="flex-row items-center gap-sm">
+              <ObjectGlyph icon={item.icon} />
+              <Text variant="small" className="flex-1">
+                {item.label}
+              </Text>
+              <Text variant="muted" className="text-xs">
+                {item.prompt}
+              </Text>
+              <Badge variant="muted">
+                <Text>{familyOf(item)}</Text>
+              </Badge>
+            </View>
+          ))}
         </View>
       </Scroll>
     </View>

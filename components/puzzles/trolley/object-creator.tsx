@@ -4,14 +4,15 @@ import { Pressable, ScrollView, View } from "react-native";
 import { OBJECT_ICON_IDS } from "@/components/icons/objects";
 import {
   Button,
+  ConfirmDialog,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  Field,
   Input,
-  Label,
   Separator,
   Text,
   Textarea,
@@ -32,6 +33,9 @@ const DEFAULT_ICON = "person";
 
 /** How many tags an object may carry, from the domain schema. */
 const MAX_TAGS = TROLLEY_OBJECT_LIMITS.maxTags;
+
+/** How tall the noun-phrase box starts: enough for a clause, not for a paragraph. */
+const PROMPT_ROWS = 3;
 
 type Draft = {
   id: string;
@@ -100,7 +104,7 @@ function ManageList({
   busyId,
 }: {
   custom: readonly TrolleyObject[];
-  onRemove: (id: string) => void;
+  onRemove: (item: TrolleyObject) => void;
   busyId: string | null;
 }) {
   if (custom.length === 0) {
@@ -125,7 +129,7 @@ function ManageList({
               size="sm"
               disabled={busyId === item.id}
               accessibilityLabel={`Delete ${item.label}`}
-              onPress={() => onRemove(item.id)}
+              onPress={() => onRemove(item)}
             >
               <Text className="text-destructive">Delete</Text>
             </Button>
@@ -165,6 +169,7 @@ export function ObjectCreator({
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
+  const [dropping, setDropping] = useState<TrolleyObject | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   /** Closing puts the form back to blank; the dialog is not a draft store. */
@@ -225,111 +230,122 @@ export function ObjectCreator({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-h-full w-full max-w-content">
-        <DialogHeader>
-          <DialogTitle>Make an object</DialogTitle>
-          <DialogDescription>
-            Anything you make joins the palette and can be put on a track like any other.
-          </DialogDescription>
-        </DialogHeader>
-        <Separator />
-
-        <ScrollView className="flex-1" contentContainerClassName="gap-lg pb-md">
-          <View className="gap-xs">
-            <Label nativeID="object-glyph">Glyph</Label>
-            <GlyphPicker value={draft.icon} onChange={(icon) => patch({ icon })} />
-          </View>
-
-          <View className="gap-xs">
-            <Label nativeID="object-label">Label</Label>
-            <Input
-              aria-labelledby="object-label"
-              value={draft.label}
-              maxLength={TROLLEY_OBJECT_LIMITS.label}
-              onChangeText={(label) => patch({ label })}
-              placeholder="What the palette calls it"
-            />
-          </View>
-
-          <View className="gap-xs">
-            <Label nativeID="object-id">Identifier</Label>
-            <Input
-              aria-labelledby="object-id"
-              value={draft.id}
-              autoCapitalize="none"
-              autoCorrect={false}
-              maxLength={TROLLEY_OBJECT_LIMITS.id}
-              onChangeText={(id) => patch({ id: slugify(id), idTouched: true })}
-              placeholder="lowercase-with-dashes"
-              className="font-mono"
-            />
-            <Text variant="muted">
-              Derived from the label until you change it. It is how a saved run refers back
-              to this object.
-            </Text>
-          </View>
-
-          <View className="gap-xs">
-            <Label nativeID="object-prompt">Prompt</Label>
-            <Textarea
-              aria-labelledby="object-prompt"
-              value={draft.prompt}
-              rows={3}
-              maxLength={TROLLEY_OBJECT_LIMITS.prompt}
-              onChangeText={(prompt) => patch({ prompt })}
-              placeholder="your neighbor's eldest daughter"
-            />
-            <Text variant="muted">
-              The noun phrase as it will appear in the prompt, e.g. &ldquo;your neighbor&rsquo;s
-              eldest daughter&rdquo;. It is spliced into the sentence describing the track.
-            </Text>
-          </View>
-
-          <View className="gap-xs">
-            <Label nativeID="object-tags">Tags</Label>
-            <Input
-              aria-labelledby="object-tags"
-              value={draft.tags}
-              autoCapitalize="none"
-              autoCorrect={false}
-              onChangeText={(text) => patch({ tags: text })}
-              placeholder="comma, separated, optional"
-            />
-            <View className="flex-row flex-wrap items-center gap-xs">
-              {tags.map((tag) => (
-                <View
-                  key={tag}
-                  className="rounded-full border-hairline border-border px-sm py-xxs"
-                >
-                  <Text variant="muted" className="text-xs">
-                    {tag}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          {error ? <Text className="text-destructive">{error}</Text> : null}
-          {problem && draft.label !== "" ? <Text variant="muted">{problem}</Text> : null}
-
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-h-full w-full max-w-content">
+          <DialogHeader>
+            <DialogTitle>Make an object</DialogTitle>
+            <DialogDescription>
+              Anything you make joins the palette and can be put on a track like any other.
+            </DialogDescription>
+          </DialogHeader>
           <Separator />
 
-          <View className="gap-xs">
-            <Text variant="h4">Your objects</Text>
-            <ManageList custom={custom} onRemove={(id) => void drop(id)} busyId={removing} />
-          </View>
-        </ScrollView>
+          <ScrollView className="flex-1" contentContainerClassName="gap-lg pb-md">
+            <Field label="Glyph">
+              <GlyphPicker value={draft.icon} onChange={(icon) => patch({ icon })} />
+            </Field>
 
-        <DialogFooter>
-          <Button variant="outline" onPress={() => setOpen(false)}>
-            <Text>Done</Text>
-          </Button>
-          <Button disabled={problem !== null || saving} onPress={() => void save()}>
-            <Text>{saving ? "Saving…" : "Save object"}</Text>
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            <Field label="Label">
+              <Input
+                value={draft.label}
+                maxLength={TROLLEY_OBJECT_LIMITS.label}
+                onChangeText={(label) => patch({ label })}
+                placeholder="What the palette calls it"
+              />
+            </Field>
+
+            <Field
+              label="Identifier"
+              hint="Derived from the label until you change it. It is how a saved run refers back to this object."
+            >
+              <Input
+                value={draft.id}
+                autoCapitalize="none"
+                autoCorrect={false}
+                maxLength={TROLLEY_OBJECT_LIMITS.id}
+                onChangeText={(id) => patch({ id: slugify(id), idTouched: true })}
+                placeholder="lowercase-with-dashes"
+                className="font-mono"
+              />
+            </Field>
+
+            <Field
+              label="Prompt"
+              hint="The noun phrase as it will appear in the prompt, e.g. “your neighbor’s eldest daughter”. It is spliced into the sentence describing the track."
+            >
+              <Textarea
+                value={draft.prompt}
+                rows={PROMPT_ROWS}
+                maxLength={TROLLEY_OBJECT_LIMITS.prompt}
+                onChangeText={(prompt) => patch({ prompt })}
+                placeholder="your neighbor's eldest daughter"
+              />
+            </Field>
+
+            <Field label="Tags">
+              <Input
+                value={draft.tags}
+                autoCapitalize="none"
+                autoCorrect={false}
+                onChangeText={(text) => patch({ tags: text })}
+                placeholder="comma, separated, optional"
+              />
+              <View className="flex-row flex-wrap items-center gap-xs">
+                {tags.map((tag) => (
+                  <View
+                    key={tag}
+                    className="rounded-full border-hairline border-border px-sm py-xxs"
+                  >
+                    <Text variant="muted" className="text-xs">
+                      {tag}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </Field>
+
+            {error ? <Text className="text-destructive">{error}</Text> : null}
+            {problem && draft.label !== "" ? <Text variant="muted">{problem}</Text> : null}
+
+            <Separator />
+
+            <View className="gap-xs">
+              <Text variant="h4">Your objects</Text>
+              <ManageList custom={custom} onRemove={setDropping} busyId={removing} />
+            </View>
+          </ScrollView>
+
+          <DialogFooter>
+            <Button variant="outline" onPress={() => setOpen(false)}>
+              <Text>Done</Text>
+            </Button>
+            <Button disabled={problem !== null || saving} onPress={() => void save()}>
+              <Text>{saving ? "Saving…" : "Save object"}</Text>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={dropping !== null}
+        onOpenChange={(next) => setDropping(next ? dropping : null)}
+        title="Delete this object?"
+        description={
+          dropping
+            ? `“${dropping.label}” leaves the palette. Runs that already put it on a track keep their own copy of it.`
+            : undefined
+        }
+        confirmLabel="Delete"
+        cancelLabel="Keep it"
+        destructive
+        loading={removing !== null}
+        onConfirm={() => {
+          const target = dropping;
+          setDropping(null);
+          if (target) void drop(target.id);
+        }}
+      />
+    </>
   );
 }

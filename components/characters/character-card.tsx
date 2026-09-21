@@ -26,7 +26,7 @@ export function CharacterCard({ character, className }: CharacterCardProps) {
         accessibilityLabel={`Edit ${characterDisplayName(character)}`}
         className={cn("min-w-menu grow", className)}
       >
-        <Card className="flex-row items-center gap-lg p-lg transition-colors duration-fast active:bg-muted web:hover:bg-muted/subtle">
+        <Card pressable className="flex-row items-center gap-lg p-lg">
           <Avatar shape={character.avatar.shape} color={character.avatar.color} size="lg" />
           <View className="flex-1 gap-xs">
             <Text variant="h4" numberOfLines={1}>

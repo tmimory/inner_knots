@@ -10,7 +10,7 @@
  * here too, because the logs screens are what need them: a stored run holds ids,
  * and a reader needs faces and labels.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo } from "react";
 
 import type { Character } from "@/lib/domain/character";
 import { isTerminalRunStatus, type Run } from "@/lib/domain/run";
@@ -19,95 +19,24 @@ import { buildCatalogue } from "@/lib/puzzles/trolley/catalogue";
 
 import { adventuresApi } from "./adventures";
 import { charactersApi } from "./characters";
-import { describeApiError } from "./errors";
 import { objectsApi } from "./objects";
 import { fetchLogs, fetchRun, fetchRuns, fetchSpans, type RunFilter } from "./runs";
 import { useAsyncResource } from "./use-async-resource";
+import { DEFAULT_POLL_MS, usePolled, type PollOptions } from "./use-polled";
 
-/** How often a live run is re-read. */
-export const DEFAULT_POLL_MS = 2000;
+export { DEFAULT_POLL_MS, type PollOptions } from "./use-polled";
 
-/** How much longer to wait after a failed request, so a dead server is not hammered. */
-const ERROR_BACKOFF = 4;
-
-export type PollOptions = {
-  /** Polling interval in milliseconds. `0` disables polling. */
-  pollMs?: number;
-};
+/**
+ * How often the logs screens re-read.
+ *
+ * Slower than {@link DEFAULT_POLL_MS}: a ledger is read, not watched, and a run
+ * detail costs three requests a tick rather than one.
+ */
+export const LOGS_POLL_MS = 2000;
 
 /** True while a run may still change, which is what keeps a poller alive. */
 export function isRunActive(run: Run): boolean {
   return !isTerminalRunStatus(run.status);
-}
-
-type PolledState<T> = {
-  data: T;
-  loading: boolean;
-  error?: string;
-  /** Re-reads immediately, whatever the poll schedule says. */
-  refresh: () => void;
-};
-
-/**
- * Loads `load()`, then reloads it every `pollMs` for as long as `active()` says
- * the value can still change. `key` identifies the request: changing it starts a
- * fresh load and cancels the one in flight.
- */
-function usePolled<T>(
-  key: string,
-  pollMs: number,
-  initial: T,
-  load: () => Promise<T>,
-  active: (value: T) => boolean,
-): PolledState<T> {
-  const [state, setState] = useState<{ data: T; loading: boolean; error?: string }>({
-    data: initial,
-    loading: true,
-  });
-  const [nonce, setNonce] = useState(0);
-  const refresh = useCallback(() => setNonce((value) => value + 1), []);
-
-  // The callbacks are read through refs so a caller may pass inline functions
-  // without restarting the poll loop on every render.
-  const loadRef = useRef(load);
-  const activeRef = useRef(active);
-  useEffect(() => {
-    loadRef.current = load;
-    activeRef.current = active;
-  });
-
-  useEffect(() => {
-    let cancelled = false;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-
-    const schedule = (ms: number): void => {
-      if (pollMs <= 0 || cancelled) return;
-      timer = setTimeout(() => void tick(), ms);
-    };
-
-    const tick = async (): Promise<void> => {
-      try {
-        const data = await loadRef.current();
-        if (cancelled) return;
-        setState({ data, loading: false });
-        if (activeRef.current(data)) schedule(pollMs);
-      } catch (error) {
-        if (cancelled) return;
-        setState((current) => ({ ...current, loading: false, error: describeApiError(error) }));
-        schedule(pollMs * ERROR_BACKOFF);
-      }
-    };
-
-    setState((current) => ({ ...current, loading: true }));
-    void tick();
-
-    return () => {
-      cancelled = true;
-      if (timer !== undefined) clearTimeout(timer);
-    };
-  }, [key, pollMs, nonce]);
-
-  return { ...state, refresh };
 }
 
 // --- runs --------------------------------------------------------------------------

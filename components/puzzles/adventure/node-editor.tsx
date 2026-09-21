@@ -5,11 +5,7 @@ import { Field } from "@/components/characters";
 import {
   Badge,
   Button,
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  ConfirmDialog,
   Input,
   Separator,
   Text,
@@ -166,24 +162,16 @@ export function NodeEditor({ adventure, node, onChange, onRemoved }: NodeEditorP
         <Text>{full ? "Five options is the limit" : "Add option"}</Text>
       </Button>
 
-      <Dialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete this node?</DialogTitle>
-          </DialogHeader>
-          <Text variant="muted">
-            Every option that led here will end the adventure instead. This cannot be undone.
-          </Text>
-          <DialogFooter>
-            <Button variant="outline" onPress={() => setConfirmingDelete(false)}>
-              <Text>Keep it</Text>
-            </Button>
-            <Button variant="destructive" onPress={remove}>
-              <Text>Delete</Text>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={confirmingDelete}
+        onOpenChange={setConfirmingDelete}
+        title="Delete this node?"
+        description="Every option that led here will end the adventure instead. This cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Keep it"
+        destructive
+        onConfirm={remove}
+      />
     </View>
   );
 }
