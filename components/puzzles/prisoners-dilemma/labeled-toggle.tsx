@@ -30,7 +30,11 @@ export function LabeledToggle({
   return (
     <View className={cn("flex-row items-start gap-md", className)}>
       <View className="flex-1 gap-xxs">
-        <Label>{label}</Label>
+        {/*
+          Regular weight, not the label medium: a switch's caption sits under a
+          run-in subhead, and two lines of the same weight make the subhead vanish.
+        */}
+        <Label className="font-body">{label}</Label>
         {description ? <Text variant="muted">{description}</Text> : null}
       </View>
       <Switch checked={checked} onCheckedChange={onCheckedChange} accessibilityLabel={label} />

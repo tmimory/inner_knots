@@ -33,11 +33,6 @@ export default function EditCharacterScreen() {
     <Screen
       title={character ? characterTitle(character) : "Character"}
       subtitle="διόρθωσις · a mask, revised"
-      right={
-        character ? (
-          <Text variant="muted">{`${character.provider} · ${character.model}`}</Text>
-        ) : null
-      }
     >
       {character ? (
         <CharacterForm

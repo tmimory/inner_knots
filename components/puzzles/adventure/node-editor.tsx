@@ -1,16 +1,7 @@
 import { useState } from "react";
 import { View } from "react-native";
 
-import {
-  Badge,
-  Button,
-  ConfirmDialog,
-  Field,
-  Input,
-  Separator,
-  Text,
-  Textarea,
-} from "@/components/ui";
+import { Button, ConfirmDialog, Field, Input, Separator, Text, Textarea } from "@/components/ui";
 import { ADVENTURE_LIMITS, type Adventure, type AdventureNode } from "@/lib/domain/adventure";
 import {
   addOption,
@@ -20,6 +11,8 @@ import {
   updateNode,
   updateOption,
 } from "@/lib/puzzles/adventure/edits";
+
+import { StartLabel } from "./start-label";
 
 export type NodeEditorProps = {
   adventure: Adventure;
@@ -64,15 +57,17 @@ export function NodeEditor({ adventure, node, onChange, onRemoved }: NodeEditorP
   return (
     <View className="gap-md">
       <View className="flex-row flex-wrap items-center gap-sm">
-        <Text variant="h4" className="flex-1">
-          Selected node
+        <Text variant="h4" className="flex-1" numberOfLines={1}>
+          {`Node · ${node.id}`}
         </Text>
         {isStart ? (
-          <Badge variant="accent">
-            <Text>start</Text>
-          </Badge>
+          <StartLabel />
         ) : (
-          <Button variant="outline" size="sm" onPress={() => onChange(setStartNode(adventure, node.id))}>
+          <Button
+            variant="outline"
+            size="sm"
+            onPress={() => onChange(setStartNode(adventure, node.id))}
+          >
             <Text>Set as start</Text>
           </Button>
         )}
@@ -80,10 +75,6 @@ export function NodeEditor({ adventure, node, onChange, onRemoved }: NodeEditorP
           <Text>Delete node</Text>
         </Button>
       </View>
-
-      <Text variant="muted" className="font-mono text-xs" numberOfLines={1}>
-        {node.id}
-      </Text>
 
       <Field label="Context">
         <Textarea
@@ -129,7 +120,9 @@ export function NodeEditor({ adventure, node, onChange, onRemoved }: NodeEditorP
               maxLength={ADVENTURE_LIMITS.optionLabel}
               accessibilityLabel={`Label for option ${index + 1}`}
               value={option.label}
-              onChangeText={(label) => onChange(updateOption(adventure, node.id, option.id, { label }))}
+              onChangeText={(label) =>
+                onChange(updateOption(adventure, node.id, option.id, { label }))
+              }
             />
             <Button
               variant="ghost"
@@ -159,7 +152,11 @@ export function NodeEditor({ adventure, node, onChange, onRemoved }: NodeEditorP
         </View>
       ))}
 
-      <Button variant="outline" disabled={full} onPress={() => onChange(addOption(adventure, node.id))}>
+      <Button
+        variant="outline"
+        disabled={full}
+        onPress={() => onChange(addOption(adventure, node.id))}
+      >
         <Text>{full ? "Five options is the limit" : "Add option"}</Text>
       </Button>
 

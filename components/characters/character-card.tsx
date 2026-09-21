@@ -2,11 +2,10 @@ import { Link } from "expo-router";
 import { Pressable, View } from "react-native";
 
 import { Avatar } from "@/components/avatars";
-import { Card, Text } from "@/components/ui";
+import { Card, Chevron, Text } from "@/components/ui";
 import { characterDisplayName, type Character } from "@/lib/domain";
-import { cn } from "@/lib/utils";
 
-import { characterTitle, OUTPUT_MODE_META, STEERING_MODE_META } from "./labels";
+import { characterBlurb, characterMeta, characterTitle } from "./labels";
 
 export type CharacterCardProps = {
   character: Character;
@@ -14,39 +13,39 @@ export type CharacterCardProps = {
 };
 
 /**
- * One character in the grid: face, name, and the facts that decide how it will
- * answer — who runs it, in what mode, and how much of a self it was given.
+ * One character in the roster: face, name, the sentence it was given about
+ * itself, and the facts that decide how it will answer.
  *
- * Fixed width rather than stretched, so a roster of three reads as three cards
- * clustered to the left instead of thirds of an empty row.
+ * A full-width row rather than a tile in a grid. Three tiles across a reading
+ * column leave one orphaned on a second row and give each card a height of its
+ * own as the blurb wraps; a row fills the column it is in, keeps one height, and
+ * gives the name, the blurb and the metadata a column each. The name is set in
+ * the body serif: small caps belong to the page's own furniture, not to its
+ * contents.
  */
 export function CharacterCard({ character, className }: CharacterCardProps) {
-  const steering = STEERING_MODE_META[character.steering.mode];
   return (
     <Link href={{ pathname: "/characters/[id]", params: { id: character.id } }} asChild>
       <Pressable
         role="link"
         accessibilityLabel={`Edit ${characterDisplayName(character)}`}
-        className={cn("w-inspector", className)}
+        className={className}
       >
-        <Card
-          pressable
-          className="flex-row items-center gap-md p-lg transition-shadow duration-fast web:hover:shadow-ink-raised"
-        >
-          <Avatar shape={character.avatar.shape} color={character.avatar.color} size="lg" />
+        <Card pressable className="flex-row items-center gap-md rounded-md p-lg">
+          <Avatar shape={character.avatar.shape} color={character.avatar.color} size="md" />
           <View className="flex-1 gap-xxs">
-            <Text variant="h4" numberOfLines={1}>
+            <Text className="font-body text-lg text-foreground" numberOfLines={1}>
               {characterTitle(character)}
             </Text>
-            <Text variant="muted" numberOfLines={1}>
-              {`${character.provider} · ${character.model}`}
-            </Text>
-            <Text variant="muted" className="text-xs" numberOfLines={1}>
-              {[OUTPUT_MODE_META[character.outputMode], steering, character.effort]
-                .filter((part) => part !== undefined)
-                .join(" · ")}
+            <Text variant="meta" numberOfLines={1}>
+              {characterBlurb(character)}
             </Text>
           </View>
+          {/* The facts hide before the name and the blurb do when the row narrows. */}
+          <Text variant="meta" numberOfLines={1} className="hidden wide:flex">
+            {characterMeta(character)}
+          </Text>
+          <Chevron direction="right" />
         </Card>
       </Pressable>
     </Link>

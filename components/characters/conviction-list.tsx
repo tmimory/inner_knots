@@ -57,7 +57,7 @@ export function ConvictionList({
             onChangeText={(text) => replace(index, text)}
             maxLength={maxLength}
             placeholder={placeholder}
-            className="pr-control-icon"
+            className="pr-control-icon transition-colors duration-fast web:hover:border-ring"
           />
           <Button
             variant="ghost"
@@ -71,11 +71,23 @@ export function ConvictionList({
         </View>
       ))}
 
-      <View className="flex-row items-center gap-md">
-        <Button variant="outline" size="sm" disabled={full} onPress={() => onChange([...value, ""])}>
+      {/*
+        A text button, not an outlined one: adding a line is the quietest thing on
+        the form, and the counter it shares its row with is the same "n / max" the
+        capped textarea above already sets, right-aligned under the group.
+      */}
+      <View className="flex-row items-center justify-between gap-md">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="px-none"
+          disabled={full}
+          onPress={() => onChange([...value, ""])}
+        >
+          <Text className="font-mono">+</Text>
           <Text>{addLabel}</Text>
         </Button>
-        <Text variant="muted">{`${value.length} / ${maxItems}`}</Text>
+        <Text variant="meta">{`${value.length} / ${maxItems}`}</Text>
       </View>
     </View>
   );

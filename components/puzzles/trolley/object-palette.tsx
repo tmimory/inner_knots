@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from "react";
 import { FlatList, LayoutChangeEvent, Pressable, View } from "react-native";
 
-import { Button, Input, Separator, Text } from "@/components/ui";
-import type { TrolleyObject } from "@/lib/puzzles/trolley/catalogue";
+import { Badge, Button, Input, Separator, Text } from "@/components/ui";
+import { familyOf, type TrolleyObject } from "@/lib/puzzles/trolley/catalogue";
 import {
   CUSTOM_TAG,
   TAG_GROUPS,
@@ -37,12 +37,12 @@ export type ObjectPaletteProps = {
 };
 
 /**
- * One filter, as a word rather than a pill.
+ * One filter, as a chip.
  *
- * Twenty-one outlined chips read as twenty-one buttons competing with the one
- * button that matters; the same twenty-one words with the chosen ones underlined
- * read as what they are — a line of filters. Selected filters are ANDed, so they
- * narrow rather than widen.
+ * A filter that is on has to be legible across the row at a glance, and a word
+ * that changes colour is not: the on state is a filled chip and the off state an
+ * outlined one, which is the same pair of states chips wear everywhere else.
+ * Selected filters are ANDed, so they narrow rather than widen.
  */
 function TagToggle({
   tag,
@@ -59,20 +59,43 @@ function TagToggle({
       accessibilityState={{ checked: selected, selected }}
       accessibilityLabel={`Filter by ${tag}`}
       onPress={onPress}
-      className="py-xxs"
+      className="transition-opacity duration-fast web:hover:opacity-hover"
     >
-      <Text
-        className={cn(
-          "font-body text-sm transition-colors duration-fast",
-          selected
-            ? "text-primary underline"
-            : "text-muted-foreground web:hover:text-foreground",
-        )}
-      >
-        {tag}
-      </Text>
+      <Badge variant={selected ? "selected" : "outline"}>
+        <Text>{tag}</Text>
+      </Badge>
     </Pressable>
   );
+}
+
+/**
+ * The catalogue dealt round-robin across its four families.
+ *
+ * Built in grammar order the list opens with a hundred variations on one noun, so
+ * the first four rows of the grid are a hundred identical figures and the glyphs
+ * look like decoration. Dealing person, animal, thing, group in turn puts four
+ * different drawings in every row while keeping each family's own order intact.
+ */
+function interleaveFamilies(items: readonly TrolleyObject[]): TrolleyObject[] {
+  const buckets = new Map<string, TrolleyObject[]>();
+  for (const item of items) {
+    const family = familyOf(item);
+    const bucket = buckets.get(family);
+    if (bucket) bucket.push(item);
+    else buckets.set(family, [item]);
+  }
+
+  const lists = [...buckets.values()];
+  if (lists.length < 2) return [...items];
+
+  const out: TrolleyObject[] = [];
+  for (let index = 0; out.length < items.length; index += 1) {
+    for (const list of lists) {
+      const item = list[index];
+      if (item) out.push(item);
+    }
+  }
+  return out;
 }
 
 /**
@@ -102,6 +125,8 @@ export function ObjectPalette({
   const [tags, setTags] = useState<string[]>([]);
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [width, setWidth] = useState(0);
+  /** How many whole rows the grid is clipped to; "Show more" lets out four more. */
+  const [rows, setRows] = useState<number>(PALETTE.visibleRows);
 
   const tileWidth = theme.avatarSizes["avatar-xl"];
   const gap = theme.spacing.xs;
@@ -110,12 +135,23 @@ export function ObjectPalette({
   const hasCustom = useMemo(() => items.some((item) => item.tags.includes(CUSTOM_TAG)), [items]);
 
   const filtered = useMemo(() => filterCatalogue(items, { query, tags }), [items, query, tags]);
-  const rows = useMemo(() => chunk(filtered, perRow), [filtered, perRow]);
+
+  // The user's own objects keep the front of the queue; the built-ins behind them
+  // are dealt family by family so a row is never four copies of one drawing.
+  const ordered = useMemo(() => {
+    const custom = filtered.filter((item) => item.tags.includes(CUSTOM_TAG));
+    const rest = filtered.filter((item) => !item.tags.includes(CUSTOM_TAG));
+    return [...custom, ...interleaveFamilies(rest)];
+  }, [filtered]);
+
+  const grid = useMemo(() => chunk(ordered, perRow), [ordered, perRow]);
 
   const filtering = tags.length > 0 || query.trim() !== "";
-  const shown = Math.min(filtered.length, perRow * PALETTE.visibleRows);
+  const shown = Math.min(filtered.length, perRow * rows);
+  const more = filtered.length - shown;
 
   const toggleTag = useCallback((tag: string) => {
+    setRows(PALETTE.visibleRows);
     setTags((current) =>
       current.includes(tag) ? current.filter((entry) => entry !== tag) : [...current, tag],
     );
@@ -139,16 +175,20 @@ export function ObjectPalette({
         <Input
           className="min-w-menu flex-1"
           value={query}
-          onChangeText={setQuery}
+          onChangeText={(text) => {
+            setRows(PALETTE.visibleRows);
+            setQuery(text);
+          }}
           placeholder="Search the catalogue"
           autoCapitalize="none"
           autoCorrect={false}
           accessibilityLabel="Search objects"
         />
-        <Button variant="outline" onPress={onRandomize}>
+        {/* Only "New object" adds anything; the other two rearrange what is there. */}
+        <Button variant="ghost" onPress={onRandomize}>
           <Text>Randomize</Text>
         </Button>
-        <Button variant="outline" onPress={onClear}>
+        <Button variant="ghost" onPress={onClear}>
           <Text>Clear tracks</Text>
         </Button>
         <Button variant="outline" onPress={onCreate}>
@@ -157,45 +197,36 @@ export function ObjectPalette({
       </View>
 
       {/*
-        Each family's own tag is the row's first word, so the family name is the
-        toggle rather than a caption repeating the toggle beside it.
+        One wrapping row: each family's own tag leads its run of chips, so the
+        family name is the filter rather than a caption sitting beside one.
       */}
-      <View className="gap-xxs">
-        {TAG_GROUP_ORDER.map((family) => {
-          const group = TAG_GROUPS[family] ?? [];
-          return (
-            <View key={family} className="flex-row flex-wrap items-center gap-lg">
-              {group.map((tag) => (
-                <TagToggle
-                  key={tag}
-                  tag={tag}
-                  selected={tags.includes(tag)}
-                  onPress={() => toggleTag(tag)}
-                />
-              ))}
-            </View>
-          );
-        })}
+      <View className="flex-row flex-wrap items-center gap-xs">
+        {TAG_GROUP_ORDER.flatMap((family) => TAG_GROUPS[family] ?? []).map((tag) => (
+          <TagToggle
+            key={tag}
+            tag={tag}
+            selected={tags.includes(tag)}
+            onPress={() => toggleTag(tag)}
+          />
+        ))}
         {hasCustom ? (
-          <View className="flex-row flex-wrap items-center gap-lg">
-            <TagToggle
-              tag={CUSTOM_TAG}
-              selected={tags.includes(CUSTOM_TAG)}
-              onPress={() => toggleTag(CUSTOM_TAG)}
-            />
-          </View>
+          <TagToggle
+            tag={CUSTOM_TAG}
+            selected={tags.includes(CUSTOM_TAG)}
+            onPress={() => toggleTag(CUSTOM_TAG)}
+          />
         ) : null}
       </View>
 
-      <View onLayout={measure} style={{ height: paletteHeight() }}>
+      <View onLayout={measure} style={{ height: paletteHeight(rows) }}>
         {filtered.length === 0 ? (
           <Text variant="muted">Nothing matches. Try fewer words, or fewer filters.</Text>
         ) : (
           <FlatList
-            data={rows}
+            data={grid}
             keyExtractor={(row, index) => row[0]?.id ?? String(index)}
             nestedScrollEnabled
-            initialNumToRender={PALETTE.visibleRows + 1}
+            initialNumToRender={rows + 1}
             windowSize={3}
             removeClippedSubviews={false}
             contentContainerClassName="gap-xs"
@@ -257,11 +288,18 @@ export function ObjectPalette({
             ? "Reading your objects…"
             : `Showing ${shown} of ${filtered.length}${filtering ? ` matching objects, from ${items.length}` : " objects"}`}
         </Text>
+        {more > 0 ? (
+          <Button variant="link" size="sm" onPress={() => setRows(rows + PALETTE.visibleRows)}>
+            <Text>Show more</Text>
+          </Button>
+        ) : null}
+        <View className="flex-1" />
         {filtering ? (
           <Button
             variant="ghost"
             size="sm"
             onPress={() => {
+              setRows(PALETTE.visibleRows);
               setQuery("");
               setTags([]);
             }}
@@ -269,8 +307,6 @@ export function ObjectPalette({
             <Text>Reset filters</Text>
           </Button>
         ) : null}
-        <View className="flex-1" />
-        <Text variant="muted">Drag a tile onto a track, or tap one and choose.</Text>
       </View>
     </View>
   );

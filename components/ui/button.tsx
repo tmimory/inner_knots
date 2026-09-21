@@ -15,9 +15,10 @@ import { cn } from "@/lib/utils";
  *   destructive  a red text link; it never gets a fill beside Save
  *   link         a text link in the rubric red
  *
- * A disabled filled button drops its fill rather than fading it: a washed-out
- * oxblood reads as a new, softer hue instead of as "not yet", which is the
- * mistake the rose-coloured Create button was making.
+ * A disabled button keeps the shape it has when it works — the filled ones stay
+ * filled, at `opacity-disabled` — because a primary that turns into an outline
+ * while you are not looking at it has changed rank, not state. The reason it is
+ * off belongs beside it as muted text, not in the button's own styling.
  */
 const buttonVariants = cva(
   "flex-row items-center justify-center gap-sm rounded-sm transition-colors duration-fast web:focus-visible:outline-none web:focus-visible:ring-thick web:focus-visible:ring-ring",
@@ -47,12 +48,8 @@ const buttonVariants = cva(
     compoundVariants: [
       // A text link has no box: it sits on the line it belongs to.
       { variant: ["destructive", "link"], class: "px-none" },
-      // Disabled: the outline of the control at reduced opacity, never a soft fill.
-      {
-        variant: ["default", "secondary"],
-        disabled: true,
-        class: "border-hairline border-border bg-transparent",
-      },
+      // Nothing hovers when it cannot be pressed.
+      { disabled: true, class: "web:hover:opacity-disabled" },
     ],
     defaultVariants: { variant: "default", size: "default", disabled: false },
   },
@@ -65,8 +62,8 @@ const buttonTextVariants = cva("font-body", {
       secondary: "text-secondary",
       outline: "text-foreground",
       ghost: "text-foreground",
-      destructive: "text-destructive underline",
-      link: "text-primary underline",
+      destructive: "text-destructive underline web:hover:text-primary",
+      link: "text-primary underline web:hover:text-destructive",
     },
     size: {
       sm: "text-sm",
@@ -79,9 +76,9 @@ const buttonTextVariants = cva("font-body", {
       false: "",
     },
   },
-  compoundVariants: [
-    { variant: ["default", "secondary"], disabled: true, class: "text-foreground" },
-  ],
+  // A text link is read as part of a sentence, so it is set at body size whatever
+  // box it is given: a 14px link beside 17px prose reads as a footnote.
+  compoundVariants: [{ variant: ["destructive", "link"], size: "sm", class: "text-base" }],
   defaultVariants: { variant: "default", size: "default", disabled: false },
 });
 

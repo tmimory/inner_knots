@@ -14,7 +14,11 @@ import type { Theme } from "@/theme";
 export type EdgeTone = { share?: number; onPath?: boolean };
 
 /** Style for a node card, given its state on the canvas. */
-export type NodeTone = { selected?: boolean; onPath?: boolean; unvisited?: boolean };
+export type NodeTone = {
+  selected?: boolean;
+  onPath?: boolean;
+  unvisited?: boolean;
+};
 
 function clampShare(share: number | undefined): number {
   if (share === undefined || !Number.isFinite(share)) return 0;
@@ -67,19 +71,25 @@ export function nodeCardStyle(theme: Theme, tone: NodeTone): Record<string, stri
     width: ADVENTURE_LAYOUT.nodeWidth,
     backgroundColor: theme.colors.card,
     borderColor,
-    borderWidth: tone.selected || tone.onPath ? theme.borderWidths.thick : theme.borderWidths.hairline,
-    borderRadius: theme.radii.lg,
+    borderWidth:
+      tone.selected || tone.onPath ? theme.borderWidths.thick : theme.borderWidths.hairline,
+    // Surfaces take the 8px step; only controls (buttons, chips) go tighter.
+    borderRadius: theme.radii.md,
     opacity: tone.unvisited ? theme.opacities.disabled : 1,
   };
 }
 
 /**
- * A connection point. Source handles are rubric, the single target is ink-faint,
- * and both are pushed clear of the card edge — React Flow centres a handle on
- * the border by default, which reads as decoration rather than as something to
- * drag. The cream ring is what separates the dot from the parchment behind it.
+ * A connection point, in one color and two shapes: a hollow ring where an edge
+ * arrives, a filled dot where one leaves. Two colors needed a key; a ring and a
+ * dot do not. Both are pushed clear of the card edge — React Flow centres a
+ * handle on the border by default, which reads as decoration rather than as
+ * something to drag.
  */
-export function handleStyle(theme: Theme, kind: "source" | "target"): Record<string, string | number> {
+export function handleStyle(
+  theme: Theme,
+  kind: "source" | "target",
+): Record<string, string | number> {
   const size = theme.spacing.md;
   // The handle is centred on its edge, so half its width plus a gap clears the border.
   const offset = -(size / 2 + theme.spacing.xs);
@@ -88,17 +98,19 @@ export function handleStyle(theme: Theme, kind: "source" | "target"): Record<str
     width: size,
     height: size,
     borderRadius: theme.radii.full,
-    backgroundColor: kind === "source" ? theme.colors.primary : theme.colors.mutedForeground,
-    borderColor: theme.colors.card,
+    backgroundColor: kind === "source" ? theme.colors.primary : theme.colors.card,
+    borderColor: theme.colors.primary,
     borderWidth: theme.borderWidths.thick,
     ...(kind === "source" ? { right: offset } : { left: offset }),
   };
 }
 
 /**
- * The canvas itself. React Flow reads its own chrome — controls, mini-map,
- * connection line, attribution — from CSS variables, so handing it a themed set
- * is how the whole widget joins the manuscript instead of only the nodes.
+ * The canvas itself. React Flow reads its edges, handles and selection box from
+ * CSS variables, so handing it a themed set is how the graph joins the
+ * manuscript. Its *chrome* — the zoom controls and the attribution chip — has
+ * shape and size baked into the vendor stylesheet that no variable reaches, so
+ * that part is restyled in `chrome-style.web.ts` instead.
  */
 export function canvasStyle(theme: Theme): Record<string, string | number> {
   return {
@@ -116,13 +128,6 @@ export function canvasStyle(theme: Theme): Record<string, string | number> {
     "--xy-handle-border-color": theme.colors.card,
     "--xy-selection-background-color": theme.colors.muted,
     "--xy-selection-border": `${theme.borderWidths.thick}px dashed ${theme.colors.ring}`,
-    "--xy-controls-button-background-color": theme.colors.card,
-    "--xy-controls-button-background-color-hover": theme.colors.muted,
-    "--xy-controls-button-color": theme.colors.foreground,
-    "--xy-controls-button-color-hover": theme.colors.primary,
-    "--xy-controls-button-border-color": theme.colors.border,
-    "--xy-controls-box-shadow": theme.shadows.inkSoft,
-    "--xy-attribution-background-color": theme.colors.card,
     "--xy-minimap-background-color": theme.colors.card,
     "--xy-minimap-node-background-color": theme.colors.muted,
     "--xy-minimap-node-stroke-color": theme.colors.border,
@@ -143,26 +148,5 @@ export function miniMapStyle(theme: Theme): Record<string, string | number> {
     borderColor: theme.colors.border,
     borderWidth: theme.borderWidths.hairline,
     borderRadius: theme.radii.md,
-  };
-}
-
-/**
- * The zoom controls, restyled into the outline-button family: one bordered
- * column on the card surface rather than React Flow's default glyph stack.
- */
-export function controlsStyle(theme: Theme): Record<string, string | number> {
-  return {
-    backgroundColor: theme.colors.card,
-    borderColor: theme.colors.border,
-    borderWidth: theme.borderWidths.hairline,
-    borderRadius: theme.radii.md,
-    overflow: "hidden",
-    margin: theme.spacing.md,
-    boxShadow: theme.shadows.inkSoft,
-    "--xy-controls-button-background-color": theme.colors.card,
-    "--xy-controls-button-background-color-hover": theme.colors.muted,
-    "--xy-controls-button-color": theme.colors.mutedForeground,
-    "--xy-controls-button-color-hover": theme.colors.primary,
-    "--xy-controls-button-border-color": theme.colors.border,
   };
 }

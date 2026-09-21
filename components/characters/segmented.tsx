@@ -38,10 +38,11 @@ export function Segmented<T extends string>({
     <View
       role="radiogroup"
       accessibilityLabel={label}
-      className={cn(
-        "flex-row items-center gap-xxs self-start rounded-md border-hairline border-border bg-muted p-xxs",
-        className,
-      )}
+      // No border: the track is the field fill, and the lit segment is the only
+      // edge the control needs. The `p-xs` inset around a `control-sm` segment
+      // makes the whole control exactly `control-md`, so it sits on the same line
+      // as the inputs and selects it shares a form — or a toolbar — with.
+      className={cn("flex-row items-center gap-xxs self-start rounded-sm bg-input p-xs", className)}
     >
       {options.map((option) => {
         const selected = option.value === value;
@@ -56,16 +57,11 @@ export function Segmented<T extends string>({
             }}
             className={cn(
               "h-control-sm items-center justify-center rounded-sm px-lg transition-colors duration-fast",
-              selected ? "bg-card shadow-ink-soft" : "bg-transparent web:hover:bg-card/subtle",
+              selected ? "bg-foreground" : "bg-transparent web:hover:bg-card",
               blocked && "opacity-disabled",
             )}
           >
-            <Text
-              className={cn(
-                "font-body text-sm",
-                selected ? "text-foreground" : "text-muted-foreground",
-              )}
-            >
+            <Text className={cn("font-body text-base", selected ? "text-card" : "text-foreground")}>
               {option.label}
             </Text>
           </Pressable>

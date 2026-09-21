@@ -13,6 +13,10 @@ import { Text } from "@/components/ui/text";
  * Column-versus-drawer is chosen by the `wide:` breakpoint rather than by measuring the
  * window, so the server-rendered HTML already matches the viewport and a load does not
  * paint the narrow header first. Only the drawer's open/closed state needs JS.
+ *
+ * The rail is the darker parchment and the routed screen the lighter one, so the
+ * page you are reading is the lit surface and the chrome falls back; a hairline is
+ * all the separation two tints that close need.
  */
 export function AppShell({ children }: { children: ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -24,7 +28,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </View>
 
       <View className="flex-1">
-        <View className="flex-row items-center gap-md border-b-hairline border-border bg-card px-lg py-sm wide:hidden">
+        <View className="flex-row items-center gap-md border-b-hairline border-border bg-sidebar px-lg py-sm wide:hidden">
           <Button variant="outline" size="icon" onPress={() => setDrawerOpen(true)}>
             <Text className="font-mono">≡</Text>
           </Button>

@@ -7,6 +7,7 @@
  * payoff defaults are values the user can overwrite, and the words around them
  * live in `prompts/prisoners-dilemma/*.md`.
  */
+import { characterDisplayName, type Character } from "@/lib/domain/character";
 import {
   DEFAULT_CRIME,
   PRISONERS_DILEMMA_VARIANTS,
@@ -17,10 +18,12 @@ import {
   type PrisonersDilemmaVariant,
   type RosterEntry,
 } from "@/lib/domain/run";
-import type { PrisonersDilemmaOutcomes } from "@/lib/domain/summary";
+
+/** The two seats, in order, as the screen and the prompts name them. */
+export const PLAYER_LABELS = ["Player A", "Player B"] as const;
 
 /** Exactly two seats: Player A and Player B. */
-export const PLAYER_COUNT = 2;
+export const PLAYER_COUNT = PLAYER_LABELS.length;
 
 /** An iterated game is at least two rounds; one round is the single game. */
 export const MIN_ITERATED_ROUNDS = 2;
@@ -268,32 +271,20 @@ export function decisionTotal(setup: PrisonersDilemmaSetup): number {
   return setup.runs * iterationsOf(setup) * PLAYER_COUNT;
 }
 
-/** One tile of the outcomes strip. */
-export type OutcomeTile = { id: keyof PrisonersDilemmaOutcomes; label: string; value: number };
-
 /**
- * The outcomes strip, named after whoever is playing.
+ * What to call the two players: their own names once they are seated, and the
+ * seat's name until then.
  *
- * "Only Iris testified" says more than "onlyATestifies", and the names are the
- * only part of the strip that is not fixed, so they are arguments rather than a
- * lookup the component does for itself.
+ * The screen, the prompt preview and the results all label the same two people,
+ * and a fallback spelled three times is a fallback that drifts, so the pair is
+ * derived in one place.
  */
-export function outcomeTiles(
-  outcomes: PrisonersDilemmaOutcomes | undefined,
-  names: { a: string; b: string },
-): OutcomeTile[] {
-  const counts = outcomes ?? {
-    bothTestify: 0,
-    bothSilent: 0,
-    onlyATestifies: 0,
-    onlyBTestifies: 0,
-    incomplete: 0,
+export function playerNames(players: {
+  a?: Pick<Character, "id" | "name">;
+  b?: Pick<Character, "id" | "name">;
+}): { a: string; b: string } {
+  return {
+    a: players.a ? characterDisplayName(players.a) : PLAYER_LABELS[0],
+    b: players.b ? characterDisplayName(players.b) : PLAYER_LABELS[1],
   };
-  return [
-    { id: "bothTestify", label: "Both testified", value: counts.bothTestify },
-    { id: "bothSilent", label: "Both stayed silent", value: counts.bothSilent },
-    { id: "onlyATestifies", label: `Only ${names.a} testified`, value: counts.onlyATestifies },
-    { id: "onlyBTestifies", label: `Only ${names.b} testified`, value: counts.onlyBTestifies },
-    { id: "incomplete", label: "Incomplete", value: counts.incomplete },
-  ];
 }

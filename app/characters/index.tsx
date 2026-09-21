@@ -5,11 +5,11 @@ import { View } from "react-native";
 import {
   CHARACTER_SEARCH_PLACEHOLDER,
   CharacterCard,
-  FilterChips,
+  FilterSegments,
   matchesCharacterQuery,
   OUTPUT_MODE_LABELS,
   STEERING_MODE_LABELS,
-  type ChipOption,
+  type FacetOption,
 } from "@/components/characters";
 import { Screen } from "@/components/shell";
 import { Button, Input, Text } from "@/components/ui";
@@ -25,14 +25,14 @@ import {
 } from "@/lib/domain";
 
 /**
- * The chips for one facet, limited to the values the roster actually uses: a
+ * The segments for one facet, limited to the values the roster actually uses: a
  * filter that can only ever return everything is not worth a row of chrome.
  */
 function facetOptions<T extends string>(
   all: readonly T[],
   used: ReadonlySet<T>,
   labels: Record<T, string>,
-): ChipOption<T>[] {
+): FacetOption<T>[] {
   return all.filter((value) => used.has(value)).map((value) => ({ value, label: labels[value] }));
 }
 
@@ -83,9 +83,9 @@ export default function CharactersScreen() {
   }, [characters, outputMode, provider, search, steering]);
 
   const filtered = visible.length !== characters.length;
-  const narrowed =
-    search !== "" || provider !== null || outputMode !== null || steering !== null;
-  const noProviders = !providers.loading && providers.error === null && providers.enabled.length === 0;
+  const narrowed = search !== "" || provider !== null || outputMode !== null || steering !== null;
+  const noProviders =
+    !providers.loading && providers.error === null && providers.enabled.length === 0;
 
   function clearFilters() {
     setSearch("");
@@ -98,17 +98,13 @@ export default function CharactersScreen() {
     <Screen
       title="Characters"
       subtitle="πρόσωπα · the masks that will answer"
+      width="reading"
       right={
-        <>
-          <Text variant="muted">
-            {loading ? "reading characters…" : pluralize(characters.length, "character")}
-          </Text>
-          <Link href="/characters/new" asChild>
-            <Button>
-              <Text>New character</Text>
-            </Button>
-          </Link>
-        </>
+        <Link href="/characters/new" asChild>
+          <Button>
+            <Text>New character</Text>
+          </Button>
+        </Link>
       }
     >
       {error ? (
@@ -126,28 +122,31 @@ export default function CharactersScreen() {
       ) : null}
 
       {characters.length > 0 ? (
+        // Search, facets and count are one toolbar: the segmented controls share
+        // the search box's height and field fill so the row reads as a single
+        // strip of chrome rather than a field with some buttons after it.
         <View className="flex-row flex-wrap items-center gap-lg">
           <Input
-            className="w-inspector"
+            className="min-w-popover flex-1"
             value={search}
             onChangeText={setSearch}
             placeholder={CHARACTER_SEARCH_PLACEHOLDER}
             autoCapitalize="none"
             autoCorrect={false}
           />
-          <FilterChips
+          <FilterSegments
             label="Provider"
             value={provider}
             onChange={setProvider}
             options={providerOptions}
           />
-          <FilterChips
+          <FilterSegments
             label="Output"
             value={outputMode}
             onChange={setOutputMode}
             options={outputOptions}
           />
-          <FilterChips
+          <FilterSegments
             label="Steering"
             value={steering}
             onChange={setSteering}
@@ -158,11 +157,14 @@ export default function CharactersScreen() {
               <Text>Clear</Text>
             </Button>
           ) : null}
+          <Text variant="meta" className="ml-auto">
+            {loading ? "reading characters…" : pluralize(visible.length, "character")}
+          </Text>
         </View>
       ) : null}
 
       {visible.length > 0 ? (
-        <View className="flex-row flex-wrap gap-lg">
+        <View className="gap-sm">
           {visible.map((character) => (
             <CharacterCard key={character.id} character={character} />
           ))}

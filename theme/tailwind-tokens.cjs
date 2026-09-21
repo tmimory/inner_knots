@@ -3,6 +3,7 @@
 module.exports = {
   colors: {
     "background": "rgb(var(--color-background) / <alpha-value>)",
+    "sidebar": "rgb(var(--color-sidebar) / <alpha-value>)",
     "foreground": "rgb(var(--color-foreground) / <alpha-value>)",
     "card": "rgb(var(--color-card) / <alpha-value>)",
     "card-foreground": "rgb(var(--color-card-foreground) / <alpha-value>)",
@@ -33,13 +34,13 @@ module.exports = {
     "mono": ["ui-monospace","SFMono-Regular","Menlo","Consolas","monospace"],
   },
   fontSize: {
-    "xs": ["13px", { lineHeight: "18px" }],
-    "sm": ["15px", { lineHeight: "22px" }],
+    "xs": ["12px", { lineHeight: "16px" }],
+    "sm": ["14px", { lineHeight: "20px" }],
     "base": ["17px", { lineHeight: "26px" }],
     "lg": ["20px", { lineHeight: "28px" }],
     "xl": ["24px", { lineHeight: "32px" }],
-    "2xl": ["30px", { lineHeight: "38px" }],
-    "3xl": ["38px", { lineHeight: "46px" }],
+    "2xl": ["26px", { lineHeight: "34px" }],
+    "3xl": ["31px", { lineHeight: "40px" }],
     "4xl": ["48px", { lineHeight: "56px" }],
   },
   spacing: {
@@ -72,6 +73,8 @@ module.exports = {
   maxWidth: {
     "menu": "264px",
     "content": "1120px",
+    "reading": "720px",
+    "card": "320px",
     "canvas": "640px",
     "inspector": "360px",
     "popover": "264px",
@@ -80,6 +83,8 @@ module.exports = {
   minWidth: {
     "menu": "264px",
     "content": "1120px",
+    "reading": "720px",
+    "card": "320px",
     "canvas": "640px",
     "inspector": "360px",
     "popover": "264px",
@@ -108,6 +113,8 @@ module.exports = {
     "thick": "2px",
     "menu": "264px",
     "content": "1120px",
+    "reading": "720px",
+    "card": "320px",
     "canvas": "640px",
     "inspector": "360px",
     "popover": "264px",

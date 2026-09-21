@@ -21,7 +21,11 @@ export const textVariants = cva("text-foreground", {
       lead: "font-body text-lg text-muted-foreground",
       muted: "font-body text-sm text-muted-foreground",
       small: "font-body text-sm text-foreground",
-      /** A metadata line: "anthropic · claude-sonnet-5 · structured". */
+      /**
+       * A metadata line: "anthropic · claude-sonnet-5 · structured". Set in the
+       * secondary ink rather than the tertiary one — at 14px the quietest ink on
+       * the page stops being readable and starts being decoration.
+       */
       meta: "font-body text-sm text-muted-foreground",
       /** The quietest line on a screen: a footer, a marginal note. */
       subtle: "font-body text-sm text-subtle-foreground",

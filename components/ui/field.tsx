@@ -91,6 +91,10 @@ export type FormSectionProps = SectionHeadingProps & {
  * A section is a heading and its content with air around it, not a box: stacked
  * cards turn a form into a list of unrelated objects, while a rule plus space
  * says "same page, next matter" without drawing four more edges.
+ *
+ * The air above the heading is half the air below it. A rule with equal space on
+ * both sides reads as a page break that happens to have a title under it; pulled
+ * close, it reads as the underscore of the heading it introduces.
  */
 export function FormSection({
   title,
@@ -102,7 +106,7 @@ export function FormSection({
 }: FormSectionProps) {
   return (
     <View
-      className={cn("gap-lg", divider && "border-t-hairline border-border pt-xl", className)}
+      className={cn("gap-lg", divider && "border-t-hairline border-border pt-md", className)}
     >
       <SectionHeading title={title} description={description} right={right} />
       {children}

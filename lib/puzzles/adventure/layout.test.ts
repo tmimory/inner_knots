@@ -61,6 +61,15 @@ describe("layoutAdventure", () => {
     expect(positionOf(laid, "start").x).toBeLessThan(positionOf(laid, "right").x);
   });
 
+  it("leaves a straight run between ranks for the edge label", () => {
+    const laid = layoutAdventure(tree());
+    const start = positionOf(laid, "start");
+    const left = positionOf(laid, "left");
+    // The edge crosses the gap between the right edge of one card and the left
+    // edge of the next; under ~180px it is all bend and no label fits on it.
+    expect(left.x - (start.x + ADVENTURE_LAYOUT.nodeWidth)).toBeGreaterThanOrEqual(180);
+  });
+
   it("separates siblings vertically by at least the node gap", () => {
     const laid = layoutAdventure(tree());
     const left = positionOf(laid, "left");

@@ -24,8 +24,14 @@
 export type ThemeName = "scroll" | "nightScroll";
 
 export type ThemeColors = {
-  /** Page background — the parchment itself. */
+  /** Page background — the content pane, the lightest parchment in the app. */
   background: string;
+  /**
+   * The chrome behind the navigation column: the same parchment, one shade
+   * deeper. Content is the sheet you read; the rail is the desk it lies on, so
+   * the rail is the darker of the two and needs no rule beyond a hairline.
+   */
+  sidebar: string;
   /** Default text color — iron-gall ink. */
   foreground: string;
   /** Raised surfaces (cards, the Scroll panel). */
@@ -65,14 +71,15 @@ export type ThemeColors = {
 };
 
 const scroll: ThemeColors = {
-  background: "#EFE3C4",
+  background: "#F5EBD2",
+  sidebar: "#EADEBE",
   foreground: "#2A1F14",
-  card: "#F5EBD2",
+  card: "#FAF3E0",
   cardForeground: "#2A1F14",
-  popover: "#F5EBD2",
+  popover: "#FAF3E0",
   popoverForeground: "#2A1F14",
   muted: "#E4D5AF",
-  mutedForeground: "#5C4A33",
+  mutedForeground: "#4E3E29",
   subtleForeground: "#7A6748",
   primary: "#8B2E1F",
   primaryForeground: "#F5EBD2",
@@ -83,21 +90,22 @@ const scroll: ThemeColors = {
   destructive: "#6E1B14",
   destructiveForeground: "#F5EBD2",
   border: "#C9B68C",
-  input: "#FAF3E0",
+  input: "#FDF8EB",
   ring: "#A8862B",
   track1: "#2F4A6B",
   track2: "#A2611F",
 };
 
 const nightScroll: ThemeColors = {
-  background: "#14110D",
+  background: "#1C1812",
+  sidebar: "#13100B",
   foreground: "#E8DCC0",
-  card: "#1E1A14",
+  card: "#252019",
   cardForeground: "#E8DCC0",
-  popover: "#1E1A14",
+  popover: "#252019",
   popoverForeground: "#E8DCC0",
-  muted: "#2A241B",
-  mutedForeground: "#B3A484",
+  muted: "#322B21",
+  mutedForeground: "#C2B393",
   subtleForeground: "#948871",
   primary: "#D2705A",
   primaryForeground: "#14110D",
@@ -107,8 +115,8 @@ const nightScroll: ThemeColors = {
   accentForeground: "#14110D",
   destructive: "#E2725B",
   destructiveForeground: "#14110D",
-  border: "#3C3428",
-  input: "#272219",
+  border: "#443B2C",
+  input: "#2C261D",
   ring: "#D4AC4A",
   track1: "#7FA3C9",
   track2: "#D9A059",
@@ -261,6 +269,15 @@ export const avatarSizes = {
 export const layout = {
   menu: 264,
   content: 1120,
+  /**
+   * One column of reading: a form, a list of rows, a header and the content under
+   * it. Screens in `width="reading"` mode put the header and the body in the same
+   * `max-w-reading` column, so the header's action lands on the content's right
+   * edge instead of at the far side of the window.
+   */
+  reading: 720,
+  /** A fixed-width item card, so a short list clusters left instead of stretching. */
+  card: 320,
   /** Height of an embedded graph canvas — the adventure builder and the outcome view. */
   canvas: 640,
   /** The inspector column beside a canvas: wide enough for a labelled textarea. */
@@ -280,27 +297,34 @@ export const borderWidths = {
   thick: 2,
 } as const;
 
-/** Font sizes, in px, named rather than numeric so type scale stays one decision. */
+/**
+ * Font sizes, in px, named rather than numeric so type scale stays one decision.
+ *
+ * A screen should only ever show four of these: `3xl` for its title, `xl`/`lg`
+ * for section headings, `base` for everything you read, `sm` for the metadata
+ * line under it. `xs` is the monospace exception — ids and payloads set larger
+ * than their point size — and `2xl` belongs to the wordmark alone.
+ */
 export const fontSizes = {
-  xs: 13,
-  sm: 15,
+  xs: 12,
+  sm: 14,
   base: 17,
   lg: 20,
   xl: 24,
-  "2xl": 30,
-  "3xl": 38,
+  "2xl": 26,
+  "3xl": 31,
   "4xl": 48,
 } as const;
 
 /** Line heights, in px, paired with `fontSizes` by key. */
 export const lineHeights = {
-  xs: 18,
-  sm: 22,
+  xs: 16,
+  sm: 20,
   base: 26,
   lg: 28,
   xl: 32,
-  "2xl": 38,
-  "3xl": 46,
+  "2xl": 34,
+  "3xl": 40,
   "4xl": 56,
 } as const;
 

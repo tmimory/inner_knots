@@ -44,14 +44,18 @@ export function OutcomeGrid({
 }: OutcomeGridProps) {
   return (
     <View className={cn("gap-sm", className)}>
-      {/* Both axes named on one line, each directly above the labels it owns. */}
+      {/*
+        Both axes named on one line: the row player's name sits over the column of
+        row labels it belongs to, and the column player's is centred over the pair
+        of columns it spans rather than sitting on the first one.
+      */}
       <View className="flex-row items-end gap-md">
         <View className="w-avatar-xl">
           <Text variant="meta" numberOfLines={1}>
             {rowPlayer}
           </Text>
         </View>
-        <View className="flex-1">
+        <View className="flex-1 items-center">
           <Text variant="meta" numberOfLines={1}>
             {columnPlayer}
           </Text>

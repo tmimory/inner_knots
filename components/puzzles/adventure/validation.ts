@@ -35,7 +35,10 @@ export function splitIssues(issues: readonly AdventureIssue[]): IssueSplit {
   };
 }
 
-export type IssueBadge = { variant: "secondary" | "accent" | "destructive"; label: string };
+export type IssueBadge = {
+  variant: "secondary" | "accent" | "destructive";
+  label: string;
+};
 
 /** One badge summarising a graph's state: ready, noted, or not yet runnable. */
 export function issueBadge(issues: readonly AdventureIssue[]): IssueBadge {
@@ -52,5 +55,5 @@ export function issueBadge(issues: readonly AdventureIssue[]): IssueBadge {
       label: pluralize(warnings.length, "note"),
     };
   }
-  return { variant: "secondary", label: "ready" };
+  return { variant: "secondary", label: "Ready" };
 }

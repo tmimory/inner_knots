@@ -11,19 +11,35 @@ import {
   type RunFilters,
 } from "@/components/logs";
 import { Screen } from "@/components/shell";
-import { Text } from "@/components/ui";
+import { Text, buttonTextVariants } from "@/components/ui";
 import { LOGS_POLL_MS, useCharacterIndex, useRuns } from "@/lib/client/use-runs";
 import type { Run } from "@/lib/domain/run";
 import { dayKey, formatDay, pluralize } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 type DayGroup = { key: string; label: string; runs: Run[] };
+
+/**
+ * Where an empty ledger sends the reader. The logs screen is the one place in
+ * the app with nothing of its own to show until something has been run, so it
+ * stops apologising and becomes the launchpad instead.
+ */
+const LAUNCHPAD = [
+  { href: "/puzzles/trolley", label: "Trolley Problems" },
+  { href: "/puzzles/prisoners-dilemma", label: "Prisoner's Dilemma" },
+  { href: "/puzzles/adventure", label: "Adventure" },
+] as const;
 
 /** Runs by the day they started, newest day first, newest run first inside it. */
 function groupByDay(runs: readonly Run[]): DayGroup[] {
   const groups = new Map<string, DayGroup>();
   for (const run of runs) {
     const key = dayKey(run.startedAt);
-    const group = groups.get(key) ?? { key, label: formatDay(run.startedAt), runs: [] };
+    const group = groups.get(key) ?? {
+      key,
+      label: formatDay(run.startedAt),
+      runs: [],
+    };
     group.runs.push(run);
     groups.set(key, group);
   }
@@ -97,11 +113,22 @@ export default function LogsScreen() {
             <Text variant="lead">
               Nothing has been run yet. Every prompt and every answer will be copied out here.
             </Text>
-            <Link href="/puzzles/trolley">
-              <Text variant="small" className="text-primary underline">
-                Run the trolley
-              </Text>
-            </Link>
+            {/* One row of destinations, not three stacked footnotes: the empty
+                ledger is the place to start a run from. */}
+            <View className="flex-row flex-wrap items-center gap-lg">
+              {LAUNCHPAD.map((puzzle) => (
+                <Link key={puzzle.href} href={puzzle.href}>
+                  <Text
+                    className={cn(
+                      buttonTextVariants({ variant: "link" }),
+                      "underline-offset-4 transition-colors duration-fast",
+                    )}
+                  >
+                    {puzzle.label}
+                  </Text>
+                </Link>
+              ))}
+            </View>
           </View>
         )
       ) : null}

@@ -69,6 +69,21 @@ export function formatTime(iso: string): string {
   });
 }
 
+/**
+ * A timestamp as it reads in a list: `Sep 21, 5:16 PM`.
+ *
+ * Month and day, hour and minute, nothing else. A run's seconds are a duration,
+ * and the duration is already on the row; a wall clock counting to the second
+ * next to it is precision no one reads.
+ */
+export function formatStamp(iso: string): string {
+  const date = parseDate(iso);
+  if (!date) return UNKNOWN;
+  const day = date.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+  const time = date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return `${day}, ${time}`;
+}
+
 /** Date and time together, for a detail header. */
 export function formatDateTime(iso: string): string {
   const date = parseDate(iso);

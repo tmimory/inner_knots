@@ -5,14 +5,15 @@
 
 @layer base {
   :root {
-    --color-background: 239 227 196;
+    --color-background: 245 235 210;
+    --color-sidebar: 234 222 190;
     --color-foreground: 42 31 20;
-    --color-card: 245 235 210;
+    --color-card: 250 243 224;
     --color-card-foreground: 42 31 20;
-    --color-popover: 245 235 210;
+    --color-popover: 250 243 224;
     --color-popover-foreground: 42 31 20;
     --color-muted: 228 213 175;
-    --color-muted-foreground: 92 74 51;
+    --color-muted-foreground: 78 62 41;
     --color-subtle-foreground: 122 103 72;
     --color-primary: 139 46 31;
     --color-primary-foreground: 245 235 210;
@@ -23,7 +24,7 @@
     --color-destructive: 110 27 20;
     --color-destructive-foreground: 245 235 210;
     --color-border: 201 182 140;
-    --color-input: 250 243 224;
+    --color-input: 253 248 235;
     --color-ring: 168 134 43;
     --color-track1: 47 74 107;
     --color-track2: 162 97 31;
@@ -37,22 +38,22 @@
     /* easing */
     --easing-standard: cubic-bezier(0.65, 0, 0.35, 1);
     /* font-size */
-    --font-size-xs: 13px;
-    --font-size-sm: 15px;
+    --font-size-xs: 12px;
+    --font-size-sm: 14px;
     --font-size-base: 17px;
     --font-size-lg: 20px;
     --font-size-xl: 24px;
-    --font-size-2xl: 30px;
-    --font-size-3xl: 38px;
+    --font-size-2xl: 26px;
+    --font-size-3xl: 31px;
     --font-size-4xl: 48px;
     /* line-height */
-    --line-height-xs: 18px;
-    --line-height-sm: 22px;
+    --line-height-xs: 16px;
+    --line-height-sm: 20px;
     --line-height-base: 26px;
     --line-height-lg: 28px;
     --line-height-xl: 32px;
-    --line-height-2xl: 38px;
-    --line-height-3xl: 46px;
+    --line-height-2xl: 34px;
+    --line-height-3xl: 40px;
     --line-height-4xl: 56px;
     /* space */
     --space-none: 0px;
@@ -78,6 +79,8 @@
     /* layout */
     --layout-menu: 264px;
     --layout-content: 1120px;
+    --layout-reading: 720px;
+    --layout-card: 320px;
     --layout-canvas: 640px;
     --layout-inspector: 360px;
     --layout-popover: 264px;
@@ -119,14 +122,15 @@
   /* Explicit opt-in: <html class="dark"> or the ThemeProvider. */
   .dark:root,
   .dark {
-    --color-background: 20 17 13;
+    --color-background: 28 24 18;
+    --color-sidebar: 19 16 11;
     --color-foreground: 232 220 192;
-    --color-card: 30 26 20;
+    --color-card: 37 32 25;
     --color-card-foreground: 232 220 192;
-    --color-popover: 30 26 20;
+    --color-popover: 37 32 25;
     --color-popover-foreground: 232 220 192;
-    --color-muted: 42 36 27;
-    --color-muted-foreground: 179 164 132;
+    --color-muted: 50 43 33;
+    --color-muted-foreground: 194 179 147;
     --color-subtle-foreground: 148 136 113;
     --color-primary: 210 112 90;
     --color-primary-foreground: 20 17 13;
@@ -136,8 +140,8 @@
     --color-accent-foreground: 20 17 13;
     --color-destructive: 226 114 91;
     --color-destructive-foreground: 20 17 13;
-    --color-border: 60 52 40;
-    --color-input: 39 34 25;
+    --color-border: 68 59 44;
+    --color-input: 44 38 29;
     --color-ring: 212 172 74;
     --color-track1: 127 163 201;
     --color-track2: 217 160 89;
@@ -145,14 +149,15 @@
 
   @media (prefers-color-scheme: dark) {
     :root:not(.light) {
-      --color-background: 20 17 13;
+      --color-background: 28 24 18;
+      --color-sidebar: 19 16 11;
       --color-foreground: 232 220 192;
-      --color-card: 30 26 20;
+      --color-card: 37 32 25;
       --color-card-foreground: 232 220 192;
-      --color-popover: 30 26 20;
+      --color-popover: 37 32 25;
       --color-popover-foreground: 232 220 192;
-      --color-muted: 42 36 27;
-      --color-muted-foreground: 179 164 132;
+      --color-muted: 50 43 33;
+      --color-muted-foreground: 194 179 147;
       --color-subtle-foreground: 148 136 113;
       --color-primary: 210 112 90;
       --color-primary-foreground: 20 17 13;
@@ -162,8 +167,8 @@
       --color-accent-foreground: 20 17 13;
       --color-destructive: 226 114 91;
       --color-destructive-foreground: 20 17 13;
-      --color-border: 60 52 40;
-      --color-input: 39 34 25;
+      --color-border: 68 59 44;
+      --color-input: 44 38 29;
       --color-ring: 212 172 74;
       --color-track1: 127 163 201;
       --color-track2: 217 160 89;

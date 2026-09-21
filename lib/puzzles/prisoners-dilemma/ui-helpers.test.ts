@@ -8,7 +8,7 @@ import {
   blockedReason,
   decisionTotal,
   iterationsOf,
-  outcomeTiles,
+  playerNames,
   parseSetup,
   payoffsOf,
   playersOf,
@@ -169,24 +169,18 @@ describe("decisionTotal", () => {
   });
 });
 
-describe("outcomeTiles", () => {
-  it("names the one-sided outcomes after the players", () => {
-    const tiles = outcomeTiles(undefined, { a: "Iris", b: "Kallias" });
-    expect(tiles.map((tile) => tile.label)).toEqual([
-      "Both testified",
-      "Both stayed silent",
-      "Only Iris testified",
-      "Only Kallias testified",
-      "Incomplete",
-    ]);
-    expect(tiles.every((tile) => tile.value === 0)).toBe(true);
+describe("playerNames", () => {
+  it("uses a seated character's name and the seat's name until then", () => {
+    expect(playerNames({ a: { id: "iris", name: "Iris" } })).toEqual({
+      a: "Iris",
+      b: "Player B",
+    });
   });
 
-  it("reads the counts straight off the summary", () => {
-    const tiles = outcomeTiles(
-      { bothTestify: 3, bothSilent: 1, onlyATestifies: 2, onlyBTestifies: 0, incomplete: 4 },
-      { a: "A", b: "B" },
-    );
-    expect(tiles.map((tile) => tile.value)).toEqual([3, 1, 2, 0, 4]);
+  it("falls back to the id when a character has no name", () => {
+    expect(playerNames({ a: { id: "iris", name: "" }, b: { id: "kallias", name: " " } })).toEqual({
+      a: "iris",
+      b: "kallias",
+    });
   });
 });

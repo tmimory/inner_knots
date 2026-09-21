@@ -10,11 +10,13 @@
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { View } from "react-native";
 
+import { StartLabel } from "@/components/puzzles/adventure/start-label";
 import { Badge, Text } from "@/components/ui";
 import { formatPercent } from "@/lib/format";
 import { ADVENTURE_LAYOUT } from "@/lib/puzzles/adventure/layout";
 import { useTheme } from "@/theme";
 
+import { TERMINAL_HANDLE_CLASS } from "./chrome-style.web";
 import { handleStyle, nodeCardStyle } from "./flow-style";
 import type { AdventureFlowNode } from "./use-adventure-graph";
 import { NODE_TARGET_HANDLE } from "./types";
@@ -39,12 +41,8 @@ export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
       />
 
       <View className="gap-xs px-md pb-sm pt-md">
-        <View className="flex-row items-center gap-xs">
-          {isStart ? (
-            <Badge variant="accent">
-              <Text>start</Text>
-            </Badge>
-          ) : null}
+        <View className="flex-row items-center gap-sm">
+          {isStart ? <StartLabel /> : null}
           {counted ? (
             <Badge variant={unvisited ? "muted" : "secondary"}>
               <Text>{`${hits} · ${formatPercent(share ?? 0)}`}</Text>
@@ -55,7 +53,7 @@ export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
         <Text variant="muted" numberOfLines={CONTEXT_LINES}>
           {node.context.trim() === "" ? "No context yet" : node.context}
         </Text>
-        <Text className="font-display text-sm" numberOfLines={DECISION_LINES}>
+        <Text className="font-bodyMedium text-base" numberOfLines={DECISION_LINES}>
           {node.decision.trim() === "" ? "No decision yet" : node.decision}
         </Text>
       </View>
@@ -87,14 +85,21 @@ export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
               </Text>
             ) : null}
             {option.nextNodeId === null ? (
-              <Badge variant="outline">
-                <Text>end</Text>
-              </Badge>
+              <Text variant="subtle" className="text-xs">
+                end
+              </Text>
             ) : null}
+            {/*
+              An option that ends the adventure says so in words; its handle
+              would contradict them. It is still there — that is how an ending
+              is joined to a card — but it only surfaces on hover, so a settled
+              graph shows one dot per edge and not one per option.
+            */}
             <Handle
               type="source"
               id={option.id}
               position={Position.Right}
+              className={option.nextNodeId === null ? TERMINAL_HANDLE_CLASS : undefined}
               style={handleStyle(theme, "source")}
             />
           </View>

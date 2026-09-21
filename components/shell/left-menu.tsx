@@ -7,31 +7,33 @@ import { Wordmark } from "@/components/shell/wordmark";
 import { Chevron } from "@/components/ui/chevron";
 import { Text } from "@/components/ui/text";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/theme";
 
-/** Shared row chrome, so a leaf link and the group toggle cannot drift apart. */
+/**
+ * Shared row chrome, so a leaf link and the group toggle cannot drift apart.
+ *
+ * Every row, parent or child, is the same box on the same left edge: the pill of
+ * the selected row then starts where every label starts, instead of hanging an
+ * indent's worth of empty fill to the left of the word it is marking.
+ */
 function rowClasses(selected: boolean): string {
   return cn(
-    "rounded-sm px-md py-sm transition-colors duration-fast",
+    "flex-row items-center gap-sm rounded-sm px-md py-xs transition-colors duration-fast",
     selected ? "bg-muted" : "bg-transparent web:hover:bg-muted/subtle",
   );
 }
 
+/** The nav label: the display face at the metadata size, so chrome sits under content. */
+const labelClasses = "font-display text-sm";
+
 /**
- * One nav row, at body size.
+ * One nav row.
  *
  * Only the leaf you are actually on carries the fill. A parent whose child is
  * open used to take the same tan block, so two rows claimed to be the current
  * page at once; the parent says where you are by being open, not by being lit.
  */
-function MenuLink({
-  item,
-  nested = false,
-  onNavigate,
-}: {
-  item: NavLeaf;
-  nested?: boolean;
-  onNavigate?: () => void;
-}) {
+function MenuLink({ item, onNavigate }: { item: NavLeaf; onNavigate?: () => void }) {
   const pathname = usePathname();
   const active = isActive(pathname, item.match);
 
@@ -45,9 +47,9 @@ function MenuLink({
         role="link"
         aria-current={active ? "page" : undefined}
         onPress={onNavigate}
-        className={cn(rowClasses(active), nested && "ml-md")}
+        className={rowClasses(active)}
       >
-        <Text className={cn("font-display", active ? "text-primary" : "text-foreground")}>
+        <Text className={cn(labelClasses, active ? "text-primary" : "text-foreground")}>
           {item.label}
         </Text>
       </Pressable>
@@ -61,6 +63,7 @@ function MenuLink({
  */
 export function LeftMenu({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const theme = useTheme();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
   function toggle(label: string, defaultOpen: boolean) {
@@ -68,7 +71,7 @@ export function LeftMenu({ onNavigate }: { onNavigate?: () => void }) {
   }
 
   return (
-    <View className="h-full w-full gap-xl border-border bg-card p-lg">
+    <View className="h-full w-full gap-xl border-border bg-sidebar p-lg">
       <Wordmark />
       <ScrollView contentContainerClassName="gap-xxs" showsVerticalScrollIndicator={false}>
         {navItems.map((item) => {
@@ -85,21 +88,27 @@ export function LeftMenu({ onNavigate }: { onNavigate?: () => void }) {
                 role="button"
                 aria-expanded={open}
                 onPress={() => toggle(item.label, groupActive)}
-                className={cn("flex-row items-center gap-sm", rowClasses(false))}
+                className={rowClasses(false)}
               >
-                <Text className="font-display text-foreground">{item.label}</Text>
-                <Chevron direction={open ? "down" : "right"} tone="foreground" />
+                {/* The label takes the row; the chevron rides its trailing edge, drawn
+                    at the label's own size and ink so it reads as punctuation on the
+                    word rather than a stray mark floating beside it. */}
+                <Text className={cn(labelClasses, "flex-1 text-foreground")}>{item.label}</Text>
+                <Chevron
+                  direction={open ? "down" : "right"}
+                  size={theme.fontSizes.base}
+                  tone="foreground"
+                />
               </Pressable>
               {open
                 ? item.children.map((child) => (
-                    <MenuLink key={child.label} item={child} nested onNavigate={onNavigate} />
+                    <MenuLink key={child.label} item={child} onNavigate={onNavigate} />
                   ))
                 : null}
             </View>
           );
         })}
       </ScrollView>
-      <Text variant="subtle">a bench for philosophical puzzles</Text>
     </View>
   );
 }

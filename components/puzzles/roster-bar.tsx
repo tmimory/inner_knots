@@ -140,6 +140,11 @@ function EmptySlot({
           {label}
         </Text>
       ) : null}
+      {/*
+        A seat that is not the next one to fill keeps its ring at full strength but
+        loses the `+`: the row is a count of seats, and fading four of five would
+        hide the capacity the row exists to show.
+      */}
       <Pressable
         role="button"
         accessibilityLabel={label ? `Add a character to ${label}` : "Add a character"}
@@ -148,12 +153,14 @@ function EmptySlot({
         className={cn(
           "h-avatar-lg w-avatar-lg items-center justify-center rounded-full border-thick border-dashed border-border",
           "transition-colors duration-fast",
-          enabled ? "bg-transparent web:hover:bg-muted" : "opacity-disabled",
+          enabled && "web:hover:bg-muted",
         )}
       >
-        <Text variant="muted" className="font-mono text-lg">
-          +
-        </Text>
+        {enabled ? (
+          <Text variant="muted" className="font-mono text-lg">
+            +
+          </Text>
+        ) : null}
       </Pressable>
     </View>
   );
@@ -182,8 +189,10 @@ function NoCharacters() {
  * The cast of a run: who answers this puzzle, and how many times each.
  *
  * Every puzzle screen uses this one bar, so a roster means the same thing on all
- * three. `fixedSlots` is what the prisoner's dilemma needs — exactly two labelled
- * seats — while the trolley and the adventure grow their row up to `max`.
+ * three. It draws `max` seats — `RUN_LIMITS.maxRoster` unless the puzzle says
+ * otherwise, never a number written into a screen — and fills them left to right,
+ * so the capacity of the run is visible before anyone is seated. `fixedSlots` is
+ * the prisoner's dilemma's exactly-two-labelled-seats.
  */
 export function RosterBar({
   value,
@@ -206,7 +215,10 @@ export function RosterBar({
     [characters],
   );
 
-  const slots = fixedSlots ?? Math.min(value.length + 1, max);
+  // Every seat the puzzle has, drawn whether or not it is taken: a row of dashed
+  // circles says "five of these" at a glance, where one lone `+` in a band of air
+  // says only "another one, maybe". `max` comes from the puzzle's own limit.
+  const slots = fixedSlots ?? max;
 
   const candidates = useMemo(() => {
     // The character in the seat being refilled stays on offer; the rest do not.

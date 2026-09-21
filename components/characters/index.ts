@@ -3,9 +3,11 @@ export { CharacterCard, type CharacterCardProps } from "./character-card";
 export { CharacterForm, type CharacterFormProps } from "./character-form";
 export { ConvictionList, type ConvictionListProps } from "./conviction-list";
 export { Field, FormSection, type FieldProps } from "./field";
-export { FilterChips, type ChipOption, type FilterChipsProps } from "./filter-chips";
+export { FilterSegments, type FacetOption, type FilterSegmentsProps } from "./filter-segments";
 export { FinalPrompt, type FinalPromptProps } from "./final-prompt";
 export {
+  characterBlurb,
+  characterMeta,
   characterTitle,
   OUTPUT_MODE_LABELS,
   OUTPUT_MODE_META,

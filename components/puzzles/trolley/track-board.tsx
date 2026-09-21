@@ -14,7 +14,9 @@ import {
   branchRail,
   laneLeft,
   laneTop,
+  railEnd,
   railY,
+  slotsLeft,
   straightRail,
   tieXs,
   type TrackId,
@@ -74,9 +76,28 @@ function StraightTrack({
   );
 }
 
-/** The rails, the sleepers, the junction and the lever. */
+/** The buffer stop a track ends at: a bar across the rails, short of the edge. */
+function Terminus({ x, y, color, theme }: { x: number; y: number; color: string; theme: Theme }) {
+  return (
+    <G>
+      <Path
+        d={`M${x} ${y - BOARD.terminusHalfHeight} V${y + BOARD.terminusHalfHeight}`}
+        stroke={color}
+        strokeWidth={theme.borderWidths.thick}
+      />
+      <Path
+        d={`M${x - BOARD.railHalfGap} ${y} H${x}`}
+        stroke={color}
+        strokeWidth={theme.borderWidths.thick}
+      />
+    </G>
+  );
+}
+
+/** The rails, the sleepers, the junction, the lever and the two buffer stops. */
 function Rails({ width, theme }: { width: number; theme: Theme }) {
   const junction = { x: BOARD.junctionX, y: BOARD.rail1Y };
+  const end = railEnd(width);
 
   return (
     <Svg
@@ -99,17 +120,20 @@ function Rails({ width, theme }: { width: number; theme: Theme }) {
       <StraightTrack
         y={BOARD.rail1Y}
         fromX={BOARD.junctionX}
-        toX={width}
+        toX={end}
         color={trackColor(theme, 1)}
         theme={theme}
       />
       <StraightTrack
         y={BOARD.rail2Y}
         fromX={BOARD.junctionX + BOARD.branchRun}
-        toX={width}
+        toX={end}
         color={trackColor(theme, 2)}
         theme={theme}
       />
+
+      <Terminus x={end} y={BOARD.rail1Y} color={trackColor(theme, 1)} theme={theme} />
+      <Terminus x={end} y={BOARD.rail2Y} color={trackColor(theme, 2)} theme={theme} />
 
       <Path
         d={branchRail(-BOARD.railHalfGap)}
@@ -155,7 +179,10 @@ function ObjectChip({
   onRemove: () => void;
 }) {
   return (
-    <View className="max-w-menu flex-row items-center gap-xs rounded-md border-hairline border-border bg-card px-xs py-xxs shadow-ink-soft">
+    <View
+      style={{ height: BOARD.slotHeight }}
+      className="flex-row items-center gap-xs rounded-sm border-hairline border-border bg-card px-xs shadow-ink-soft"
+    >
       <ObjectGlyph icon={item.icon} />
       <Text variant="small" numberOfLines={1} className="shrink">
         {item.label}
@@ -172,13 +199,19 @@ function ObjectChip({
   );
 }
 
-/** The band a track's objects stand in, and the drop target they arrive through. */
+/**
+ * The band a track's objects stand in, and the drop target they arrive through.
+ *
+ * The band is a fixed row of `max` slots rather than a wrapping bag of chips, so
+ * an empty track still shows how many things it will take and where each one will
+ * stand — the capacity is drawn rather than written under the board.
+ */
 function Lane({
   track,
   items,
   width,
   hovered,
-  full,
+  max,
   zone: { attach, onLayout },
   onRemove,
 }: {
@@ -186,7 +219,7 @@ function Lane({
   items: readonly TrolleyObject[];
   width: number;
   hovered: boolean;
-  full: boolean;
+  max: number;
   zone: DropZoneBinding;
   onRemove: (id: string, index: number) => void;
 }) {
@@ -195,35 +228,38 @@ function Lane({
     <View
       ref={attach}
       onLayout={onLayout}
-      accessibilityLabel={`Track ${track}`}
+      accessibilityLabel={`Track ${track}: ${items.length} of ${max} places taken`}
       style={{
         position: "absolute",
         left,
         top: laneTop(track),
         width: Math.max(0, width - left),
         height: BOARD.laneHeight,
+        // Both tracks queue from the same x, and neither runs into the buffer stop.
+        paddingLeft: slotsLeft() - left,
+        paddingRight: BOARD.terminus,
       }}
       className={cn(
-        "justify-between rounded-sm border-hairline border-dashed p-xs transition-colors duration-fast",
+        "flex-row items-end gap-xs rounded-sm border-hairline border-dashed py-xs transition-colors duration-fast",
         hovered ? "border-thick border-ring bg-muted" : "border-transparent",
       )}
     >
-      {/* The empty line sits at the top of the band, in the air above the rail. */}
-      {items.length === 0 ? (
-        <Text variant="muted" className="text-xs">
-          {hovered ? "Drop it here" : `Nothing on track ${track}`}
-        </Text>
-      ) : null}
-      <View className="flex-row flex-wrap items-end gap-xs">
-        {items.map((item, index) => (
-          <ObjectChip
-            key={`${item.id}-${index}`}
-            item={item}
-            onRemove={() => onRemove(item.id, index)}
-          />
-        ))}
-        {full ? <Text variant="muted" className="text-xs">full</Text> : null}
-      </View>
+      {Array.from({ length: max }, (_, index) => {
+        const item = items[index];
+        return (
+          <View key={index} className="flex-1">
+            {item ? (
+              <ObjectChip item={item} onRemove={() => onRemove(item.id, index)} />
+            ) : (
+              // The empty place: an outline standing where an object would stand.
+              <View
+                style={{ height: BOARD.slotHeight }}
+                className="rounded-sm border-hairline border-dashed border-border"
+              />
+            )}
+          </View>
+        );
+      })}
     </View>
   );
 }
@@ -298,7 +334,10 @@ export function TrackBoard({
             }}
             className="px-md"
           >
-            <Text variant="meta">{`Track ${track}`}</Text>
+            {/* The label wears its own rail's hue, which is all the two hues mean. */}
+            <Text variant="meta" className={track === 1 ? "text-track1" : "text-track2"}>
+              {`Track ${track}`}
+            </Text>
           </View>
         ))}
       </View>
@@ -314,7 +353,7 @@ export function TrackBoard({
               items={items}
               width={width}
               hovered={hovered === track}
-              full={items.length >= max}
+              max={max}
               zone={zones.bind(zoneOf(track))}
               onRemove={(_id, index) => onRemove(track, index)}
             />

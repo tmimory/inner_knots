@@ -30,6 +30,15 @@ export const BOARD = {
   laneHeight: 76,
   /** Left padding inside a lane, so a chip never sits on the branch curve. */
   laneInset: 12,
+  /**
+   * How far short of the board's right edge the rails stop. Without it the rails
+   * run under the panel border and read as clipped rather than as ended.
+   */
+  terminus: 24,
+  /** Half the height of the buffer stop drawn across the rails at the terminus. */
+  terminusHalfHeight: 12,
+  /** One slot on a track: the box a single object stands in. */
+  slotHeight: 32,
   /** The approach rail the trolley rolls in along, left of the junction. */
   approachRun: 92,
   /**
@@ -81,15 +90,21 @@ export const PALETTE = {
    * baseline rather than making every row a different height.
    */
   tileHeight: 76,
+  /**
+   * The label's own box: two lines of the `xs` step, reserved whether the label
+   * needs one line or two, so the glyph above it sits at the same height in every
+   * tile of a row instead of drifting with the label's depth.
+   */
+  labelHeight: 36,
   /** Tile height plus the `xs` gap between rows; the pitch of the grid. */
   rowHeight: 80,
-  /** How many rows of tiles the palette shows before it scrolls. */
+  /** How many rows of tiles the palette shows before "Show more" is pressed. */
   visibleRows: 4,
 } as const;
 
-/** The height the palette grid is clipped to: whole rows, with no half row. */
-export function paletteHeight(): number {
-  return PALETTE.rowHeight * PALETTE.visibleRows - (PALETTE.rowHeight - PALETTE.tileHeight);
+/** The height a palette grid of `rows` whole rows is clipped to, with no half row. */
+export function paletteHeight(rows: number = PALETTE.visibleRows): number {
+  return PALETTE.rowHeight * rows - (PALETTE.rowHeight - PALETTE.tileHeight);
 }
 
 export type TrackId = 1 | 2;
@@ -107,6 +122,22 @@ export function laneTop(track: TrackId): number {
 /** The leftmost x a chip may occupy, clear of the junction and the branch. */
 export function laneLeft(track: TrackId): number {
   return (track === 1 ? BOARD.junctionX : BOARD.junctionX + BOARD.branchRun) + BOARD.laneInset;
+}
+
+/**
+ * Where the slots of both tracks begin.
+ *
+ * Track 1 has room further left, but slots that start at two different x read as
+ * two unrelated rows rather than as the same five places twice, so both tracks
+ * queue from the later of the two.
+ */
+export function slotsLeft(): number {
+  return laneLeft(2);
+}
+
+/** Where a rail stops: short of the board's right edge, at the buffer stop. */
+export function railEnd(width: number): number {
+  return width - BOARD.terminus;
 }
 
 /** `M x0 y H x1` for one rail of a pair. */

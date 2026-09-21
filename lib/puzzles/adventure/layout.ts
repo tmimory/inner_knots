@@ -26,13 +26,17 @@ export const ADVENTURE_LAYOUT = {
   /** Width of a decision card, in px. */
   nodeWidth: 280,
   /** What a card takes up before its first option row: badges, context, decision. */
-  nodeHeaderHeight: 132,
+  nodeHeaderHeight: 144,
   /** Added per option row. */
   nodeOptionHeight: 30,
-  /** Gap between one rank of nodes and the next, across the flow. */
-  rankGap: 96,
+  /**
+   * Gap between one rank of nodes and the next, across the flow. Wide enough
+   * that an edge between two ranks has a straight run in the middle to carry
+   * its label — under about 180px it is all bend and the label lands on a curve.
+   */
+  rankGap: spacing["4xl"] * 3,
   /** Gap between siblings within a rank. */
-  nodeGap: 56,
+  nodeGap: spacing["4xl"],
   /** Room kept for an edge label between siblings. */
   edgeGap: spacing.xl,
   /** Margin around the laid-out graph. */
@@ -41,7 +45,9 @@ export const ADVENTURE_LAYOUT = {
 
 /** How tall a decision card is drawn, which is what the ranking has to avoid. */
 export function adventureNodeHeight(node: Pick<AdventureNode, "options">): number {
-  return ADVENTURE_LAYOUT.nodeHeaderHeight + node.options.length * ADVENTURE_LAYOUT.nodeOptionHeight;
+  return (
+    ADVENTURE_LAYOUT.nodeHeaderHeight + node.options.length * ADVENTURE_LAYOUT.nodeOptionHeight
+  );
 }
 
 /**

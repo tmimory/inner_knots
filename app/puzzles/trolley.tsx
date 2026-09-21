@@ -234,7 +234,7 @@ export default function TrolleyScreen() {
       <Section
         title="The framing"
         right={
-          <Button variant="ghost" size="sm" onPress={() => void prompt.show()}>
+          <Button variant="link" size="sm" onPress={() => void prompt.show()}>
             <Text>Prompt view</Text>
           </Button>
         }
@@ -246,10 +246,7 @@ export default function TrolleyScreen() {
         />
       </Section>
 
-      <Section
-        title="The tracks"
-        description={`Drag from the palette, or tap a tile and pick a track. ${TRACK_CAPACITY} per track.`}
-      >
+      <Section title="The tracks">
         <TrackBoard
           track1={track1}
           track2={track2}
@@ -267,6 +264,8 @@ export default function TrolleyScreen() {
             />
           )}
         />
+        {/* The screen's one instruction, on the seam between the board and the palette. */}
+        <Text variant="meta">Drag a tile onto a track, or tap one and choose.</Text>
         <ObjectPalette
           items={catalogue.items}
           loading={catalogue.loading}
@@ -280,13 +279,14 @@ export default function TrolleyScreen() {
           onCreate={() => setCreatorOpen(true)}
         />
         {catalogue.error ? <Text className="text-destructive">{catalogue.error}</Text> : null}
-      </Section>
 
-      <Section title="The run">
-        {/* The only filled button on the screen; blocked, it outlines and says why. */}
+        {/*
+          The run belongs to the board: a heading and a rule over one button made a
+          section out of the thing the section above is for. It stays the screen's
+          only filled control, and says beside itself why it is off.
+        */}
         <View className="flex-row flex-wrap items-center gap-md">
           <Button
-            variant={blocked === null ? "default" : "outline"}
             disabled={blocked !== null || starter.starting}
             onPress={() => void startRun()}
           >

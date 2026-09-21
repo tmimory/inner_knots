@@ -9,6 +9,7 @@ import {
   formatDuration,
   formatElapsed,
   formatPercent,
+  formatStamp,
   formatTime,
   pluralize,
   truncate,
@@ -50,6 +51,20 @@ describe("durationBetween", () => {
   it("is undefined for an unreadable timestamp", () => {
     expect(durationBetween("not a date")).toBeUndefined();
     expect(formatElapsed("not a date")).toBe(UNKNOWN);
+  });
+});
+
+describe("formatStamp", () => {
+  it("gives month, day and the clock without seconds", () => {
+    const stamp = formatStamp(new Date(2026, 8, 21, 17, 16, 4).toISOString());
+    expect(stamp).toMatch(/Sep/);
+    expect(stamp).toMatch(/21/);
+    expect(stamp).toMatch(/\b5:16\b|\b17:16\b/);
+    expect(stamp).not.toMatch(/:\d\d:\d\d/);
+  });
+
+  it("reports an unreadable timestamp rather than throwing", () => {
+    expect(formatStamp("nonsense")).toBe(UNKNOWN);
   });
 });
 

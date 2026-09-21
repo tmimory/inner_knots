@@ -5,9 +5,10 @@ import { View } from "react-native";
 import { Avatar } from "@/components/avatars";
 import { Histogram, type HistogramGroupSpec, type HistogramSeriesSpec } from "@/components/charts";
 import { Button, Label, Text } from "@/components/ui";
-import { characterDisplayName, type Character } from "@/lib/domain/character";
+import type { Character } from "@/lib/domain/character";
 import type { PlayerTally, PrisonersDilemmaSummary } from "@/lib/domain/summary";
 import { countNote, pluralize } from "@/lib/format";
+import { playerNames } from "@/lib/puzzles/prisoners-dilemma/ui-helpers";
 import { cn } from "@/lib/utils";
 
 import { OutcomeGrid } from "./outcome-grid";
@@ -59,13 +60,7 @@ export function PrisonersDilemmaResults({
   runId,
   className,
 }: PrisonersDilemmaResultsProps) {
-  const names = useMemo(
-    () => ({
-      a: players.a ? characterDisplayName(players.a) : "Player A",
-      b: players.b ? characterDisplayName(players.b) : "Player B",
-    }),
-    [players.a, players.b],
-  );
+  const names = useMemo(() => playerNames(players), [players]);
 
   const groups = useMemo((): HistogramGroupSpec[] => {
     return (["a", "b"] as const).map((side) => {
@@ -87,11 +82,12 @@ export function PrisonersDilemmaResults({
   const rounds = summary?.games.reduce((sum, game) => sum + game.rounds.length, 0) ?? 0;
 
   // Before a round exists there is nothing to chart: zero tiles and an empty
-  // legend are a dashboard pretending to have data.
+  // legend are a dashboard pretending to have data, and so is a paragraph
+  // explaining that there is no data.
   if (summary === undefined || rounds === 0) {
     return (
       <Text variant="muted" className={className}>
-        Nothing decided yet. Put them in the rooms and the outcomes appear here.
+        Nothing decided yet.
       </Text>
     );
   }

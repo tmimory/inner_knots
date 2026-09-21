@@ -20,6 +20,20 @@ export type VariantSelectProps<Id extends string = string> = {
   className?: string;
 };
 
+/** The leading radio: a ring that fills with the rubric red when the row is chosen. */
+function RadioMark({ selected }: { selected: boolean }) {
+  return (
+    <View
+      className={cn(
+        "h-md w-md items-center justify-center self-center rounded-full border-hairline transition-colors duration-fast",
+        selected ? "border-primary bg-primary" : "border-border bg-input",
+      )}
+    >
+      {selected ? <View className="h-xs w-xs rounded-full bg-primary-foreground" /> : null}
+    </View>
+  );
+}
+
 /**
  * A radio list of prompt framings: one row each, name and consequence on the
  * same line.
@@ -29,6 +43,10 @@ export type VariantSelectProps<Id extends string = string> = {
  * screen is actually about. As equal-width tiles the copy wrapped at three
  * different depths and the row read as three unrelated cards; as rows the eye
  * runs down one edge and compares the sentences.
+ *
+ * Only the chosen row is drawn: a soft tan fill and a filled mark. Three bordered
+ * rows weigh more than the text field above them, and a border around every
+ * option says nothing, because what the eye is looking for is which one is on.
  */
 export function VariantSelect<Id extends string = string>({
   value,
@@ -54,12 +72,13 @@ export function VariantSelect<Id extends string = string>({
             accessibilityHint={option.description}
             onPress={() => onChange(option.id)}
             className={cn(
-              "flex-row flex-wrap items-baseline gap-x-md gap-y-xxs rounded-sm border-hairline px-md py-sm transition-colors duration-fast",
+              "flex-row flex-wrap items-baseline gap-x-md gap-y-xxs rounded-sm px-md py-sm transition-colors duration-fast",
               selected
-                ? "border-ring bg-muted/subtle"
-                : "border-border bg-transparent active:bg-muted web:hover:bg-muted/subtle",
+                ? "bg-muted"
+                : "bg-transparent active:bg-muted/subtle web:hover:bg-muted/subtle",
             )}
           >
+            <RadioMark selected={selected} />
             <Text className={cn("font-body", selected ? "text-primary" : "text-foreground")}>
               {option.label}
             </Text>

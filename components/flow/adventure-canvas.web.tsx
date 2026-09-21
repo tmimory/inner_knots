@@ -26,8 +26,9 @@ import { View } from "react-native";
 
 import { useTheme } from "@/theme";
 
+import { useFlowChromeStyle } from "./chrome-style.web";
 import { adventureNodeTypes } from "./decision-node.web";
-import { canvasStyle, controlsStyle, miniMapStyle } from "./flow-style";
+import { canvasStyle, miniMapStyle } from "./flow-style";
 import type { AdventureCanvasProps } from "./types";
 import {
   decorationFromSummary,
@@ -50,6 +51,9 @@ function Canvas(props: AdventureCanvasProps) {
   const theme = useTheme();
   const { fitView } = useReactFlow();
 
+  // React Flow's own chrome is CSS, not props: this puts the themed sheet in.
+  useFlowChromeStyle(theme);
+
   const builder = props.mode === "builder";
   const summary = props.mode === "outcomes" ? props.summary : undefined;
   const highlight = props.mode === "outcomes" ? props.highlight : undefined;
@@ -57,10 +61,7 @@ function Canvas(props: AdventureCanvasProps) {
   const onChange = props.mode === "builder" ? props.onChange : undefined;
   const onSelectNode = props.mode === "builder" ? props.onSelectNode : undefined;
 
-  const decoration = useMemo(
-    () => decorationFromSummary(summary, highlight),
-    [summary, highlight],
-  );
+  const decoration = useMemo(() => decorationFromSummary(summary, highlight), [summary, highlight]);
 
   const graph = useAdventureGraph({
     adventure: props.adventure,
@@ -119,11 +120,12 @@ function Canvas(props: AdventureCanvasProps) {
           maskColor={theme.colors.background}
         />
       ) : null}
-      <Controls
-        showInteractive={builder}
-        position="bottom-left"
-        style={controlsStyle(theme) as CSSProperties}
-      />
+      {/*
+        Zoom, zoom out, fit — and nothing else. The interactivity lock is a
+        fourth glyph nobody reaches for, and a padlock beside two magnifiers
+        reads as a warning rather than as a toggle.
+      */}
+      <Controls showInteractive={false} showZoom showFitView position="bottom-left" />
     </ReactFlow>
   );
 }
@@ -132,7 +134,12 @@ function Canvas(props: AdventureCanvasProps) {
 export default function AdventureCanvas(props: AdventureCanvasProps) {
   const theme = useTheme();
   return (
-    <View style={{ height: theme.layout.canvas }} className="w-full">
+    // The canvas is an object on the page, not the page: a hairline and the
+    // surface radius are what tell the graph's whitespace from the screen's.
+    <View
+      style={{ height: theme.layout.canvas }}
+      className="w-full overflow-hidden rounded-md border-hairline border-border"
+    >
       <ReactFlowProvider>
         <Canvas {...props} />
       </ReactFlowProvider>

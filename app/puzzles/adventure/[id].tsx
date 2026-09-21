@@ -4,7 +4,7 @@ import { Pressable, View } from "react-native";
 
 import { AdventureBuilder } from "@/components/flow";
 import { NodeEditor, splitIssues } from "@/components/puzzles/adventure";
-import { Screen, Scroll } from "@/components/shell";
+import { PageHeader, Screen, Scroll } from "@/components/shell";
 import { Button, Field, Input, Separator, Text, Textarea } from "@/components/ui";
 import { useAdventure } from "@/lib/client/use-adventures";
 import {
@@ -13,6 +13,7 @@ import {
   type AdventureIssue,
   type AdventureNode,
 } from "@/lib/domain/adventure";
+import { pluralize } from "@/lib/format";
 import { addNode } from "@/lib/puzzles/adventure/edits";
 import { ADVENTURE_LAYOUT, layoutAdventure } from "@/lib/puzzles/adventure/layout";
 import { cn } from "@/lib/utils";
@@ -22,7 +23,10 @@ import { durations } from "@/theme";
 const AUTOSAVE_DELAY_MS = durations.slow * 4;
 
 /** Where a new node lands: to the right of everything already on the canvas, as the graph flows. */
-function nextNodePosition(nodes: readonly AdventureNode[]): { x: number; y: number } {
+function nextNodePosition(nodes: readonly AdventureNode[]): {
+  x: number;
+  y: number;
+} {
   if (nodes.length === 0) return { x: 0, y: 0 };
   const right = Math.max(...nodes.map((node) => node.position.x + ADVENTURE_LAYOUT.nodeWidth));
   const top = Math.min(...nodes.map((node) => node.position.y));
@@ -45,9 +49,7 @@ function IssueRow({
       className="flex-row items-center gap-sm rounded-md p-sm transition-colors duration-fast active:bg-muted web:hover:bg-muted"
       onPress={onPress}
     >
-      <View
-        className={cn("h-sm w-sm rounded-full", blocking ? "bg-destructive" : "bg-accent")}
-      />
+      <View className={cn("h-sm w-sm rounded-full", blocking ? "bg-destructive" : "bg-accent")} />
       <Text variant="small" className="flex-1">
         {issue.message}
       </Text>
@@ -102,11 +104,23 @@ export default function AdventureBuilderScreen() {
   const saveState = saving ? "Saving…" : dirty ? "Unsaved changes" : "Saved";
 
   return (
-    <Screen title={draft.name} subtitle="ὁδός · branching paths, recorded">
+    <View className="gap-xl">
+      <View className="gap-xs">
+        {/* Where this tree sits, not a thing to do with it — so it leads the
+            title instead of standing in the row of actions. */}
+        <Pressable
+          role="link"
+          className="self-start"
+          onPress={() => router.push("/puzzles/adventure")}
+        >
+          <Text variant="meta" className="transition-colors duration-fast web:hover:text-primary">
+            ← Shelf
+          </Text>
+        </Pressable>
+        <PageHeader title={draft.name} subtitle="ὁδός · branching paths, recorded" />
+      </View>
+
       <View className="flex-row flex-wrap items-center gap-sm">
-        <Button variant="ghost" size="sm" onPress={() => router.push("/puzzles/adventure")}>
-          <Text>← Shelf</Text>
-        </Button>
         <Button variant="outline" size="sm" onPress={addBeside}>
           <Text>Add node</Text>
         </Button>
@@ -126,18 +140,28 @@ export default function AdventureBuilderScreen() {
 
         <View className="flex-1" />
 
+        {/* One line about the draft's state. The Save button only appears when
+            there is something to save; the rest of the time autosave has it. */}
         <Text variant="meta">{saveState}</Text>
-        <Button variant="outline" size="sm" disabled={!dirty || saving} onPress={() => void save()}>
-          <Text>Save</Text>
-        </Button>
+        {dirty || saving ? (
+          <Button variant="outline" size="sm" disabled={saving} onPress={() => void save()}>
+            <Text>Save</Text>
+          </Button>
+        ) : null}
+        {runnable ? null : (
+          <Text variant="meta">{`${pluralize(blocking.length, "problem")} to fix first`}</Text>
+        )}
         <Button
           size="sm"
           disabled={!runnable}
           onPress={() =>
-            router.push({ pathname: "/puzzles/adventure/[id]/run", params: { id: draft.id } })
+            router.push({
+              pathname: "/puzzles/adventure/[id]/run",
+              params: { id: draft.id },
+            })
           }
         >
-          <Text>{runnable ? "Run" : `${blocking.length} to fix first`}</Text>
+          <Text>Run</Text>
         </Button>
       </View>
 
@@ -182,6 +206,9 @@ export default function AdventureBuilderScreen() {
         </View>
 
         <Scroll className="w-full wide:w-inspector">
+          {/* The inspector reads top to bottom: the tree, then the card in it. */}
+          <Text variant="h4">Adventure</Text>
+
           <Field label="Title">
             <Input
               maxLength={ADVENTURE_LIMITS.name}
@@ -212,12 +239,11 @@ export default function AdventureBuilderScreen() {
             />
           ) : (
             <Text variant="muted">
-              Select a card to write its context, its question and the ways out of it. Drag an
-              option&apos;s handle onto another card to connect them.
+              Select a card to write it; drag an option&apos;s handle onto another card.
             </Text>
           )}
         </Scroll>
       </View>
-    </Screen>
+    </View>
   );
 }

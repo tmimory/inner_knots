@@ -133,14 +133,21 @@ export function DraggableObject({
             )}
           >
             <ObjectGlyph icon={item.icon} />
-            <Text
-              variant="muted"
-              className="text-center text-xs"
-              numberOfLines={2}
-              ellipsizeMode="tail"
-            >
-              {item.label}
-            </Text>
+            {/*
+              The label's two lines are reserved whether it needs them or not, so
+              a one-word tile and a three-word tile put their glyphs on the same
+              line rather than each row rocking up and down.
+            */}
+            <View style={{ height: PALETTE.labelHeight }} className="w-full justify-center">
+              <Text
+                variant="muted"
+                className="text-center text-xs"
+                numberOfLines={2}
+                ellipsizeMode="tail"
+              >
+                {item.label}
+              </Text>
+            </View>
           </View>
         </Animated.View>
       </GestureDetector>

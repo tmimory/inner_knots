@@ -15,9 +15,6 @@ type PreviewState =
   | { status: "ready"; prompt: string | null }
   | { status: "error"; message: string };
 
-/** A settled answer, tagged with the draft it answers for. */
-type PreviewResult = PreviewState & { signature: string };
-
 /**
  * The composed steering prompt for a draft character, debounced.
  *
@@ -26,7 +23,7 @@ type PreviewResult = PreviewState & { signature: string };
  * the client — edit a fragment and this panel changes with it.
  */
 function useSteeringPreview(steering: Steering): PreviewState {
-  const [result, setResult] = useState<PreviewResult | null>(null);
+  const [result, setResult] = useState<PreviewState | null>(null);
   const signature = JSON.stringify(steering);
 
   useEffect(() => {
@@ -34,11 +31,11 @@ function useSteeringPreview(steering: Steering): PreviewState {
     const timer = setTimeout(() => {
       previewSteering({ steering: JSON.parse(signature) as Steering })
         .then((prompt) => {
-          if (!cancelled) setResult({ signature, status: "ready", prompt });
+          if (!cancelled) setResult({ status: "ready", prompt });
         })
         .catch((cause: unknown) => {
           if (!cancelled) {
-            setResult({ signature, status: "error", message: describeApiError(cause) });
+            setResult({ status: "error", message: describeApiError(cause) });
           }
         });
     }, DEBOUNCE_MS);
@@ -49,8 +46,10 @@ function useSteeringPreview(steering: Steering): PreviewState {
     };
   }, [signature]);
 
-  // An answer for an older draft is a stale answer, which reads as "still composing".
-  return result?.signature === signature ? result : { status: "loading" };
+  // An answer for an older draft is one keystroke behind, not wrong: holding it
+  // while the next one composes keeps the panel from blinking out on every letter
+  // typed into the bio. Only the very first draft has nothing to show.
+  return result ?? { status: "loading" };
 }
 
 export type FinalPromptProps = {
@@ -62,8 +61,8 @@ export type FinalPromptProps = {
  * What the model will actually be told before it hears the puzzle. Read-only on
  * purpose: the prompt is derived from the fields above it, never edited here.
  *
- * A character that sends no system prompt gets one line, not a titled panel
- * around an empty box: there is nothing there to frame.
+ * A character that sends no system prompt draws nothing at all: the steering
+ * mode's own line already says what that means, and there is no box to frame.
  */
 export function FinalPrompt({ steering, className }: FinalPromptProps) {
   const state = useSteeringPreview(steering);
@@ -76,21 +75,10 @@ export function FinalPrompt({ steering, className }: FinalPromptProps) {
     );
   }
 
-  if (state.status === "loading") {
-    return (
-      <Text variant="muted" className={className}>
-        Composing the final prompt…
-      </Text>
-    );
-  }
-
-  if (state.prompt === null) {
-    return (
-      <Text variant="muted" className={className}>
-        No steering prompt; this character speaks for the raw model.
-      </Text>
-    );
-  }
+  // Nothing to show is nothing to draw: a character that sends no system prompt
+  // has already been told so by the steering mode's own line, and a titled panel
+  // around that sentence would say it twice.
+  if (state.status === "loading" || state.prompt === null) return null;
 
   return (
     <View className={cn("gap-md", className)}>

@@ -2,35 +2,15 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 
-import { issueBadge, type IssueBadge } from "@/components/puzzles/adventure";
+import { issueBadge } from "@/components/puzzles/adventure";
 import { Screen } from "@/components/shell";
 import { Button, ConfirmDialog, Text } from "@/components/ui";
 import { describeApiError } from "@/lib/client/errors";
 import { useAdventures } from "@/lib/client/use-adventures";
 import { usePendingDelete } from "@/lib/client/use-pending-delete";
 import { validateAdventure, type Adventure } from "@/lib/domain/adventure";
-import { UNKNOWN, pluralize } from "@/lib/format";
+import { formatStamp, pluralize } from "@/lib/format";
 import { starterAdventure } from "@/lib/puzzles/adventure/edits";
-import { cn } from "@/lib/utils";
-
-/** The bullet a graph's state is shown as: green settled, gilt noted, oxblood blocked. */
-const STATUS_DOTS: Record<IssueBadge["variant"], string> = {
-  secondary: "bg-secondary",
-  accent: "bg-accent",
-  destructive: "bg-destructive",
-};
-
-/** When a tree was last touched, to the minute: `Sep 21, 5:16 PM`. */
-function editedStamp(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return UNKNOWN;
-  return date.toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
 
 /**
  * One saved tree as a row: the title is the way in, Run sits beside it, and the
@@ -56,22 +36,21 @@ function AdventureRow({
   const badge = issueBadge(validateAdventure(adventure));
 
   return (
-    <View className="flex-row items-center gap-sm border-b-hairline border-border">
+    // The row is the hover surface, but only the words are the way in: a Run
+    // button inside a pressable row is a click that means two things at once.
+    <View className="flex-row items-center gap-sm border-b-hairline border-border transition-colors duration-fast web:hover:bg-muted/subtle">
       <Pressable
         role="link"
         accessibilityLabel={`Open ${adventure.name}`}
-        className="flex-1 gap-xxs rounded-md px-sm py-md transition-colors duration-fast active:bg-muted web:hover:bg-muted/subtle"
+        className="flex-1 gap-xxs py-md"
         onPress={onOpen}
       >
-        <Text className="font-display text-base" numberOfLines={1}>
+        <Text className="font-bodyMedium text-base text-primary" numberOfLines={1}>
           {adventure.name}
         </Text>
-        <View className="flex-row items-center gap-xs">
-          <View className={cn("h-sm w-sm rounded-full", STATUS_DOTS[badge.variant])} />
-          <Text variant="meta" numberOfLines={1}>
-            {`${badge.label} · ${pluralize(adventure.nodes.length, "node")} · edited ${editedStamp(adventure.updatedAt)}`}
-          </Text>
-        </View>
+        <Text variant="meta" numberOfLines={1}>
+          {`${badge.label} · ${pluralize(adventure.nodes.length, "node")} · edited ${formatStamp(adventure.updatedAt)}`}
+        </Text>
       </Pressable>
 
       {showActions ? (
@@ -83,8 +62,8 @@ function AdventureRow({
             <Text>Delete</Text>
           </Button>
           <Button
-            variant="ghost"
-            size="icon"
+            variant="outline"
+            size="sm"
             accessibilityLabel="Hide actions"
             onPress={() => setShowActions(false)}
           >
@@ -97,8 +76,8 @@ function AdventureRow({
             <Text>Run</Text>
           </Button>
           <Button
-            variant="ghost"
-            size="icon"
+            variant="outline"
+            size="sm"
             accessibilityLabel={`More for ${adventure.name}`}
             onPress={() => setShowActions(true)}
           >
@@ -138,25 +117,19 @@ export default function AdventureListScreen() {
     <Screen
       title="Choose Your Own Adventure"
       subtitle="ὁδός · branching paths, recorded"
+      width="reading"
       right={
-        <>
-          {adventures.length > 0 || loading ? (
-            <Text variant="meta">
-              {loading ? "reading the shelf…" : `${adventures.length} on the shelf`}
-            </Text>
-          ) : null}
-          <Button
-            disabled={busy}
-            onPress={() =>
-              void act(async () => {
-                const created = await create(starterAdventure());
-                openBuilder(created.id);
-              })
-            }
-          >
-            <Text>New adventure</Text>
-          </Button>
-        </>
+        <Button
+          disabled={busy}
+          onPress={() =>
+            void act(async () => {
+              const created = await create(starterAdventure());
+              openBuilder(created.id);
+            })
+          }
+        >
+          <Text>New adventure</Text>
+        </Button>
       }
     >
       {error ? (
@@ -178,28 +151,35 @@ export default function AdventureListScreen() {
         </Text>
       ) : null}
 
-      {adventures.length > 0 ? (
-        <View className="w-full max-w-canvas">
-          {adventures.map((adventure) => (
-            <AdventureRow
-              key={adventure.id}
-              adventure={adventure}
-              busy={busy}
-              onOpen={() => openBuilder(adventure.id)}
-              onRun={() =>
-                router.push({
-                  pathname: "/puzzles/adventure/[id]/run",
-                  params: { id: adventure.id },
-                })
-              }
-              onDuplicate={() =>
-                void act(async () => {
-                  await duplicate(adventure);
-                })
-              }
-              onDelete={() => deleting.request(adventure)}
-            />
-          ))}
+      {adventures.length > 0 || loading ? (
+        <View className="gap-sm">
+          {/* The list's caption, not the button's: a count belongs to the thing
+              it counts, under the heading and over the rules. */}
+          <Text variant="meta">
+            {loading ? "Reading the shelf…" : `${adventures.length} on the shelf`}
+          </Text>
+          <View className="border-t-hairline border-border">
+            {adventures.map((adventure) => (
+              <AdventureRow
+                key={adventure.id}
+                adventure={adventure}
+                busy={busy}
+                onOpen={() => openBuilder(adventure.id)}
+                onRun={() =>
+                  router.push({
+                    pathname: "/puzzles/adventure/[id]/run",
+                    params: { id: adventure.id },
+                  })
+                }
+                onDuplicate={() =>
+                  void act(async () => {
+                    await duplicate(adventure);
+                  })
+                }
+                onDelete={() => deleting.request(adventure)}
+              />
+            ))}
+          </View>
         </View>
       ) : null}
 
