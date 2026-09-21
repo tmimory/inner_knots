@@ -1,0 +1,41 @@
+# Secrets: real values live in .env, never committed. Copy .env.example to .env to get started.
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+
+# Dependencies and build output (React Native / Expo)
+node_modules/
+.expo/
+dist/
+build/
+web-build/
+ios/build/
+android/build/
+android/app/build/
+*.jsbundle
+
+# Signing and credentials
+*.keystore
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+google-services.json
+GoogleService-Info.plist
+
+# Tooling and OS
+.DS_Store
+*.log
+npm-debug.log*
+yarn-error.log*
+.idea/
+.vscode/
+coverage/
+
+# Claude Code config and instructions (local only)
+.claude/
+CLAUDE.md
+CLAUDE.local.md
