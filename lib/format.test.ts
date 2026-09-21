@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   UNKNOWN,
+  countNote,
   dayKey,
   durationBetween,
   formatDay,
@@ -9,6 +10,7 @@ import {
   formatElapsed,
   formatPercent,
   formatTime,
+  pluralize,
   truncate,
 } from "./format";
 
@@ -101,5 +103,30 @@ describe("truncate", () => {
 
   it("returns nothing when there is no room", () => {
     expect(truncate("abc", 0)).toBe("");
+  });
+});
+
+describe("pluralize", () => {
+  it("keeps the singular at one and pluralizes everything else", () => {
+    expect(pluralize(1, "node")).toBe("1 node");
+    expect(pluralize(0, "node")).toBe("0 nodes");
+    expect(pluralize(2, "node")).toBe("2 nodes");
+  });
+
+  it("takes an irregular plural when the default will not do", () => {
+    expect(pluralize(1, "person", "people")).toBe("1 person");
+    expect(pluralize(3, "person", "people")).toBe("3 people");
+  });
+});
+
+describe("countNote", () => {
+  it("says nothing at zero", () => {
+    expect(countNote(0, "error")).toBeUndefined();
+  });
+
+  it("counts from one upwards", () => {
+    expect(countNote(1, "error")).toBe("1 error");
+    expect(countNote(4, "error")).toBe("4 errors");
+    expect(countNote(2, "ending", "endings")).toBe("2 endings");
   });
 });

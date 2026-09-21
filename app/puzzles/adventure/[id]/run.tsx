@@ -19,6 +19,7 @@ import { useRun, useRunStarter } from "@/lib/client/use-run";
 import { validateAdventure } from "@/lib/domain/adventure";
 import { RUN_LIMITS, type RosterEntry } from "@/lib/domain/run";
 import type { AdventureSummary } from "@/lib/domain/summary";
+import { pluralize } from "@/lib/format";
 
 export default function AdventureRunScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -59,7 +60,7 @@ export default function AdventureRunScreen() {
     roster.length === 0
       ? "Put at least one character on the roster."
       : !runnable
-        ? `${blocking.length} ${blocking.length === 1 ? "problem" : "problems"} in the tree stop a run.`
+        ? `${pluralize(blocking.length, "problem")} in the tree stop a run.`
         : null;
 
   if (loading || !adventure) {

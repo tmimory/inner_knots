@@ -1,19 +1,18 @@
 import { useState, type ReactNode } from "react";
-import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 
 import { LeftMenu } from "@/components/shell/left-menu";
 import { Wordmark } from "@/components/shell/wordmark";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
-import { layout } from "@/theme";
+import { useWideViewport } from "@/lib/client/use-viewport";
 
 /**
  * The application frame: a fixed menu column on wide viewports, a slide-over drawer
  * on narrow ones, with the routed screen scrolling beside it.
  */
 export function AppShell({ children }: { children: ReactNode }) {
-  const { width } = useWindowDimensions();
-  const wide = width >= layout.wideBreakpoint;
+  const wide = useWideViewport();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (

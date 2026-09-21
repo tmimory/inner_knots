@@ -16,4 +16,4 @@ Phases
 | 6 | [Prisoner's dilemma](plan/06-prisoners-dilemma.md) | done |
 | 7 | [Choose your own adventure](plan/07-adventure.md) | done |
 | 8 | [Logs](plan/08-logs.md) | done |
-| 9 | [Polish and review](plan/09-polish.md) | in progress |
+| 9 | [Polish and review](plan/09-polish.md) | done |

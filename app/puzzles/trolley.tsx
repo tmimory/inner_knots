@@ -1,4 +1,3 @@
-import { Link } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { View } from "react-native";
 
@@ -28,6 +27,7 @@ import { useCharacters } from "@/lib/client/use-characters";
 import { usePersistedState } from "@/lib/client/use-persisted-state";
 import { usePromptPreview } from "@/lib/client/use-prompt-preview";
 import { useRun, useRunStarter } from "@/lib/client/use-run";
+import { pluralize } from "@/lib/format";
 import { RUN_LIMITS, TROLLEY_VARIANTS, type RosterEntry, type TrolleyVariant } from "@/lib/domain/run";
 import type { TrolleySummary } from "@/lib/domain/summary";
 import type { TrolleyObject } from "@/lib/puzzles/trolley/catalogue";
@@ -238,25 +238,14 @@ export default function TrolleyScreen() {
         title="The roster"
         description="Who answers, and how many times each. Up to five characters."
       >
-        {characters.length === 0 ? (
-          <View className="flex-row flex-wrap items-center gap-sm">
-            <Text variant="muted">No characters yet.</Text>
-            <Link href="/characters" asChild>
-              <Button variant="secondary" size="sm">
-                <Text>Make one</Text>
-              </Button>
-            </Link>
-          </View>
-        ) : (
-          <RosterBar
-            value={board.roster}
-            onChange={(roster) => patch({ roster })}
-            characters={characters}
-            max={RUN_LIMITS.maxRoster}
-            min={0}
-            showRuns
-          />
-        )}
+        <RosterBar
+          value={board.roster}
+          onChange={(roster) => patch({ roster })}
+          characters={characters}
+          max={RUN_LIMITS.maxRoster}
+          min={0}
+          showRuns
+        />
       </Section>
 
       <Section
@@ -315,9 +304,7 @@ export default function TrolleyScreen() {
         title="The run"
         description={
           blocked ??
-          `${total} ${total === 1 ? "decision" : "decisions"} across ${board.roster.length} ${
-            board.roster.length === 1 ? "character" : "characters"
-          }.`
+          `${pluralize(total, "decision")} across ${pluralize(board.roster.length, "character")}.`
         }
         right={
           <Button disabled={blocked !== null || starter.starting} onPress={() => void startRun()}>

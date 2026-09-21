@@ -1,4 +1,3 @@
-import { Link } from "expo-router";
 import { useCallback, useMemo } from "react";
 import { View } from "react-native";
 
@@ -20,6 +19,7 @@ import { useRun, useRunStarter } from "@/lib/client/use-run";
 import { characterDisplayName, type Character } from "@/lib/domain/character";
 import { DEFAULT_CRIME, RUN_LIMITS, type PrisonersDilemmaVariant } from "@/lib/domain/run";
 import type { PrisonersDilemmaSummary } from "@/lib/domain/summary";
+import { pluralize } from "@/lib/format";
 import {
   DEFAULT_SETUP,
   MIN_ITERATED_ROUNDS,
@@ -161,28 +161,17 @@ export default function PrisonersDilemmaScreen() {
         title="The players"
         description="Two seats, two rooms. Both have to be filled before anyone is asked anything."
       >
-        {characters.length === 0 ? (
-          <View className="flex-row flex-wrap items-center gap-sm">
-            <Text variant="muted">No characters yet.</Text>
-            <Link href="/characters" asChild>
-              <Button variant="secondary" size="sm">
-                <Text>Make one</Text>
-              </Button>
-            </Link>
-          </View>
-        ) : (
-          <RosterBar
-            value={setup.roster}
-            onChange={(roster) => patch({ roster })}
-            characters={characters}
-            max={PLAYER_COUNT}
-            min={0}
-            showRuns={false}
-            labels={SLOT_LABELS}
-            fixedSlots={PLAYER_COUNT}
-            allowDuplicates
-          />
-        )}
+        <RosterBar
+          value={setup.roster}
+          onChange={(roster) => patch({ roster })}
+          characters={characters}
+          max={PLAYER_COUNT}
+          min={0}
+          showRuns={false}
+          labels={SLOT_LABELS}
+          fixedSlots={PLAYER_COUNT}
+          allowDuplicates
+        />
       </Section>
 
       <Section
@@ -326,9 +315,10 @@ export default function PrisonersDilemmaScreen() {
         title="The run"
         description={
           blocked ??
-          `${total} ${total === 1 ? "decision" : "decisions"}: ${setup.runs} ${
-            setup.runs === 1 ? "game" : "games"
-          } × ${iterations} ${iterations === 1 ? "round" : "rounds"} × 2 players.`
+          `${pluralize(total, "decision")}: ${pluralize(setup.runs, "game")} × ${pluralize(
+            iterations,
+            "round",
+          )} × 2 players.`
         }
         right={
           <Button disabled={blocked !== null || starter.starting} onPress={() => void startRun()}>

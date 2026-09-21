@@ -7,6 +7,7 @@ import { Histogram, type HistogramGroupSpec, type HistogramSeriesSpec } from "@/
 import { Button, Text } from "@/components/ui";
 import { characterDisplayName, type Character } from "@/lib/domain/character";
 import type { PlayerTally, PrisonersDilemmaSummary } from "@/lib/domain/summary";
+import { countNote, pluralize } from "@/lib/format";
 import { outcomeTiles } from "@/lib/puzzles/prisoners-dilemma/ui-helpers";
 import { cn } from "@/lib/utils";
 
@@ -30,11 +31,6 @@ export type PrisonersDilemmaResultsProps = {
   runId?: string | null;
   className?: string;
 };
-
-function errorNote(errors: number): string | undefined {
-  if (errors === 0) return undefined;
-  return errors === 1 ? "1 error" : `${errors} errors`;
-}
 
 /** One count of the outcomes strip. */
 function StatTile({ label, value }: { label: string; value: number }) {
@@ -81,7 +77,7 @@ export function PrisonersDilemmaResults({
         label: names[side],
         values: { testify: tally.testify, silent: tally.silent },
         weights: tally.meanWeights,
-        note: errorNote(tally.errors),
+        note: countNote(tally.errors, "error"),
         accessory: character ? (
           <Avatar shape={character.avatar.shape} color={character.avatar.color} size="sm" />
         ) : undefined,
@@ -116,7 +112,7 @@ export function PrisonersDilemmaResults({
 
       <View className="flex-row flex-wrap items-center gap-md">
         <Text variant="muted">
-          {rounds === 1 ? "1 round recorded" : `${rounds} rounds recorded`}
+          {`${pluralize(rounds, "round")} recorded`}
         </Text>
         <View className="flex-1" />
         {runId ? (

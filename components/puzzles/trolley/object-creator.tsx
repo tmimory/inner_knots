@@ -18,6 +18,7 @@ import {
   Textarea,
 } from "@/components/ui";
 import { describeApiError } from "@/lib/client/errors";
+import { usePendingDelete } from "@/lib/client/use-pending-delete";
 import {
   TROLLEY_OBJECT_LIMITS,
   type TrolleyObjectInput,
@@ -169,7 +170,7 @@ export function ObjectCreator({
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
-  const [dropping, setDropping] = useState<TrolleyObject | null>(null);
+  const dropping = usePendingDelete<TrolleyObject>();
   const [error, setError] = useState<string | null>(null);
 
   /** Closing puts the form back to blank; the dialog is not a draft store. */
@@ -312,7 +313,7 @@ export function ObjectCreator({
 
             <View className="gap-xs">
               <Text variant="h4">Your objects</Text>
-              <ManageList custom={custom} onRemove={setDropping} busyId={removing} />
+              <ManageList custom={custom} onRemove={dropping.request} busyId={removing} />
             </View>
           </ScrollView>
 
@@ -328,23 +329,19 @@ export function ObjectCreator({
       </Dialog>
 
       <ConfirmDialog
-        open={dropping !== null}
-        onOpenChange={(next) => setDropping(next ? dropping : null)}
+        open={dropping.open}
+        onOpenChange={dropping.onOpenChange}
         title="Delete this object?"
         description={
-          dropping
-            ? `“${dropping.label}” leaves the palette. Runs that already put it on a track keep their own copy of it.`
+          dropping.target
+            ? `“${dropping.target.label}” leaves the palette. Runs that already put it on a track keep their own copy of it.`
             : undefined
         }
         confirmLabel="Delete"
         cancelLabel="Keep it"
         destructive
         loading={removing !== null}
-        onConfirm={() => {
-          const target = dropping;
-          setDropping(null);
-          if (target) void drop(target.id);
-        }}
+        onConfirm={() => dropping.confirm((target) => void drop(target.id))}
       />
     </>
   );

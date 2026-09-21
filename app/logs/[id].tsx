@@ -1,6 +1,6 @@
 import { Link, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
-import { View, useWindowDimensions } from "react-native";
+import { View } from "react-native";
 
 import {
   ConfigView,
@@ -23,9 +23,9 @@ import {
   useObjectIndex,
   useRunDetail,
 } from "@/lib/client/use-runs";
+import { useWideViewport } from "@/lib/client/use-viewport";
 import { errorMessage } from "@/lib/errors";
 import { formatDateTime, formatElapsed } from "@/lib/format";
-import { layout } from "@/theme";
 
 /** A labelled figure in the run's vital-statistics row. */
 function Stat({ label, value }: { label: string; value: string }) {
@@ -44,8 +44,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 export default function RunDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const runId = typeof params.id === "string" ? params.id : "";
-  const { width } = useWindowDimensions();
-  const wide = width >= layout.wideBreakpoint;
+  const wide = useWideViewport();
   const { toast } = useToast();
 
   const { run, spans, logs, loading, error, refresh } = useRunDetail(runId, { pollMs: LOGS_POLL_MS });

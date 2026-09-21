@@ -16,6 +16,7 @@ export {
   borderWidths,
   controlSizes,
   durations,
+  easings,
   fontSizes,
   fonts,
   layout,

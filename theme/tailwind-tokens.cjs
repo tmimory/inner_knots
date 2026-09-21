@@ -140,6 +140,9 @@ module.exports = {
     "normal": "200ms",
     "slow": "360ms",
   },
+  transitionTimingFunction: {
+    "standard": "var(--easing-standard)",
+  },
   zIndex: {
     "base": "0",
     "menu": "10",

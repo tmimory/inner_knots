@@ -8,6 +8,7 @@
  * what "ready" means.
  */
 import type { AdventureIssue } from "@/lib/domain/adventure";
+import { pluralize } from "@/lib/format";
 
 /** Findings that warn rather than block. */
 export const NON_BLOCKING_ISSUE_CODES: readonly AdventureIssue["code"][] = ["unreachable-node"];
@@ -42,13 +43,13 @@ export function issueBadge(issues: readonly AdventureIssue[]): IssueBadge {
   if (blocking.length > 0) {
     return {
       variant: "destructive",
-      label: `${blocking.length} ${blocking.length === 1 ? "problem" : "problems"}`,
+      label: pluralize(blocking.length, "problem"),
     };
   }
   if (warnings.length > 0) {
     return {
       variant: "accent",
-      label: `${warnings.length} ${warnings.length === 1 ? "note" : "notes"}`,
+      label: pluralize(warnings.length, "note"),
     };
   }
   return { variant: "secondary", label: "ready" };

@@ -4,6 +4,7 @@ import { Avatar, medallionVariants, type AvatarSize } from "@/components/avatars
 import { Text } from "@/components/ui";
 import { characterDisplayName, type Character } from "@/lib/domain/character";
 import type { RunConfig } from "@/lib/domain/run";
+import { pluralize } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /** One seat on a run's roster: who answered, and how many times they were asked. */
@@ -103,7 +104,7 @@ export function RosterList({ config, characters }: Omit<RosterAvatarsProps, "siz
             </Text>
           </View>
           <Text variant="muted" className="text-xs">
-            {seat.runs} {seat.runs === 1 ? "run" : "runs"}
+            {pluralize(seat.runs, "run")}
           </Text>
         </View>
       ))}

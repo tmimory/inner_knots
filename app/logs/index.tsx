@@ -13,7 +13,7 @@ import { PageHeader, Scroll } from "@/components/shell";
 import { Badge, Text } from "@/components/ui";
 import { LOGS_POLL_MS, useCharacterIndex, useRuns } from "@/lib/client/use-runs";
 import type { Run } from "@/lib/domain/run";
-import { dayKey, formatDay } from "@/lib/format";
+import { dayKey, formatDay, pluralize } from "@/lib/format";
 
 type DayGroup = { key: string; label: string; runs: Run[] };
 
@@ -63,7 +63,7 @@ export default function LogsScreen() {
                 ? `the ledger could not be read: ${error}`
                 : loading && runs.length === 0
                   ? "opening the ledger…"
-                  : `${shown.length} ${shown.length === 1 ? "run" : "runs"}`}
+                  : pluralize(shown.length, "run")}
             </Text>
           </Badge>
         }

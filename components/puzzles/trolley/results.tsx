@@ -8,6 +8,7 @@ import { Button, Text } from "@/components/ui";
 import { characterDisplayName, type Character } from "@/lib/domain/character";
 import type { RosterEntry } from "@/lib/domain/run";
 import type { TrolleySummary } from "@/lib/domain/summary";
+import { countNote, pluralize } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /** The two answers, pinned to the theme's comparison pair. */
@@ -26,11 +27,6 @@ export type TrolleyResultsProps = {
   runId?: string | null;
   className?: string;
 };
-
-function errorNote(errors: number): string | undefined {
-  if (errors === 0) return undefined;
-  return errors === 1 ? "1 error" : `${errors} errors`;
-}
 
 /**
  * How the roster answered: one cluster of bars per character.
@@ -68,7 +64,7 @@ export function TrolleyResults({
         label: character ? characterDisplayName(character) : id,
         values: { track1: tally?.track1 ?? 0, track2: tally?.track2 ?? 0 },
         weights: tally?.meanWeights,
-        note: errorNote(tally?.errors ?? 0),
+        note: countNote(tally?.errors ?? 0, "error"),
         accessory: character ? (
           <Avatar shape={character.avatar.shape} color={character.avatar.color} size="sm" />
         ) : undefined,
@@ -88,7 +84,7 @@ export function TrolleyResults({
 
       <View className="flex-row flex-wrap items-center gap-md">
         <Text variant="muted">
-          {answered === 1 ? "1 decision recorded" : `${answered} decisions recorded`}
+          {`${pluralize(answered, "decision")} recorded`}
         </Text>
         <View className="flex-1" />
         {runId ? (

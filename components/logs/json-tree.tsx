@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Pressable, View } from "react-native";
 
 import { Text } from "@/components/ui";
-import { truncate } from "@/lib/format";
+import { pluralize, truncate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /** Beyond this a string is shown shortened until the reader asks for the rest. */
@@ -28,7 +28,7 @@ function branchOf(value: unknown): Branch | undefined {
 function summaryOf(branch: Branch): string {
   const count = branch.entries.length;
   if (branch.open === "[") return `[ ${count} ]`;
-  return count === 1 ? "{ 1 key }" : `{ ${count} keys }`;
+  return `{ ${pluralize(count, "key")} }`;
 }
 
 /** A primitive as source text: strings quoted, everything else as JSON writes it. */

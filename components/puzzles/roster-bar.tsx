@@ -1,3 +1,4 @@
+import { Link } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 
@@ -14,6 +15,7 @@ import {
   Text,
 } from "@/components/ui";
 import { characterDisplayName, RUN_LIMITS, type Character, type RosterEntry } from "@/lib/domain";
+import { pluralize } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export type { RosterEntry };
@@ -155,6 +157,25 @@ function EmptySlot({
 }
 
 /**
+ * What there is to say when the roster screen is empty: there is no cast to seat
+ * until a character exists, so the bar sends the user to make one rather than
+ * offering three empty slots that cannot be filled. Every puzzle screen showed
+ * this itself; the bar owns it now, which is why it knows about routing.
+ */
+function NoCharacters() {
+  return (
+    <View className="flex-row flex-wrap items-center gap-sm">
+      <Text variant="muted">No characters yet.</Text>
+      <Link href="/characters" asChild>
+        <Button variant="secondary" size="sm">
+          <Text>Make one</Text>
+        </Button>
+      </Link>
+    </View>
+  );
+}
+
+/**
  * The cast of a run: who answers this puzzle, and how many times each.
  *
  * Every puzzle screen uses this one bar, so a roster means the same thing on all
@@ -216,6 +237,14 @@ export function RosterBar({
     setPicking(index);
   }
 
+  if (characters.length === 0) {
+    return (
+      <View className={className}>
+        <NoCharacters />
+      </View>
+    );
+  }
+
   return (
     <View className={cn("gap-sm", className)}>
       <View className="flex-row flex-wrap items-start gap-lg">
@@ -252,7 +281,7 @@ export function RosterBar({
       </View>
 
       <Text variant="muted">
-        {`${value.length} of ${max} ${max === 1 ? "seat" : "seats"} filled`}
+        {`${value.length} of ${pluralize(max, "seat")} filled`}
       </Text>
 
       <Dialog open={picking !== null} onOpenChange={(open) => setPicking(open ? picking : null)}>

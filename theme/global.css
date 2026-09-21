@@ -32,6 +32,8 @@
     --font-body: "CormorantGaramond_400Regular", 'Cormorant Garamond', Garamond, Georgia, serif;
     --font-greek: "GFSNeohellenic_400Regular", 'GFS Neohellenic', 'Cormorant Garamond', Georgia, serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    /* easing */
+    --easing-standard: cubic-bezier(0.65, 0, 0.35, 1);
     /* font-size */
     --font-size-xs: 12px;
     --font-size-sm: 14px;

@@ -1,12 +1,13 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { Pressable, View, useWindowDimensions } from "react-native";
+import { Pressable, View } from "react-native";
 
 import { AdventureBuilder } from "@/components/flow";
 import { NodeEditor, issueBadge, splitIssues } from "@/components/puzzles/adventure";
 import { PageHeader, Scroll } from "@/components/shell";
 import { Badge, Button, Input, Separator, Text, Textarea } from "@/components/ui";
 import { useAdventure } from "@/lib/client/use-adventures";
+import { useWideViewport } from "@/lib/client/use-viewport";
 import {
   ADVENTURE_LIMITS,
   validateAdventure,
@@ -19,7 +20,7 @@ import {
   adventureNodeHeight,
   layoutAdventure,
 } from "@/lib/puzzles/adventure/layout";
-import { durations, layout } from "@/theme";
+import { durations } from "@/theme";
 
 /** How long the builder waits after the last edit before writing the draft back. */
 const AUTOSAVE_DELAY_MS = durations.slow * 4;
@@ -61,8 +62,7 @@ function IssueRow({
 export default function AdventureBuilderScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { width } = useWindowDimensions();
-  const wide = width >= layout.wideBreakpoint;
+  const wide = useWideViewport();
 
   const { draft, setDraft, loading, error, saving, dirty, save } = useAdventure(id ?? null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useMemo } from "react";
-import { View, useWindowDimensions } from "react-native";
+import { View } from "react-native";
 
 import { Text } from "@/components/ui";
 import {
@@ -8,9 +8,10 @@ import {
   type HistogramGroupInput,
   type HistogramSeries,
 } from "@/lib/charts/histogram";
+import { useSideBySide } from "@/lib/client/use-viewport";
 import { formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { layout, useTheme, type Theme } from "@/theme";
+import { useTheme, type Theme } from "@/theme";
 
 /** The token a series is drawn with. Two tracks, then a spread for the rest. */
 export type SeriesColorKey = "track1" | "track2" | "secondary" | "accent" | "primary" | "mutedForeground";
@@ -78,12 +79,12 @@ export function Histogram({
   className,
 }: HistogramProps) {
   const theme = useTheme();
-  const { width } = useWindowDimensions();
   const { rows, empty } = useMemo(() => buildHistogram(series, groups), [series, groups]);
   const colors = series.map((spec, index) => colorFor(theme, spec, index));
   // Every bar still scales against the longest bar in the whole chart, so the
   // columns compare against each other rather than each filling its own.
-  const columns = sideBySide && width >= layout.wideBreakpoint && rows.length > 1;
+  const wideEnough = useSideBySide(rows.length);
+  const columns = sideBySide && wideEnough;
 
   return (
     <View className={cn("gap-lg", className)}>

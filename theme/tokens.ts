@@ -2,13 +2,15 @@
  * The single source of truth for every design value in inner_knots.
  *
  * Nothing else in the codebase may contain a literal color, font family, radius,
- * shadow, spacing step, duration or z-index. Consumers get these values through:
+ * shadow, spacing step, duration, easing curve or z-index. Consumers get these
+ * values through:
  *
  *  - Tailwind / NativeWind classes  -> `theme/tailwind-tokens.cjs` (generated)
  *  - Web CSS variables              -> `theme/global.css` (generated)
  *  - Native CSS variables           -> `vars()` in `theme/index.ts`
  *  - Raw values in JS (SVG fills,
- *    React Flow styles, charts)     -> `useTheme()` in `theme/index.ts`
+ *    React Flow styles, charts,
+ *    easing curves)                 -> `useTheme()` in `theme/index.ts`
  *
  * Regenerate the derived files with `npm run theme:css` (also run by `predev`).
  *
@@ -198,6 +200,19 @@ export const durations = {
   slow: 360,
 } as const;
 
+/**
+ * Motion curves, as cubic-bezier control points.
+ *
+ * Stored as plain numbers rather than a `cubic-bezier(...)` string or a Reanimated
+ * `Easing` value so this file stays importable by the Node CSS generator and by
+ * native alike: the web build spells them into `--easing-standard`, and
+ * `Easing.bezier(...theme.easings.standard)` spells them into a native animation.
+ */
+export const easings = {
+  /** Ease-in-out cubic: the app's one curve for anything that moves. */
+  standard: [0.65, 0, 0.35, 1],
+} as const;
+
 /** Stacking layers. */
 export const zIndex = {
   base: 0,
@@ -355,6 +370,7 @@ export type Theme = {
   shadows: typeof shadows;
   opacities: typeof opacities;
   durations: typeof durations;
+  easings: typeof easings;
   zIndex: typeof zIndex;
   borderWidths: typeof borderWidths;
   fontSizes: typeof fontSizes;
@@ -375,6 +391,7 @@ function buildTheme(name: ThemeName): Theme {
     shadows,
     opacities,
     durations,
+    easings,
     zIndex,
     borderWidths,
     fontSizes,

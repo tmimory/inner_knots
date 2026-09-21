@@ -1,5 +1,5 @@
 /**
- * Display formatting: durations, clock times, day headings, percentages.
+ * Display formatting: durations, clock times, day headings, percentages, counts.
  *
  * Every screen that shows a timestamp or an elapsed time renders it the same way
  * because the rules live here rather than beside each caller. Nothing in this
@@ -116,4 +116,21 @@ export function formatPercent(value: number, fractionDigits = 0): string {
 export function truncate(text: string, max: number): string {
   if (max <= 0) return "";
   return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
+}
+
+/**
+ * `3 nodes`, `1 node`. The plural defaults to the singular plus `s`, which covers
+ * every noun this app counts; pass one when it does not (`ending` / `endings` is
+ * regular, `person` / `people` would not be).
+ */
+export function pluralize(count: number, singular: string, plural?: string): string {
+  return `${count} ${count === 1 ? singular : (plural ?? `${singular}s`)}`;
+}
+
+/**
+ * `pluralize`, but silent at zero: the aside that reads "2 errors" beside a bar
+ * should not read "0 errors" when nothing went wrong.
+ */
+export function countNote(count: number, singular: string, plural?: string): string | undefined {
+  return count === 0 ? undefined : pluralize(count, singular, plural);
 }

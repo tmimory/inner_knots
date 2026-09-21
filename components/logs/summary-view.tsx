@@ -10,7 +10,7 @@ import {
   type PrisonersDilemmaSummary,
   type TrolleySummary,
 } from "@/lib/domain/summary";
-import { formatPercent } from "@/lib/format";
+import { formatPercent, pluralize } from "@/lib/format";
 
 import { JsonTree } from "./json-tree";
 import { CharacterFace, nameOf } from "./roster-avatars";
@@ -69,7 +69,7 @@ export function summaryLine(run: Run): string | undefined {
     case "adventure": {
       const paths = summary.paths.length;
       const endings = endingsOf(summary);
-      return `${paths} ${paths === 1 ? "path" : "paths"}, ${endings} ${endings === 1 ? "ending" : "endings"}`;
+      return `${pluralize(paths, "path")}, ${pluralize(endings, "ending")}`;
     }
   }
 }

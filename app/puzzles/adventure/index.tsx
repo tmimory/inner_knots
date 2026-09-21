@@ -16,8 +16,9 @@ import {
 } from "@/components/ui";
 import { describeApiError } from "@/lib/client/errors";
 import { useAdventures } from "@/lib/client/use-adventures";
+import { usePendingDelete } from "@/lib/client/use-pending-delete";
 import { validateAdventure, type Adventure } from "@/lib/domain/adventure";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, pluralize } from "@/lib/format";
 import { starterAdventure } from "@/lib/puzzles/adventure/edits";
 
 /** One saved tree: what it is called, how big it is, and whether it would run. */
@@ -51,7 +52,7 @@ function AdventureCard({
           </Badge>
         </View>
         <Text variant="muted">
-          {`${nodes} ${nodes === 1 ? "node" : "nodes"} · edited ${formatDateTime(adventure.updatedAt)}`}
+          {`${pluralize(nodes, "node")} · edited ${formatDateTime(adventure.updatedAt)}`}
         </Text>
       </CardHeader>
       <CardContent className="flex-row flex-wrap gap-sm">
@@ -78,7 +79,7 @@ export default function AdventureListScreen() {
 
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState<Adventure | null>(null);
+  const deleting = usePendingDelete<Adventure>();
 
   function openBuilder(id: string) {
     router.push({ pathname: "/puzzles/adventure/[id]", params: { id } });
@@ -166,29 +167,25 @@ export default function AdventureListScreen() {
                 await duplicate(adventure);
               })
             }
-            onDelete={() => setDeleting(adventure)}
+            onDelete={() => deleting.request(adventure)}
           />
         ))}
       </View>
 
       <ConfirmDialog
-        open={deleting !== null}
-        onOpenChange={(open) => setDeleting(open ? deleting : null)}
+        open={deleting.open}
+        onOpenChange={deleting.onOpenChange}
         title="Delete this adventure?"
         description={
-          deleting
-            ? `“${deleting.name}” and its ${deleting.nodes.length} nodes go for good. Runs already recorded keep their own copy of the configuration.`
+          deleting.target
+            ? `“${deleting.target.name}” and its ${deleting.target.nodes.length} nodes go for good. Runs already recorded keep their own copy of the configuration.`
             : undefined
         }
         confirmLabel="Delete"
         cancelLabel="Keep it"
         destructive
         loading={busy}
-        onConfirm={() => {
-          const target = deleting;
-          setDeleting(null);
-          if (target) void act(() => remove(target.id));
-        }}
+        onConfirm={() => deleting.confirm((target) => void act(() => remove(target.id)))}
       />
     </View>
   );

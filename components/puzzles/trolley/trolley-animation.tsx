@@ -130,7 +130,7 @@ export function TrolleyAnimation({ decisions, characters, width }: TrolleyAnimat
       progress.value = 0;
       progress.value = reduceMotion
         ? 1
-        : withTiming(1, { duration: runMs, easing: Easing.inOut(Easing.cubic) });
+        : withTiming(1, { duration: runMs, easing: Easing.bezier(...theme.easings.standard) });
     }
 
     const timer = setTimeout(

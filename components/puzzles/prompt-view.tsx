@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ScrollView, View, useWindowDimensions } from "react-native";
+import { ScrollView, View } from "react-native";
 
 import {
   Badge,
@@ -12,9 +12,9 @@ import {
   Separator,
   Text,
 } from "@/components/ui";
+import { useSideBySide } from "@/lib/client/use-viewport";
 import type { PromptOption } from "@/lib/puzzles/types";
 import { cn } from "@/lib/utils";
-import { layout } from "@/theme";
 
 /** One composed prompt. The dilemma needs two of these; the other puzzles, one. */
 export type PromptPanel = {
@@ -102,8 +102,7 @@ export function PromptView({
   loading = false,
   error = null,
 }: PromptViewProps) {
-  const { width } = useWindowDimensions();
-  const sideBySide = width >= layout.wideBreakpoint && panels.length > 1;
+  const sideBySide = useSideBySide(panels.length);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

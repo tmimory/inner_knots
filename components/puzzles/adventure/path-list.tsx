@@ -5,7 +5,7 @@ import { Badge, Separator, Text } from "@/components/ui";
 import { characterDisplayName, type Character } from "@/lib/domain/character";
 import type { Adventure } from "@/lib/domain/adventure";
 import type { AdventurePathSummary, AdventureStepSummary } from "@/lib/domain/summary";
-import { formatDuration, formatPercent, truncate } from "@/lib/format";
+import { formatDuration, formatPercent, pluralize, truncate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /** How much of a node's question or an outcome a row shows before it trails off. */
@@ -138,7 +138,7 @@ export function PathList({ adventure, paths, characters, selected, onSelect }: P
                 {`#${path.iteration}`}
               </Text>
               <Text variant="muted">
-                {`${path.steps.length} ${path.steps.length === 1 ? "step" : "steps"}`}
+                {pluralize(path.steps.length, "step")}
               </Text>
               <Badge variant={badge.variant}>
                 <Text>{badge.label}</Text>

@@ -18,6 +18,7 @@ import { hexToRgbChannels, kebab } from "../theme/color.ts";
 import {
   borderWidths,
   durations,
+  easings,
   fontFallbacks,
   fontSizes,
   fonts,
@@ -39,6 +40,7 @@ const cssVarNames = {
   color: (key) => `--color-${kebab(key)}`,
   shadow: (key) => `--shadow-${kebab(key)}`,
   font: (key) => `--font-${kebab(key)}`,
+  easing: (key) => `--easing-${kebab(key)}`,
   scalar: (prefix, key) => `--${prefix}-${kebab(key)}`,
 };
 
@@ -55,6 +57,12 @@ function staticBlock(indent = "  ") {
     const family = fonts[key];
     const value = key === "mono" ? stack : `"${family}", ${stack}`;
     lines.push(`${indent}${cssVarNames.font(key)}: ${value};`);
+  }
+
+  // Easings are tuples rather than scalars, so they get their own pass.
+  lines.push(`${indent}/* easing */`);
+  for (const [key, points] of Object.entries(easings)) {
+    lines.push(`${indent}${cssVarNames.easing(key)}: cubic-bezier(${points.join(", ")});`);
   }
 
   // Every scalar category comes from the one registry in theme/tokens.ts, which
@@ -182,6 +190,11 @@ ${Object.entries(opacities)
   transitionDuration: {
 ${Object.entries(durations)
   .map(([key, value]) => `    "${key}": "${value}ms",`)
+  .join("\n")}
+  },
+  transitionTimingFunction: {
+${Object.keys(easings)
+  .map((key) => `    "${kebab(key)}": "var(${cssVarNames.easing(key)})",`)
   .join("\n")}
   },
   zIndex: {
