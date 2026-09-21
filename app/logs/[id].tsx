@@ -23,7 +23,6 @@ import {
   useObjectIndex,
   useRunDetail,
 } from "@/lib/client/use-runs";
-import { useWideViewport } from "@/lib/client/use-viewport";
 import { errorMessage } from "@/lib/errors";
 import { formatDateTime, formatElapsed } from "@/lib/format";
 
@@ -44,7 +43,6 @@ function Stat({ label, value }: { label: string; value: string }) {
 export default function RunDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const runId = typeof params.id === "string" ? params.id : "";
-  const wide = useWideViewport();
   const { toast } = useToast();
 
   const { run, spans, logs, loading, error, refresh } = useRunDetail(runId, { pollMs: LOGS_POLL_MS });
@@ -167,7 +165,7 @@ export default function RunDetailScreen() {
         </TabsContent>
 
         <TabsContent value="spans">
-          <View className={wide ? "flex-row items-start gap-lg" : "gap-lg"}>
+          <View className="gap-lg wide:flex-row wide:items-start">
             <View className="flex-1">
               <Scroll>
                 <SpanTree

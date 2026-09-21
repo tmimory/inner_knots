@@ -7,7 +7,6 @@ import { NodeEditor, issueBadge, splitIssues } from "@/components/puzzles/advent
 import { PageHeader, Scroll } from "@/components/shell";
 import { Badge, Button, Input, Separator, Text, Textarea } from "@/components/ui";
 import { useAdventure } from "@/lib/client/use-adventures";
-import { useWideViewport } from "@/lib/client/use-viewport";
 import {
   ADVENTURE_LIMITS,
   validateAdventure,
@@ -62,7 +61,6 @@ function IssueRow({
 export default function AdventureBuilderScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const wide = useWideViewport();
 
   const { draft, setDraft, loading, error, saving, dirty, save } = useAdventure(id ?? null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -198,7 +196,7 @@ export default function AdventureBuilderScreen() {
         </Text>
       ) : null}
 
-      <View className={wide ? "flex-row items-start gap-lg" : "gap-lg"}>
+      <View className="gap-lg wide:flex-row wide:items-start">
         <View className="flex-1">
           <AdventureBuilder
             adventure={draft}
@@ -213,7 +211,7 @@ export default function AdventureBuilderScreen() {
           </Text>
         </View>
 
-        <Scroll className={wide ? "w-inspector" : "w-full"} ornament={false}>
+        <Scroll className="w-full wide:w-inspector" ornament={false}>
           <Text variant="h3">The tree</Text>
           <Input
             maxLength={ADVENTURE_LIMITS.name}

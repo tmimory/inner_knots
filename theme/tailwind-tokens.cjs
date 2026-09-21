@@ -62,6 +62,11 @@ module.exports = {
     "hairline": "1px",
     "thick": "2px",
   },
+  screens: {
+    // The one breakpoint, as CSS: layout that only depends on width uses `wide:`
+    // classes so the server-rendered HTML is right before any JS measures the window.
+    "wide": "900px",
+  },
   maxWidth: {
     "menu": "264px",
     "content": "1120px",

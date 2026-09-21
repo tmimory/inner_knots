@@ -156,6 +156,11 @@ ${fontSizeEntries}
   spacing: {
 ${px(sizes)}
   },
+  screens: {
+    // The one breakpoint, as CSS: layout that only depends on width uses \`wide:\`
+    // classes so the server-rendered HTML is right before any JS measures the window.
+    "wide": "${layout.wideBreakpoint}px",
+  },
   maxWidth: {
 ${px(layout)}
   },

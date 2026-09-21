@@ -22,15 +22,15 @@ across the top, then snaps back into the left column.
   hamburger header first and switches to the column once the client hydrates.
 
 **Fix.**
-- [ ] `LeftMenu`: move `onPress={onNavigate}` from `Link` onto the `Pressable` child, so
+- [x] `LeftMenu`: move `onPress={onNavigate}` from `Link` onto the `Pressable` child, so
       Radix `Slot` composes it with the navigation handler instead of replacing it.
-- [ ] Breakpoint as CSS: the theme generator emits `screens.wide` from
+- [x] Breakpoint as CSS: the theme generator emits `screens.wide` from
       `layout.wideBreakpoint`; `AppShell` renders the menu column `hidden wide:flex` and
       the narrow header `wide:hidden`, so the SSR HTML is right at any width with no JS.
-- [ ] The two screens that toggle classes on `useWideViewport()` for pure layout
+- [x] The two screens that toggle classes on `useWideViewport()` for pure layout
       (`app/logs/[id].tsx`, `app/puzzles/adventure/[id].tsx`) use `wide:` classes instead.
       `useSideBySide` stays: it depends on a count, not only on width.
-- [ ] Verified in headless Chromium: one `load` event per session, no hamburger frame on
+- [x] Verified in headless Chromium: one `load` event per session, no hamburger frame on
       any menu click, and the SSR HTML for a wide viewport shows no hamburger.
 
 ## 2. The loops
@@ -81,8 +81,8 @@ badges keep their width.
 "An empty roster", "Back to the roster"), which says rosters are edited there. They are
 not: each puzzle page seats its own roster from the characters that exist.
 
-- [ ] Characters screens, their hooks and comments, and the README say "characters";
+- [x] Characters screens, their hooks and comments, and the README say "characters";
       "roster" is reserved for the cast a puzzle page seats.
-- [ ] The Characters screen says in one line that rosters are built on the puzzle pages.
+- [x] The Characters screen says in one line that rosters are built on the puzzle pages.
 
 ## Done

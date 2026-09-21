@@ -33,11 +33,16 @@ function MenuLink({
   const pathname = usePathname();
   const active = isActive(pathname, item.match);
 
+  // `onPress` goes on the child, never on `Link`: expo-router spreads its own props
+  // before `...rest`, so an `onPress` handed to `Link` (even `undefined`) replaces the
+  // navigation handler and the anchor falls back to a full document load. On the child,
+  // Radix `Slot` composes the two handlers instead.
   return (
-    <Link href={item.href} asChild onPress={onNavigate}>
+    <Link href={item.href} asChild>
       <Pressable
         role="link"
         aria-current={active ? "page" : undefined}
+        onPress={onNavigate}
         className={cn(rowClasses(active), nested && "ml-md")}
       >
         <Text

@@ -10,7 +10,13 @@ import { useWindowDimensions } from "react-native";
 
 import { layout } from "@/theme";
 
-/** True at and above the breakpoint where a fixed column beats a drawer. */
+/**
+ * True at and above the breakpoint where a fixed column beats a drawer.
+ *
+ * Pure layout does not use this: a `wide:` class is right in the server-rendered HTML,
+ * while this hook reads 0 on the server and so costs a hydration repaint. Reach for it
+ * only when the decision depends on more than the width — see `useSideBySide`.
+ */
 export function useWideViewport(): boolean {
   const { width } = useWindowDimensions();
   return width >= layout.wideBreakpoint;
