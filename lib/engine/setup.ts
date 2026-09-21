@@ -12,7 +12,7 @@
  */
 import { validateAdventure, type Adventure, type AdventureIssue } from "@/lib/domain/adventure";
 import type { Character } from "@/lib/domain/character";
-import type { RunConfig } from "@/lib/domain/run";
+import type { RosterEntry, RunConfig } from "@/lib/domain/run";
 import { buildCatalogue } from "@/lib/puzzles/trolley/catalogue";
 import type { TrackItem } from "@/lib/puzzles/trolley/prompt";
 import { adventures, characters as charactersStore, trolleyObjects } from "@/lib/storage/collections";
@@ -69,6 +69,21 @@ function required<T>(byId: Map<string, T>, id: string): T {
   return value;
 }
 
+/**
+ * The roster of a puzzle that has one, with each entry's character resolved and
+ * the run's `total` decided: a roster run is Σ of its per-character run counts.
+ */
+async function resolveRoster(
+  entries: readonly RosterEntry[],
+): Promise<{ roster: RosterMember[]; total: number }> {
+  const byId = await resolveCharacters(entries.map((entry) => entry.characterId));
+  const roster = entries.map((entry) => ({
+    character: required(byId, entry.characterId),
+    runs: entry.runs,
+  }));
+  return { roster, total: roster.reduce((sum, entry) => sum + entry.runs, 0) };
+}
+
 /** Characters by id, or a `RunSetupError` naming every id that is not in the store. */
 async function resolveCharacters(ids: readonly string[]): Promise<Map<string, Character>> {
   const byId = new Map((await charactersStore.list()).map((character) => [character.id, character]));
@@ -107,11 +122,7 @@ export async function resolveTrolleyObjects(
 export async function prepareRun(config: RunConfig): Promise<RunPlan> {
   switch (config.puzzle) {
     case "trolley": {
-      const byId = await resolveCharacters(config.roster.map((entry) => entry.characterId));
-      const roster = config.roster.map((entry) => ({
-        character: required(byId, entry.characterId),
-        runs: entry.runs,
-      }));
+      const { roster, total } = await resolveRoster(config.roster);
       const [track1, track2] = await Promise.all([
         resolveTrolleyObjects(config.track1),
         resolveTrolleyObjects(config.track2),
@@ -119,7 +130,6 @@ export async function prepareRun(config: RunConfig): Promise<RunPlan> {
       if (track1.length === 0 && track2.length === 0) {
         throw new RunSetupError("Put something on at least one track before running.");
       }
-      const total = roster.reduce((sum, entry) => sum + entry.runs, 0);
       return { puzzle: "trolley", config, total, roster, track1, track2 };
     }
 
@@ -135,11 +145,8 @@ export async function prepareRun(config: RunConfig): Promise<RunPlan> {
     }
 
     case "adventure": {
-      const byId = await resolveCharacters(config.roster.map((entry) => entry.characterId));
-      const roster = config.roster.map((entry) => ({
-        character: required(byId, entry.characterId),
-        runs: entry.runs,
-      }));
+      // A walk is the unit of progress here, however many nodes it turns out to visit.
+      const { roster, total } = await resolveRoster(config.roster);
       const adventure = await adventures.get(config.adventureId);
       if (!adventure) {
         throw new RunSetupError(`No adventure with id "${config.adventureId}".`);
@@ -152,7 +159,6 @@ export async function prepareRun(config: RunConfig): Promise<RunPlan> {
           `The adventure cannot be run yet: ${blocking.map((issue) => issue.message).join(" ")}`,
         );
       }
-      const total = roster.reduce((sum, entry) => sum + entry.runs, 0);
       return { puzzle: "adventure", config, total, roster, adventure };
     }
   }

@@ -165,6 +165,39 @@ export function parseRunSummary(value: unknown): RunSummary | undefined {
   return parsed.success ? parsed.data : undefined;
 }
 
+/** What both per-choice tallies count: one answer, or the reason there was none. */
+export type ChoiceRecord<C extends string> = {
+  choice?: C;
+  weights?: Record<string, number>;
+  error?: string;
+};
+
+/**
+ * Counts answers per choice, plus the failures and the mean reported weights.
+ *
+ * It works for the trolley and the dilemma because both tallies name their fields
+ * after the choices themselves (`track1`/`track2`, `testify`/`silent`). An
+ * adventure tally counts whole walks rather than choices, so it does not come
+ * through here.
+ */
+export function tallyChoices<C extends string>(
+  records: readonly ChoiceRecord<C>[],
+  choices: readonly C[],
+): Record<C, number> & { errors: number; meanWeights?: Record<C, number> } {
+  const counts = {} as Record<C, number>;
+  for (const choice of choices) {
+    counts[choice] = records.filter((record) => record.choice === choice).length;
+  }
+  return {
+    ...counts,
+    errors: records.filter((record) => record.error !== undefined).length,
+    meanWeights: meanOf(
+      records.map((record) => record.weights),
+      choices,
+    ),
+  };
+}
+
 /** The arithmetic mean of each key, over the records that carry it. */
 export function meanOf<K extends string>(
   records: readonly (Record<string, number> | undefined)[],

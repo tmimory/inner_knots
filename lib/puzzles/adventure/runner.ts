@@ -15,7 +15,7 @@ import type { AdventureSummary } from "@/lib/domain/summary";
 import { collectDecision } from "@/lib/engine/decide";
 import { mergePool, type Source } from "@/lib/engine/pool";
 import type { AdventurePlan } from "@/lib/engine/setup";
-import type { PuzzleRunner, RunnerContext } from "@/lib/engine/types";
+import { characterIterationPath, type PuzzleRunner, type RunnerContext } from "@/lib/engine/types";
 
 import { buildAdventurePrompt, type AdventureStep } from "./prompt";
 import { emptySummary, reduce, type AdventureDecisionEvent, type AdventureEventData } from "./summary";
@@ -43,15 +43,7 @@ export function createAdventureRunner(plan: AdventurePlan): PuzzleRunner<Adventu
               iteration,
             });
 
-            const path = [
-              { key: character.id, name: "character" as const, characterId: character.id },
-              {
-                key: String(iteration),
-                name: "iteration" as const,
-                characterId: character.id,
-                iteration,
-              },
-            ];
+            const path = characterIterationPath(character.id, iteration);
 
             const history: AdventureStep[] = [];
             let nodeId: string = plan.adventure.startNodeId;

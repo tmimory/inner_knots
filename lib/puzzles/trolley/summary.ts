@@ -10,7 +10,7 @@
 import type { TrolleyConfig } from "@/lib/domain/run";
 import {
   TROLLEY_CHOICES,
-  meanOf,
+  tallyChoices,
   type TrolleyCharacterTally,
   type TrolleyChoice,
   type TrolleyDecisionSummary,
@@ -40,19 +40,6 @@ export function emptySummary(config: Pick<TrolleyConfig, "roster">): TrolleySumm
   return { kind: "trolley", decisions: [], perCharacter };
 }
 
-/** Counts one character's decisions out of the whole list. */
-function tally(decisions: readonly TrolleyDecisionSummary[]): TrolleyCharacterTally {
-  return {
-    track1: decisions.filter((decision) => decision.choice === "track1").length,
-    track2: decisions.filter((decision) => decision.choice === "track2").length,
-    errors: decisions.filter((decision) => decision.error !== undefined).length,
-    meanWeights: meanOf(
-      decisions.map((decision) => decision.weights),
-      TROLLEY_CHOICES,
-    ),
-  };
-}
-
 /** Adds one finished decision to the summary. */
 export function reduce(summary: TrolleySummary, event: TrolleyDecisionEvent): TrolleySummary {
   const { characterId, iteration } = event.data;
@@ -74,7 +61,10 @@ export function reduce(summary: TrolleySummary, event: TrolleyDecisionEvent): Tr
     decisions,
     perCharacter: {
       ...summary.perCharacter,
-      [characterId]: tally(decisions.filter((entry) => entry.characterId === characterId)),
+      [characterId]: tallyChoices(
+        decisions.filter((entry) => entry.characterId === characterId),
+        TROLLEY_CHOICES,
+      ),
     },
   };
 }

@@ -26,6 +26,17 @@ export type SpanPathSegment = {
   nodeId?: string;
 };
 
+/**
+ * The span chain shared by every puzzle that runs a character a number of times:
+ * the character, then the iteration. An adventure appends its node segment to it.
+ */
+export function characterIterationPath(characterId: string, iteration: number): SpanPathSegment[] {
+  return [
+    { key: characterId, name: "character", characterId },
+    { key: String(iteration), name: "iteration", characterId, iteration },
+  ];
+}
+
 /** One finished decision, with everything needed to record it. */
 export type DecisionEvent<TData> = {
   /** Span chain under the run span; the last segment holds the decision. */

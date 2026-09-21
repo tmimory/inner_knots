@@ -10,7 +10,7 @@
  */
 import {
   PRISONERS_DILEMMA_CHOICES,
-  meanOf,
+  tallyChoices,
   type PlayerDecisionSummary,
   type PlayerTally,
   type PrisonersDilemmaChoice,
@@ -58,18 +58,6 @@ export function emptySummary(): PrisonersDilemmaSummary {
 /** Every round played so far, across every game. */
 function allRounds(games: readonly PrisonersDilemmaGame[]) {
   return games.flatMap((game) => game.rounds);
-}
-
-function tally(decisions: readonly PlayerDecisionSummary[]): PlayerTally {
-  return {
-    testify: decisions.filter((decision) => decision.choice === "testify").length,
-    silent: decisions.filter((decision) => decision.choice === "silent").length,
-    errors: decisions.filter((decision) => decision.error !== undefined).length,
-    meanWeights: meanOf(
-      decisions.map((decision) => decision.weights),
-      PRISONERS_DILEMMA_CHOICES,
-    ),
-  };
 }
 
 /** How the rounds came out. A round missing either answer counts as incomplete. */
@@ -143,8 +131,8 @@ export function reduce(
     ...summary,
     games,
     perPlayer: {
-      a: tally(rounds.map((round) => round.a)),
-      b: tally(rounds.map((round) => round.b)),
+      a: tallyChoices(rounds.map((round) => round.a), PRISONERS_DILEMMA_CHOICES),
+      b: tallyChoices(rounds.map((round) => round.b), PRISONERS_DILEMMA_CHOICES),
     },
     outcomes: outcomesOf(games),
   };

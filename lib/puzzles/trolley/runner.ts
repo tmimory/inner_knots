@@ -12,7 +12,7 @@ import type { TrolleySummary } from "@/lib/domain/summary";
 import { collectDecision } from "@/lib/engine/decide";
 import { mergePool, type Source } from "@/lib/engine/pool";
 import type { TrolleyPlan } from "@/lib/engine/setup";
-import type { PuzzleRunner, RunnerContext } from "@/lib/engine/types";
+import { characterIterationPath, type PuzzleRunner, type RunnerContext } from "@/lib/engine/types";
 
 import { buildTrolleyPrompt } from "./prompt";
 import { emptySummary, reduce, type TrolleyDecisionEvent, type TrolleyEventData } from "./summary";
@@ -65,15 +65,7 @@ export function createTrolleyRunner(plan: TrolleyPlan): PuzzleRunner<TrolleyEven
             });
 
             yield {
-              path: [
-                { key: character.id, name: "character", characterId: character.id },
-                {
-                  key: String(iteration),
-                  name: "iteration",
-                  characterId: character.id,
-                  iteration,
-                },
-              ],
+              path: characterIterationPath(character.id, iteration),
               calls: outcome.calls,
               decision: outcome.record,
               error: outcome.error,
