@@ -172,8 +172,7 @@ export function TrolleyAnimation({ decisions, characters, width }: TrolleyAnimat
   return (
     <>
       <Animated.View
-        style={[{ position: "absolute", left: 0, top: 0 }, style]}
-        pointerEvents="none"
+        style={[{ position: "absolute", left: 0, top: 0, pointerEvents: "none" }, style]}
         accessibilityElementsHidden
       >
         <TrolleyGlyph theme={theme} />
@@ -181,8 +180,7 @@ export function TrolleyAnimation({ decisions, characters, width }: TrolleyAnimat
 
       {caption ? (
         <View
-          style={{ position: "absolute", left: 0, right: 0, top: 0 }}
-          pointerEvents="none"
+          style={{ position: "absolute", left: 0, right: 0, top: 0, pointerEvents: "none" }}
           className="flex-row items-center justify-center gap-sm p-xs"
         >
           {character ? (
