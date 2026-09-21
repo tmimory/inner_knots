@@ -2,7 +2,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { View } from "react-native";
 
 import { CharacterForm } from "@/components/characters";
-import { PageHeader, Scroll } from "@/components/shell";
+import { Screen, Scroll } from "@/components/shell";
 import { Badge, Button, Text, useToast } from "@/components/ui";
 import { useCharacters } from "@/lib/client/use-characters";
 import { characterDisplayName, type CharacterInput } from "@/lib/domain";
@@ -30,19 +30,17 @@ export default function EditCharacterScreen() {
   }
 
   return (
-    <View className="gap-xl">
-      <PageHeader
-        title={character ? characterDisplayName(character) : "Character"}
-        subtitle="διόρθωσις · a mask, revised"
-        right={
-          character ? (
-            <Badge variant="muted">
-              <Text>{`${character.provider} · ${character.model}`}</Text>
-            </Badge>
-          ) : null
-        }
-      />
-
+    <Screen
+      title={character ? characterDisplayName(character) : "Character"}
+      subtitle="διόρθωσις · a mask, revised"
+      right={
+        character ? (
+          <Badge variant="muted">
+            <Text>{`${character.provider} · ${character.model}`}</Text>
+          </Badge>
+        ) : null
+      }
+    >
       {character ? (
         <CharacterForm
           character={character}
@@ -68,6 +66,6 @@ export default function EditCharacterScreen() {
           </View>
         </Scroll>
       )}
-    </View>
+    </Screen>
   );
 }

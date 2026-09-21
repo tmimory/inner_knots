@@ -86,3 +86,51 @@ not: each puzzle page seats its own roster from the characters that exist.
 - [x] The Characters screen says in one line that rosters are built on the puzzle pages.
 
 ## Done
+
+Shipped 2026-09-21, one commit per item, in the order 4, 1, 2, 3, then a critic sweep.
+
+**Rosters** (`0a496fa`). Copy and comments only. The Characters screens, their hooks
+and the README now say "characters"; the index screen opens with "Characters are made
+here; each puzzle page seats its own roster from them." Nothing in `lib/domain` or the
+puzzle screens was renamed.
+
+**Navigation flicker** (`753af8b`). Both faults confirmed in headless Chromium before
+and after: a menu click now fires one `framenavigated` and no `load`, and every 30ms
+sample for 1.5s after a click shows the menu column rendered and the hamburger not.
+`useWideViewport` stays for `useSideBySide`, which depends on a count as well as a
+width; the drawer's open state is the only layout decision still in JS.
+
+**The loops** (`8f16eee`). Retired rather than tuned. Along the way the implementer
+found that `cn()`'s tailwind-merge did not know the theme's named border widths, so it
+read `border-hairline` as a colour and let a following `border-border` delete it:
+cards, panels, chips and the old `Scroll` had never drawn the edge their source asked
+for. `lib/utils.ts` now extends tailwind-merge with `Object.keys(borderWidths)`. The
+visible consequence is that declared hairlines now draw everywhere, which is what the
+components always said they did.
+
+**Spacing** (`c577348`). The rhythm table above, applied through the primitives first
+and then audited screen by screen. Two decisions beyond the table: the page header
+stacks on narrow rather than wrapping, because the badge-and-button cluster still
+squeezed the title when it wrapped; and the Logs day heading sits `gap-md` above its
+rows because the page's `gap-xl` already separates one day from the next. `gap-xxs`
+survives only inside controls (stepper, segmented, tabs, chip rows, menu rows, the
+wordmark rule). The empty roster seat is labelled "Add" because "Add character" was
+truncating at the avatar width.
+
+**Critics.** secrets-critic: 0 findings, `.env.example` and the reads in sync both ways.
+design-token-critic: 0 findings on the diff and on the whole of `components/shell`,
+`components/ui` and `lib/utils.ts`; the `wide:` variant is backed by
+`layout.wideBreakpoint`. duplication-critic: 3 findings; see the follow-up commit.
+A visual-critic pass on the trolley screen (5.5/10) asked for things outside this
+phase: a sticky primary Run action in the header, dropping the outer panel on the
+roster and framing sections, one accent hue for selection, warm rail colours, fewer
+small caps, and five seat slots drawn in a row. Recorded here as candidates for a
+later pass, not acted on.
+
+**Duplication follow-up.** Of the three findings, two taken: the run detail's local
+`Stat` was `FieldCode` from `components/logs` under another name, and fifteen screens
+opened with the same `<View className="gap-xl"><PageHeader …/>` shell, which is why the
+spacing pass had to touch every one of them. `components/shell/screen.tsx` now owns
+that shell; `PageHeader` is used only from there. The third, a shared split-pane for
+the two screens that lay a panel beside a canvas or a tree, was left: one class string
+at two sites is thinner than the component would be.

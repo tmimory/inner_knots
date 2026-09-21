@@ -4,7 +4,7 @@ import { Pressable, View } from "react-native";
 
 import { AdventureBuilder } from "@/components/flow";
 import { NodeEditor, issueBadge, splitIssues } from "@/components/puzzles/adventure";
-import { PageHeader, Scroll } from "@/components/shell";
+import { Screen, Scroll } from "@/components/shell";
 import { Badge, Button, Input, Separator, Text, Textarea } from "@/components/ui";
 import { useAdventure } from "@/lib/client/use-adventures";
 import {
@@ -83,17 +83,12 @@ export default function AdventureBuilderScreen() {
   }, [draft, setDraft]);
 
   if (loading) {
-    return (
-      <View className="gap-xl">
-        <PageHeader title="Opening the tree" subtitle="ὁδός · branching paths, recorded" />
-      </View>
-    );
+    return <Screen title="Opening the tree" subtitle="ὁδός · branching paths, recorded" />;
   }
 
   if (!draft) {
     return (
-      <View className="gap-xl">
-        <PageHeader title="No such adventure" subtitle="ὁδός · branching paths, recorded" />
+      <Screen title="No such adventure" subtitle="ὁδός · branching paths, recorded">
         <Scroll>
           <Text variant="lead">{error ?? "That adventure is not on the shelf any more."}</Text>
           <View className="flex-row">
@@ -102,7 +97,7 @@ export default function AdventureBuilderScreen() {
             </Button>
           </View>
         </Scroll>
-      </View>
+      </Screen>
     );
   }
 
@@ -112,22 +107,20 @@ export default function AdventureBuilderScreen() {
   const selected = draft.nodes.find((node) => node.id === selectedNodeId);
 
   return (
-    <View className="gap-xl">
-      <PageHeader
-        title={draft.name}
-        subtitle="ὁδός · branching paths, recorded"
-        right={
-          <>
-            <Badge variant={badge.variant}>
-              <Text>{badge.label}</Text>
-            </Badge>
-            <Badge variant={dirty || saving ? "accent" : "muted"}>
-              <Text>{saving ? "saving…" : dirty ? "unsaved" : "saved"}</Text>
-            </Badge>
-          </>
-        }
-      />
-
+    <Screen
+      title={draft.name}
+      subtitle="ὁδός · branching paths, recorded"
+      right={
+        <>
+          <Badge variant={badge.variant}>
+            <Text>{badge.label}</Text>
+          </Badge>
+          <Badge variant={dirty || saving ? "accent" : "muted"}>
+            <Text>{saving ? "saving…" : dirty ? "unsaved" : "saved"}</Text>
+          </Badge>
+        </>
+      }
+    >
       <View className="flex-row flex-wrap items-center gap-sm">
         <Button variant="ghost" size="sm" onPress={() => router.push("/puzzles/adventure")}>
           <Text>← Shelf</Text>
@@ -244,6 +237,6 @@ export default function AdventureBuilderScreen() {
           )}
         </Scroll>
       </View>
-    </View>
+    </Screen>
   );
 }

@@ -10,7 +10,7 @@ import { View } from "react-native";
 
 import { Avatar, AVATAR_SHAPES, ColorPicker, DEFAULT_AVATAR_SHAPE, ShapePicker, resolveAvatarColor } from "@/components/avatars";
 import { OBJECT_ICON_IDS, ObjectGlyph } from "@/components/icons/objects";
-import { PageHeader, Scroll } from "@/components/shell";
+import { Screen, Scroll } from "@/components/shell";
 import { Badge, Button, Separator, Switch, Text } from "@/components/ui";
 import {
   CATALOGUE_TAGS,
@@ -47,13 +47,11 @@ export default function AssetsScreen() {
   const iconTint = tintIcons ? resolveAvatarColor(theme, color) : undefined;
 
   return (
-    <View className="gap-xl">
-      <PageHeader
-        title="Assets"
-        subtitle="ὕλη · the drawings, laid out flat"
-        right={<Badge variant="muted"><Text>dev only</Text></Badge>}
-      />
-
+    <Screen
+      title="Assets"
+      subtitle="ὕλη · the drawings, laid out flat"
+      right={<Badge variant="muted"><Text>dev only</Text></Badge>}
+    >
       <Scroll>
         <Text variant="h3">Avatars</Text>
         <Text variant="muted">
@@ -160,6 +158,6 @@ export default function AssetsScreen() {
           ))}
         </View>
       </Scroll>
-    </View>
+    </Screen>
   );
 }

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { View } from "react-native";
 
 import { issueBadge } from "@/components/puzzles/adventure";
-import { PageHeader, Scroll } from "@/components/shell";
+import { Screen, Scroll } from "@/components/shell";
 import {
   Badge,
   Button,
@@ -98,32 +98,30 @@ export default function AdventureListScreen() {
   }
 
   return (
-    <View className="gap-xl">
-      <PageHeader
-        title="Choose Your Own Adventure"
-        subtitle="ὁδός · branching paths, recorded"
-        right={
-          <>
-            <Badge variant={loading ? "muted" : "secondary"}>
-              <Text>
-                {loading ? "reading the shelf…" : `${adventures.length} on the shelf`}
-              </Text>
-            </Badge>
-            <Button
-              disabled={busy}
-              onPress={() =>
-                void act(async () => {
-                  const created = await create(starterAdventure());
-                  openBuilder(created.id);
-                })
-              }
-            >
-              <Text>New adventure</Text>
-            </Button>
-          </>
-        }
-      />
-
+    <Screen
+      title="Choose Your Own Adventure"
+      subtitle="ὁδός · branching paths, recorded"
+      right={
+        <>
+          <Badge variant={loading ? "muted" : "secondary"}>
+            <Text>
+              {loading ? "reading the shelf…" : `${adventures.length} on the shelf`}
+            </Text>
+          </Badge>
+          <Button
+            disabled={busy}
+            onPress={() =>
+              void act(async () => {
+                const created = await create(starterAdventure());
+                openBuilder(created.id);
+              })
+            }
+          >
+            <Text>New adventure</Text>
+          </Button>
+        </>
+      }
+    >
       {error ? (
         <Scroll>
           <Text variant="h3">The shelf would not open</Text>
@@ -186,6 +184,6 @@ export default function AdventureListScreen() {
         loading={busy}
         onConfirm={() => deleting.confirm((target) => void act(() => remove(target.id)))}
       />
-    </View>
+    </Screen>
   );
 }

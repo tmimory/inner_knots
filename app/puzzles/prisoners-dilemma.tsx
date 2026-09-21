@@ -9,7 +9,7 @@ import { RosterBar } from "@/components/puzzles/roster-bar";
 import { RunProgress } from "@/components/puzzles/run-progress";
 import { Section } from "@/components/puzzles/section";
 import { VariantSelect, type VariantOption } from "@/components/puzzles/variant-select";
-import { PageHeader } from "@/components/shell";
+import { Screen } from "@/components/shell";
 import { Button, Label, Slider, Switch, Text, Textarea } from "@/components/ui";
 import { previewPrisonersDilemmaPrompt } from "@/lib/client/prompts";
 import { useCharacters } from "@/lib/client/use-characters";
@@ -147,11 +147,10 @@ export default function PrisonersDilemmaScreen() {
   }
 
   return (
-    <View className="gap-xl">
-      <PageHeader
-        title="Prisoner's Dilemma"
-        subtitle="πίστις · two rooms, one bargain, and no way to check"
-      />
+    <Screen
+      title="Prisoner's Dilemma"
+      subtitle="πίστις · two rooms, one bargain, and no way to check"
+    >
       <Text variant="lead">
         Seat two characters on either side of the same bargain, tell them who the other one is,
         and see whether trust survives being worth something.
@@ -348,6 +347,6 @@ export default function PrisonersDilemmaScreen() {
         loading={prompt.loading}
         error={prompt.error}
       />
-    </View>
+    </Screen>
   );
 }

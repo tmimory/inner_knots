@@ -9,7 +9,7 @@ import {
   matchesSearch,
   type RunFilters,
 } from "@/components/logs";
-import { PageHeader, Scroll } from "@/components/shell";
+import { Screen, Scroll } from "@/components/shell";
 import { Badge, Text } from "@/components/ui";
 import { LOGS_POLL_MS, useCharacterIndex, useRuns } from "@/lib/client/use-runs";
 import type { Run } from "@/lib/domain/run";
@@ -52,23 +52,21 @@ export default function LogsScreen() {
   const narrowed = filterSummary(filters);
 
   return (
-    <View className="gap-xl">
-      <PageHeader
-        title="Logs"
-        subtitle="ὑπομνήματα · every prompt, every answer"
-        right={
-          <Badge variant={error ? "destructive" : "muted"}>
-            <Text>
-              {error
-                ? `the ledger could not be read: ${error}`
-                : loading && runs.length === 0
-                  ? "opening the ledger…"
-                  : pluralize(shown.length, "run")}
-            </Text>
-          </Badge>
-        }
-      />
-
+    <Screen
+      title="Logs"
+      subtitle="ὑπομνήματα · every prompt, every answer"
+      right={
+        <Badge variant={error ? "destructive" : "muted"}>
+          <Text>
+            {error
+              ? `the ledger could not be read: ${error}`
+              : loading && runs.length === 0
+                ? "opening the ledger…"
+                : pluralize(shown.length, "run")}
+          </Text>
+        </Badge>
+      }
+    >
       <Scroll>
         <RunFiltersBar filters={filters} characters={characters} onChange={setFilters} />
       </Scroll>
@@ -95,6 +93,6 @@ export default function LogsScreen() {
           </Text>
         </Scroll>
       ) : null}
-    </View>
+    </Screen>
   );
 }

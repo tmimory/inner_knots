@@ -10,7 +10,7 @@ import {
   OUTPUT_MODE_LABELS,
   STEERING_MODE_LABELS,
 } from "@/components/characters";
-import { PageHeader, Scroll } from "@/components/shell";
+import { Screen, Scroll } from "@/components/shell";
 import { Badge, Button, Input, Separator, Text } from "@/components/ui";
 import { useCharacters } from "@/lib/client/use-characters";
 import { useProviders } from "@/lib/client/use-providers";
@@ -61,21 +61,20 @@ export default function CharactersScreen() {
   );
 
   return (
-    <View className="gap-xl">
-      <PageHeader
-        title="Characters"
-        subtitle="πρόσωπα · the masks that will answer"
-        right={
-          <>
-            <Badge variant={loading ? "muted" : "secondary"}>
-              <Text>
-                {loading ? "reading characters…" : pluralize(characters.length, "character")}
-              </Text>
-            </Badge>
-            {newButton}
-          </>
-        }
-      />
+    <Screen
+      title="Characters"
+      subtitle="πρόσωπα · the masks that will answer"
+      right={
+        <>
+          <Badge variant={loading ? "muted" : "secondary"}>
+            <Text>
+              {loading ? "reading characters…" : pluralize(characters.length, "character")}
+            </Text>
+          </Badge>
+          {newButton}
+        </>
+      }
+    >
       <Text variant="lead">
         Characters are made here; each puzzle page seats its own roster from them.
       </Text>
@@ -156,6 +155,6 @@ export default function CharactersScreen() {
           {filtered ? null : <View className="flex-row">{newButton}</View>}
         </Scroll>
       )}
-    </View>
+    </Screen>
   );
 }

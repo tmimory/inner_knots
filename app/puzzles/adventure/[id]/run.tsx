@@ -8,7 +8,7 @@ import { PromptView } from "@/components/puzzles/prompt-view";
 import { RosterBar } from "@/components/puzzles/roster-bar";
 import { RunProgress } from "@/components/puzzles/run-progress";
 import { Section } from "@/components/puzzles/section";
-import { PageHeader, Scroll } from "@/components/shell";
+import { Screen, Scroll } from "@/components/shell";
 import { Badge, Button, Label, Switch, Text } from "@/components/ui";
 import { describeApiError } from "@/lib/client/errors";
 import { previewAdventurePrompt } from "@/lib/client/prompts";
@@ -65,8 +65,7 @@ export default function AdventureRunScreen() {
 
   if (loading || !adventure) {
     return (
-      <View className="gap-xl">
-        <PageHeader title="Opening the tree" subtitle="ὁδός · branching paths, recorded" />
+      <Screen title="Opening the tree" subtitle="ὁδός · branching paths, recorded">
         {error ? (
           <Scroll>
             <Text variant="lead">{error}</Text>
@@ -77,33 +76,31 @@ export default function AdventureRunScreen() {
             </View>
           </Scroll>
         ) : null}
-      </View>
+      </Screen>
     );
   }
 
   return (
-    <View className="gap-xl">
-      <PageHeader
-        title={adventure.name}
-        subtitle="ὁδός · branching paths, recorded"
-        right={
-          <>
-            <Badge variant={badge.variant}>
-              <Text>{badge.label}</Text>
-            </Badge>
-            <Button
-              variant="outline"
-              size="sm"
-              onPress={() =>
-                router.push({ pathname: "/puzzles/adventure/[id]", params: { id: adventure.id } })
-              }
-            >
-              <Text>Edit the tree</Text>
-            </Button>
-          </>
-        }
-      />
-
+    <Screen
+      title={adventure.name}
+      subtitle="ὁδός · branching paths, recorded"
+      right={
+        <>
+          <Badge variant={badge.variant}>
+            <Text>{badge.label}</Text>
+          </Badge>
+          <Button
+            variant="outline"
+            size="sm"
+            onPress={() =>
+              router.push({ pathname: "/puzzles/adventure/[id]", params: { id: adventure.id } })
+            }
+          >
+            <Text>Edit the tree</Text>
+          </Button>
+        </>
+      }
+    >
       <Section
         title="The cast"
         description="Who walks the tree, and how many times each of them walks it."
@@ -228,6 +225,6 @@ export default function AdventureRunScreen() {
         loading={prompt.loading}
         error={prompt.error}
       />
-    </View>
+    </Screen>
   );
 }

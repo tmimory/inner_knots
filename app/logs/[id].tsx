@@ -5,6 +5,7 @@ import { View } from "react-native";
 import {
   ConfigView,
   ExportButton,
+  FieldCode,
   LogList,
   SpanDetail,
   SpanTree,
@@ -12,7 +13,7 @@ import {
   SummaryView,
   spanDepths,
 } from "@/components/logs";
-import { PageHeader, Scroll } from "@/components/shell";
+import { Screen, Scroll } from "@/components/shell";
 import { Button, Progress, Separator, Tabs, TabsContent, TabsList, TabsTrigger, Text, useToast } from "@/components/ui";
 import { cancelRun } from "@/lib/client/runs";
 import {
@@ -25,20 +26,6 @@ import {
 } from "@/lib/client/use-runs";
 import { errorMessage } from "@/lib/errors";
 import { formatDateTime, formatElapsed } from "@/lib/format";
-
-/** A labelled figure in the run's vital-statistics row. */
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <View className="gap-xs">
-      <Text variant="muted" className="text-xs">
-        {label}
-      </Text>
-      <Text variant="small" className="font-mono">
-        {value}
-      </Text>
-    </View>
-  );
-}
 
 export default function RunDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
@@ -73,8 +60,7 @@ export default function RunDetailScreen() {
 
   if (!run) {
     return (
-      <View className="gap-xl">
-        <PageHeader title="Run" subtitle="ὑπόμνημα · one run, in full" />
+      <Screen title="Run" subtitle="ὑπόμνημα · one run, in full">
         <Scroll>
           <Text variant="lead">
             {loading ? "Reading the run…" : (error ?? `No run is recorded under "${runId}".`)}
@@ -85,35 +71,33 @@ export default function RunDetailScreen() {
             </Text>
           </Link>
         </Scroll>
-      </View>
+      </Screen>
     );
   }
 
   return (
-    <View className="gap-xl">
-      <PageHeader
-        title={run.puzzle}
-        subtitle={run.id}
-        right={
-          <>
-            <StatusBadge status={run.status} />
-            {isRunActive(run) ? (
-              <Button variant="destructive" size="sm" onPress={() => void cancel()}>
-                <Text>Cancel</Text>
-              </Button>
-            ) : null}
-            <ExportButton run={run} spans={spans} logs={logs} />
-          </>
-        }
-      />
-
+    <Screen
+      title={run.puzzle}
+      subtitle={run.id}
+      right={
+        <>
+          <StatusBadge status={run.status} />
+          {isRunActive(run) ? (
+            <Button variant="destructive" size="sm" onPress={() => void cancel()}>
+              <Text>Cancel</Text>
+            </Button>
+          ) : null}
+          <ExportButton run={run} spans={spans} logs={logs} />
+        </>
+      }
+    >
       <Scroll>
         <View className="flex-row flex-wrap items-center gap-xl">
-          <Stat label="Started" value={formatDateTime(run.startedAt)} />
-          <Stat label="Duration" value={formatElapsed(run.startedAt, run.finishedAt)} />
-          <Stat label="Progress" value={`${run.progress.done} / ${run.progress.total}`} />
-          <Stat label="Spans" value={String(spans.length)} />
-          <Stat label="Log lines" value={String(logs.length)} />
+          <FieldCode label="Started" value={formatDateTime(run.startedAt)} />
+          <FieldCode label="Duration" value={formatElapsed(run.startedAt, run.finishedAt)} />
+          <FieldCode label="Progress" value={`${run.progress.done} / ${run.progress.total}`} />
+          <FieldCode label="Spans" value={String(spans.length)} />
+          <FieldCode label="Log lines" value={String(logs.length)} />
         </View>
         {isRunActive(run) ? (
           <Progress
@@ -196,6 +180,6 @@ export default function RunDetailScreen() {
           </Scroll>
         </TabsContent>
       </Tabs>
-    </View>
+    </Screen>
   );
 }

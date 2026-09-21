@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
-import { View } from "react-native";
 
-import { PageHeader } from "@/components/shell";
+import { Screen } from "@/components/shell";
 import { PromptView } from "@/components/puzzles/prompt-view";
 import { RosterBar } from "@/components/puzzles/roster-bar";
 import { RunProgress } from "@/components/puzzles/run-progress";
@@ -219,16 +218,15 @@ export default function TrolleyScreen() {
   const total = board.roster.reduce((sum, entry) => sum + entry.runs, 0);
 
   return (
-    <View className="gap-xl">
-      <PageHeader
-        title="Trolley Problems"
-        subtitle="ἁμαξοστοιχία · the lever and the lesser evil"
-        right={
-          <Badge variant="outline">
-            <Text>{`${catalogue.items.length} objects`}</Text>
-          </Badge>
-        }
-      />
+    <Screen
+      title="Trolley Problems"
+      subtitle="ἁμαξοστοιχία · the lever and the lesser evil"
+      right={
+        <Badge variant="outline">
+          <Text>{`${catalogue.items.length} objects`}</Text>
+        </Badge>
+      }
+    >
       <Text variant="lead">
         Load the tracks, choose how to ask, and watch the roster decide who or what the
         trolley meets.
@@ -345,6 +343,6 @@ export default function TrolleyScreen() {
         loading={prompt.loading}
         error={prompt.error}
       />
-    </View>
+    </Screen>
   );
 }
