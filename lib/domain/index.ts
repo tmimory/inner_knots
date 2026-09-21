@@ -10,4 +10,5 @@ export * from "./enums";
 export * from "./id";
 export * from "./run";
 export * from "./span";
+export * from "./summary";
 export * from "./trolley-object";

@@ -21,6 +21,8 @@ export const decisionRecordSchema = z.object({
   /** Per-option probabilities, when the provider exposes them (e.g. Jev). */
   weights: z.record(z.string(), z.number()).optional(),
   rationale: z.string().optional(),
+  /** Provider-reported confidence in the choice, from zero to one (TypeSafe). */
+  confidence: z.number().optional(),
   usage: z.object({ inputTokens: z.number(), outputTokens: z.number() }).optional(),
   latencyMs: z.number(),
 });

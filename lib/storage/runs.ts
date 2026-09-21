@@ -43,6 +43,9 @@ function applyEvent(runs: Map<string, Run>, event: RunEvent): void {
     case "progress":
       runs.set(run.id, { ...run, progress: event.progress, status: event.status });
       break;
+    case "summary":
+      runs.set(run.id, { ...run, summary: event.summary });
+      break;
     case "finished":
       runs.set(run.id, {
         ...run,
@@ -125,6 +128,15 @@ export async function updateRunProgress(
   status: RunStatus = "running",
 ): Promise<void> {
   await writeEvent({ type: "progress", runId, progress, status });
+}
+
+/**
+ * Rewrites the run's summary without changing its status. The engine calls this
+ * after every decision so a poller sees a run fill in rather than jump from
+ * empty to complete when it finishes.
+ */
+export async function updateRunSummary(runId: string, summary: unknown): Promise<void> {
+  await writeEvent({ type: "summary", runId, summary });
 }
 
 export async function finishRun(runId: string, summary?: unknown): Promise<void> {

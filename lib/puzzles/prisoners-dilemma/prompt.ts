@@ -90,6 +90,8 @@ export async function buildPrisonersDilemmaPrompt(
     ? (player === "a" ? config.relationshipA : config.relationshipB)?.trim()
     : undefined;
 
+  const question = await render("prisoners-dilemma/question");
+
   const sections = [
     await render(`prisoners-dilemma/variant-${config.variant}`),
     await render("prisoners-dilemma/crime", { crime: config.crime }),
@@ -106,9 +108,13 @@ export async function buildPrisonersDilemmaPrompt(
           })),
         })
       : null,
-    await render("prisoners-dilemma/question"),
+    question,
     await renderDecisionInstructions(PRISONERS_DILEMMA_OPTIONS, outputMode),
   ];
 
-  return { user: joinSections(sections), options: [...PRISONERS_DILEMMA_OPTIONS] };
+  return {
+    user: joinSections(sections),
+    options: [...PRISONERS_DILEMMA_OPTIONS],
+    question: question.trim(),
+  };
 }

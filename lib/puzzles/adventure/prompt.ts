@@ -48,5 +48,6 @@ export async function buildAdventurePrompt(input: AdventurePromptInput): Promise
     await renderDecisionInstructions(options, input.outputMode),
   ];
 
-  return { user: joinSections(sections), options };
+  // The node's own decision text is the question; it is data, not prose in code.
+  return { user: joinSections(sections), options, question: input.node.decision.trim() };
 }

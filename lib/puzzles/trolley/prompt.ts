@@ -53,11 +53,13 @@ export async function buildTrolleyPrompt(input: TrolleyPromptInput): Promise<Puz
     track2: describeTrack(input.track2),
   });
 
+  const question = await render("trolley/question");
+
   const user = joinSections([
     await render(`trolley/variant-${input.variant}`, { situation }),
-    await render("trolley/question"),
+    question,
     await renderDecisionInstructions(TROLLEY_OPTIONS, input.outputMode),
   ]);
 
-  return { user, options: [...TROLLEY_OPTIONS] };
+  return { user, options: [...TROLLEY_OPTIONS], question: question.trim() };
 }

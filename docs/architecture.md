@@ -153,7 +153,30 @@ Every provider call is wrapped in a span that records the exact request body and
 
 ## Run engine (lib/engine)
 
-`startRun(config)` creates the run, returns immediately, and executes in the background inside the API route process. Puzzle definitions supply an async generator that yields decisions; the engine wraps each in spans, appends logs, updates progress, and writes the summary when finished. Screens poll `GET /api/runs/:id` every second for progress and results. Runs can be cancelled via `POST /api/runs/:id/cancel`.
+`POST /api/runs` creates the run, returns immediately, and executes it in the background inside the API route process. Puzzle definitions supply an async generator that yields decisions; the engine wraps each in spans, appends logs, updates progress, and writes the summary when finished. Screens poll `GET /api/runs/:id` every second for progress and results. Runs can be cancelled via `POST /api/runs/:id/cancel`.
+
+### Engine
+
+`POST /api/runs` validates the config, resolves everything it names and answers **202** with the queued run; execution continues in the process that served the request, so screens poll `GET /api/runs/:id`. `prepareRun(config)` (`lib/engine/setup.ts`) is the resolution step and is called twice on purpose — once by the route, so a missing character, object or adventure is a 400 naming it before a run exists, and once by the engine when it starts, because the store may have changed. It also computes `progress.total`: trolley Σ runs, prisoner's dilemma runs × iterations × 2, adventure Σ runs (a path is the unit, whatever its length). Trolley object ids resolve against the user's objects first and the built-in catalogue second.
+
+A puzzle supplies a `PuzzleRunner`: a total, an `emptySummary()`, a pure `reduce()` and an async generator of `DecisionEvent`s. The engine knows nothing else about the puzzle. For every event it does the same four things — write its spans, fold it into the summary, persist `progress` **and the partial summary**, log it — which is what lets a screen animate a run: the summary read mid-run has the final shape with fewer decisions in it. `updateRunSummary` appends a `summary` run event for this, so a progress tick and a summary rewrite stay two short lines rather than a rewritten run.
+
+**Span tree.** Each event names the chain of spans it belongs under, and the engine opens each segment the first time it is mentioned:
+
+```
+run
+└── character                     one per roster entry (per side, for the dilemma)
+    └── iteration                 one per run index; for the dilemma, game then round
+        └── provider-call         one per upstream round trip, retries and fallbacks included
+```
+
+Adventures use a `node` span per step in place of the innermost `iteration`. The span a decision belongs to carries the final `DecisionRecord`; each `provider-call` span carries the exact request body as `input` and the raw response as `output`, so a run can be read back call by call.
+
+**Concurrency.** `mergePool` (`lib/engine/pool.ts`) runs up to `RUN_CONCURRENCY` (default 3, capped at 16) sequences at once and yields their decisions as they arrive. What a sequence is depends on the puzzle: one decision for the trolley, one game for the dilemma (its rounds are strictly ordered, because round n+1 is the one where a player knows what happened in round n), one walk for an adventure (its nodes are ordered for the same reason). A player's two decisions within a round go out together.
+
+**Failure** is asymmetric. A decision that fails is retried once if the `ProviderError` is retryable, then recorded — `error` on its span, `errors` in the summary — and the run continues, because a model that will not answer is a finding. Only a failure to set the run up fails the run.
+
+**Cancellation** goes through the store. `POST /api/runs/:id/cancel` appends the `cancelled` event; the engine looks for it between decisions (reading `data/runs/index.jsonl` directly, since the run store's cache only sees its own module's writes) and stops, keeping the partial summary. The in-process `AbortController` in `lib/engine/registry.ts` is a fast path, not the mechanism: in the dev server the cancel request does not share module state with the request the run is executing inside.
 
 ## Theme (theme/)
 

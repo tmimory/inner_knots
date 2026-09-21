@@ -14,6 +14,7 @@ import {
   listRuns,
   listSpans,
   updateRunProgress,
+  updateRunSummary,
   updateSpan,
 } from "./runs";
 import { useTempDataDir, type TempStore } from "./test-utils";
@@ -74,6 +75,19 @@ describe("run store", () => {
     const cancelled = await createRun({ config: trolleyConfig, total: 1 });
     await cancelRun(cancelled.id);
     expect((await getRun(cancelled.id))?.status).toBe("cancelled");
+  });
+
+  it("rewrites the summary without changing the status", async () => {
+    const run = await createRun({ config: trolleyConfig, total: 3 });
+    await updateRunProgress(run.id, { done: 1, total: 3 });
+    await updateRunSummary(run.id, { kind: "trolley", decisions: [1] });
+
+    const running = await getRun(run.id);
+    expect(running?.status).toBe("running");
+    expect(running?.summary).toEqual({ kind: "trolley", decisions: [1] });
+
+    await updateRunSummary(run.id, { kind: "trolley", decisions: [1, 2] });
+    expect((await getRun(run.id))?.summary).toEqual({ kind: "trolley", decisions: [1, 2] });
   });
 
   it("lists runs newest first and filters them", async () => {

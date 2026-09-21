@@ -1,5 +1,5 @@
-/** Client-side access to the run index, spans and logs. */
-import type { PuzzleId, Run, RunStatus } from "../domain/run";
+/** Client-side access to the run index, spans and logs, and to starting a run. */
+import type { PuzzleId, Run, RunConfig, RunStatus } from "../domain/run";
 import type { LogEvent, LogLevel, Span } from "../domain/span";
 import { apiFetch } from "./api";
 
@@ -28,6 +28,31 @@ export async function fetchRuns(filter: RunFilter = {}): Promise<Run[]> {
 /** One run, including its summary once it has finished. */
 export async function fetchRun(id: string): Promise<Run> {
   const { item } = await apiFetch<{ item: Run }>(`/api/runs/${encodeURIComponent(id)}`);
+  return item;
+}
+
+/**
+ * Starts a run. Resolves as soon as the server has created it — the run is then
+ * `queued` or `running`, and {@link fetchRun} (or `useRun`) reports its progress.
+ * A configuration naming a character, object or adventure that is not there
+ * fails with a 400 naming it, and nothing is created.
+ */
+export async function startRun(config: RunConfig): Promise<Run> {
+  const { item } = await apiFetch<{ item: Run }>("/api/runs", {
+    method: "POST",
+    body: JSON.stringify({ config }),
+  });
+  return item;
+}
+
+/**
+ * Asks a run to stop. It stops after the decisions already in flight and keeps
+ * the partial summary, so the returned run may still say `running`.
+ */
+export async function cancelRun(id: string): Promise<Run> {
+  const { item } = await apiFetch<{ item: Run }>(`/api/runs/${encodeURIComponent(id)}/cancel`, {
+    method: "POST",
+  });
   return item;
 }
 

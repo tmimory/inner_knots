@@ -16,6 +16,12 @@ export type PuzzlePrompt = {
   system?: string;
   user: string;
   options: PromptOption[];
+  /**
+   * The decision in one sentence, taken from the puzzle's own question fragment
+   * (or, for an adventure, from the node). Providers that take an instruction
+   * separate from the transcript — TypeSafe's `instructions` — are given this.
+   */
+  question: string;
 };
 
 /**

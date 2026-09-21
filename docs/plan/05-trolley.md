@@ -9,5 +9,21 @@
 - [ ] Run: `/api/runs` with trolley config; progress bar; trolley animation that plays each decision as it arrives (heads toward chosen track).
 - [ ] Histogram per character (Track 1 vs Track 2); Jev weights recorded per decision and shown as mean weight.
 
+## Engine
+
+The run side of this phase already exists. `POST /api/runs` takes `{ config: { puzzle: "trolley", variant, track1: id[], track2: id[], roster } }` and answers 202 with the queued run; ids resolve against the user's objects first and the built-in catalogue second, and an unknown id is a 400 naming it. `progress.total` is Σ roster runs.
+
+The screen reads `TrolleySummary` (`lib/domain/summary.ts`), which the engine rewrites after **every** decision, so the trolley animation and the histogram can be driven straight off a poll:
+
+```ts
+TrolleySummary = {
+  kind: "trolley";
+  decisions: { characterId; iteration; choice?: "track1" | "track2"; weights?; confidence?; latencyMs?; error? }[];
+  perCharacter: Record<characterId, { track1; track2; errors; meanWeights?: { track1; track2 } }>;
+}
+```
+
+`useRun(runId)` (`lib/client/use-run.ts`) polls until the run settles and hands back `{ run, summary, isRunning, error, refresh }` with the summary already narrowed by `kind`; `useRunStarter()` gives `{ start(config), runId, starting, error }`. A decision that failed appears in `decisions` with an `error` and no `choice`, and in that character's `errors` — the histogram should show it rather than drop it.
+
 ## Done
 _(fill in on completion)_

@@ -125,6 +125,14 @@ export type AdventureConfig = z.infer<typeof adventureConfigSchema>;
 export const RUN_STATUSES = ["queued", "running", "finished", "failed", "cancelled"] as const;
 export type RunStatus = (typeof RUN_STATUSES)[number];
 
+/** The statuses a run never leaves. Polling stops when one is reached. */
+export const TERMINAL_RUN_STATUSES = ["finished", "failed", "cancelled"] as const;
+
+/** Whether a run has settled, one way or another. */
+export function isTerminalRunStatus(status: RunStatus): boolean {
+  return (TERMINAL_RUN_STATUSES as readonly string[]).includes(status);
+}
+
 export const runProgressSchema = z.object({
   done: z.number().int().min(0),
   total: z.number().int().min(0),
@@ -161,6 +169,12 @@ export const runEventSchema = z.discriminatedUnion("type", [
     runId: z.string(),
     progress: runProgressSchema,
     status: z.enum(RUN_STATUSES),
+  }),
+  z.object({
+    /** The partial summary, rewritten after each decision so pollers can animate. */
+    type: z.literal("summary"),
+    runId: z.string(),
+    summary: z.unknown(),
   }),
   z.object({
     type: z.literal("finished"),
