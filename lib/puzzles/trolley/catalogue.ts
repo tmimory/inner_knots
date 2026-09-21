@@ -73,11 +73,26 @@ const SMALL_WORDS = new Set([
   "with",
 ]);
 
-/** `"your neighbor's eldest daughter"` -> `"your-neighbors-eldest-daughter"`. */
-function slug(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/['’]/g, "")
+/**
+ * Apostrophes are dropped rather than turned into separators, so "your
+ * neighbor's" reads as one word in both an id and a search. Exported because
+ * every place that compares user text against a catalogue entry has to strip
+ * them the same way.
+ */
+export function stripApostrophes(text: string): string {
+  return text.replace(/['’]/g, "");
+}
+
+/**
+ * `"your neighbor's eldest daughter"` -> `"your-neighbors-eldest-daughter"`.
+ *
+ * The one id rule. Built-in ids are derived with it here, and the object creator
+ * derives and validates a user's id with it through `slugify` in `search.ts`, so
+ * the two halves of the catalogue share one id-space by construction rather than
+ * by two implementations agreeing.
+ */
+export function slug(text: string): string {
+  return stripApostrophes(text.toLowerCase())
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }

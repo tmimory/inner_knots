@@ -8,7 +8,8 @@
  */
 import {
   CATALOGUE_FAMILIES,
-  CATALOGUE_TAGS,
+  slug,
+  stripApostrophes,
   type CatalogueFamily,
   type CatalogueTag,
   type TrolleyObject,
@@ -32,14 +33,14 @@ export const TAG_GROUPS: Record<CatalogueFamily, readonly CatalogueTag[]> = {
 /** Headings for the chip groups, in the order they are rendered. */
 export const TAG_GROUP_ORDER: readonly CatalogueFamily[] = CATALOGUE_FAMILIES;
 
-/** `"your neighbor's eldest daughter"` -> `"your-neighbors-eldest-daughter"`. */
-export function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/['’]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
+/**
+ * `"your neighbor's eldest daughter"` -> `"your-neighbors-eldest-daughter"`.
+ *
+ * Re-exported from the catalogue rather than reimplemented: a user's object id
+ * has to land in the same id-space the built-ins were generated into, or the two
+ * halves of the palette could collide.
+ */
+export const slugify = slug;
 
 /** Whether an id is already the slug it would be turned into, and non-empty. */
 export function isSlug(value: string): boolean {
@@ -48,14 +49,14 @@ export function isSlug(value: string): boolean {
 
 /** Case- and punctuation-insensitive: "neighbors daughter" finds the apostrophe one. */
 function haystack(item: TrolleyObject): string {
-  return `${item.id} ${item.label} ${item.prompt} ${item.tags.join(" ")}`
-    .toLowerCase()
-    .replace(/['’]/g, "");
+  return stripApostrophes(
+    `${item.id} ${item.label} ${item.prompt} ${item.tags.join(" ")}`.toLowerCase(),
+  );
 }
 
 /** Every whitespace-separated word of the query must appear somewhere in the item. */
 export function matchesQuery(item: TrolleyObject, query: string): boolean {
-  const words = query.toLowerCase().replace(/['’]/g, "").split(/\s+/).filter(Boolean);
+  const words = stripApostrophes(query.toLowerCase()).split(/\s+/).filter(Boolean);
   if (words.length === 0) return true;
   const text = haystack(item);
   return words.every((word) => text.includes(word));

@@ -302,22 +302,17 @@ export function TrackBoard({
 
           {overlay?.(width)}
 
-          <View
-            style={{ position: "absolute", left: 0, top: railY(1) + BOARD.railHalfGap }}
-            className="px-sm"
-          >
-            <Text variant="muted" className="font-display text-xs">
-              Track 1
-            </Text>
-          </View>
-          <View
-            style={{ position: "absolute", left: 0, top: railY(2) + BOARD.railHalfGap }}
-            className="px-sm"
-          >
-            <Text variant="muted" className="font-display text-xs">
-              Track 2
-            </Text>
-          </View>
+          {lanes.map(({ track }) => (
+            <View
+              key={`label-${track}`}
+              style={{ position: "absolute", left: 0, top: railY(track) + BOARD.railHalfGap }}
+              className="px-sm"
+            >
+              <Text variant="muted" className="font-display text-xs">
+                {`Track ${track}`}
+              </Text>
+            </View>
+          ))}
         </View>
       </ScrollView>
     </View>

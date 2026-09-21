@@ -128,6 +128,22 @@ Against a live server with a scratch `DATA_DIR`: `/puzzles/trolley` rendered 200
 7. **The object creator does not reset itself on open.** It clears when it closes instead, which keeps the reset out of an effect — the React Compiler's lint rules reject a `setState` in an effect body, and every piece of state in this phase is derived or set from a callback as a result.
 8. **`TrackBoard` takes `overlay: (width) => ReactNode`** rather than plain children, because the animation needs the measured width and only the board has it.
 
+### Review
+
+`secrets-critic`: zero findings. Nothing in this phase reads configuration; the tree and `git log -p --all` are clean and `.env.example` holds placeholders only.
+
+`design-token-critic`: no hex literals, raw palette classes, arbitrary values or bare pixel/colour/duration literals in any of this phase's files, and the geometry constants are confined to `geometry.ts` as agreed. Its one note is accepted rather than fixed: `Easing.inOut(Easing.cubic)` in `trolley-animation.tsx` is the only motion value not from a token — the duration beside it is `theme.durations.slow * 5` — but a reanimated easing function cannot round-trip through the CSS/Tailwind generator, so there is nowhere in `tokens.ts` for it to live yet. Worth an `easings` group the moment a second curve appears.
+
+`duplication-critic`: seven findings, two applied.
+
+- **Applied (high).** `catalogue.ts` and `search.ts` each defined the slug rule, and the apostrophe strip appeared four times between them. `slug` and `stripApostrophes` are now exported from `catalogue.ts` and `slugify` is an alias of `slug`, so a user's object id lands in exactly the id-space the built-ins were generated into rather than in one that happens to agree.
+- **Applied (cosmetic).** The two "Track 1" / "Track 2" caption blocks fold into the `lanes` loop next to them.
+- **Deferred, and worth a decision before phase 6 writes a third copy.** `ObjectCreator` hand-rolls the labelled-field rhythm that `components/characters/field.tsx` already generalizes as `Field`, and `Section` duplicates `FormSection`'s heading block. Both fixes want `Field` / `FormSection` moved out of `components/characters/` into `components/puzzles/` or `components/ui/` first, which is a call for whoever owns the UI kit rather than something to do inside one phase.
+- **Deferred, needs care.** `mergeCatalogue` (client) and `resolveTrolleyObjects` (`lib/engine/setup.ts`, server) both encode "a custom object of the same id wins". One should call the other, but `mergeCatalogue` also applies `CUSTOM_TAG` and the server file is storage-bound, so the merge wants checking for bundling before it happens.
+- **Deferred, low.** The `max-h-full w-full max-w-content` sheet className appears in both dialogs and would be better as a `DialogContent` size variant; the tap-to-place popover spells out the floating-card look that `Select`, `Dialog` and `Toast` also spell out. Both are changes to the shared UI kit while three other phases are mid-flight.
+
+It explicitly did not flag `useDropZones` or the gesture wiring (nothing else drags yet), `ObjectCreator`'s draft/patch/save idiom against `CharacterForm`'s (same shape, different rules), `TagChip` against `Segmented` (multi-select filter vs exclusive radio), or the `Histogram` split — and confirmed `RunProgress`, `PromptView` and `VariantSelect` carry no trolley-specific assumptions, so phases 6 and 7 can take them unchanged.
+
 ### Notes for phases 6 and 7
 
 - Import the shared five from `@/components/puzzles/<name>` and the chart from `@/components/charts`. None of them knows anything about the trolley.
