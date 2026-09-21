@@ -3,6 +3,7 @@ import { Pressable, ScrollView, View } from "react-native";
 
 import { Avatar } from "@/components/avatars";
 import { CHARACTER_SEARCH_PLACEHOLDER, matchesCharacterQuery } from "@/components/characters";
+import { CountStepper } from "@/components/puzzles/count-stepper";
 import {
   Button,
   Dialog,
@@ -36,62 +37,14 @@ export type RosterBarProps = {
    * left to right: the next empty one is the one that opens the picker.
    */
   fixedSlots?: number;
+  /**
+   * Let the same character take more than one seat. The prisoner's dilemma wants
+   * this — a character playing itself is a run worth making — and the puzzles
+   * that read a roster as a cast of distinct answerers do not.
+   */
+  allowDuplicates?: boolean;
   className?: string;
 };
-
-/** How many run-count steps one press of the stepper moves. */
-const RUNS_STEP = 1;
-
-function clampRuns(value: number): number {
-  if (!Number.isFinite(value)) return RUN_LIMITS.minRuns;
-  return Math.min(RUN_LIMITS.maxRuns, Math.max(RUN_LIMITS.minRuns, Math.round(value)));
-}
-
-/** The run count for one character: how many times it answers this puzzle. */
-function RunsStepper({ value, onChange }: { value: number; onChange: (runs: number) => void }) {
-  // What was typed, tagged with the count it produced: a half-typed "" or "1" on
-  // the way to "12" stays on screen, while a count changed from outside wins.
-  const [typed, setTyped] = useState<{ text: string; from: number } | null>(null);
-  const text = typed?.from === value ? typed.text : String(value);
-
-  return (
-    <View className="flex-row items-center gap-xxs">
-      <Button
-        variant="outline"
-        size="icon"
-        className="h-control-sm w-control-sm"
-        accessibilityLabel="One run fewer"
-        disabled={value <= RUN_LIMITS.minRuns}
-        onPress={() => onChange(clampRuns(value - RUNS_STEP))}
-      >
-        <Text className="font-mono">−</Text>
-      </Button>
-      <Input
-        className="h-control-sm w-3xl px-xs text-center"
-        keyboardType="number-pad"
-        accessibilityLabel="Runs"
-        value={text}
-        onChangeText={(next) => {
-          const parsed = Number.parseInt(next, 10);
-          const runs = Number.isFinite(parsed) ? clampRuns(parsed) : value;
-          setTyped({ text: next, from: runs });
-          if (runs !== value) onChange(runs);
-        }}
-        onBlur={() => setTyped(null)}
-      />
-      <Button
-        variant="outline"
-        size="icon"
-        className="h-control-sm w-control-sm"
-        accessibilityLabel="One run more"
-        disabled={value >= RUN_LIMITS.maxRuns}
-        onPress={() => onChange(clampRuns(value + RUNS_STEP))}
-      >
-        <Text className="font-mono">+</Text>
-      </Button>
-    </View>
-  );
-}
 
 /** One column of the bar: a face, a name, and what it is asked to do. */
 function Medallion({
@@ -151,7 +104,15 @@ function Medallion({
       <Text variant="small" className="text-center" numberOfLines={1}>
         {name}
       </Text>
-      {showRuns ? <RunsStepper value={runs} onChange={onRuns} /> : null}
+      {showRuns ? (
+        <CountStepper
+          value={runs}
+          onChange={onRuns}
+          min={RUN_LIMITS.minRuns}
+          max={RUN_LIMITS.maxRuns}
+          label="Runs"
+        />
+      ) : null}
     </View>
   );
 }
@@ -209,6 +170,7 @@ export function RosterBar({
   showRuns = true,
   labels,
   fixedSlots,
+  allowDuplicates = false,
   className,
 }: RosterBarProps) {
   /** Which seat the picker is filling: an index, or `null` when it is closed. */
@@ -225,13 +187,13 @@ export function RosterBar({
   const candidates = useMemo(() => {
     // The character in the seat being refilled stays on offer; the rest do not.
     const replacing = picking !== null ? value[picking]?.characterId : undefined;
-    const taken = new Set(value.map((entry) => entry.characterId));
+    const taken = new Set(allowDuplicates ? [] : value.map((entry) => entry.characterId));
     return characters.filter(
       (character) =>
         (character.id === replacing || !taken.has(character.id)) &&
         matchesCharacterQuery(character, search),
     );
-  }, [characters, picking, search, value]);
+  }, [allowDuplicates, characters, picking, search, value]);
 
   function put(index: number, characterId: string) {
     const next = value.map((entry) => ({ ...entry }));

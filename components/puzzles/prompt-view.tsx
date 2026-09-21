@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { ScrollView, View, useWindowDimensions } from "react-native";
 
 import {
@@ -19,6 +20,8 @@ import { layout } from "@/theme";
 export type PromptPanel = {
   /** Which side this is, e.g. "Player A". Omitted when there is only one panel. */
   label?: string;
+  /** Drawn beside the label — the avatar of the character this panel is for. */
+  accessory?: ReactNode;
   /** The system message, when the puzzle itself supplies one. */
   system?: string;
   user: string;
@@ -57,7 +60,14 @@ function Block({ label, text }: { label: string; text: string }) {
 function Panel({ panel, showLabel }: { panel: PromptPanel; showLabel: boolean }) {
   return (
     <View className="flex-1 gap-md">
-      {showLabel && panel.label ? <Text variant="h4">{panel.label}</Text> : null}
+      {showLabel && panel.label ? (
+        <View className="flex-row items-center gap-sm">
+          {panel.accessory}
+          <Text variant="h4" className="flex-1" numberOfLines={1}>
+            {panel.label}
+          </Text>
+        </View>
+      ) : null}
       {panel.system ? <Block label="System" text={panel.system} /> : null}
       <Block label="User" text={panel.user} />
       <View className="gap-xs">

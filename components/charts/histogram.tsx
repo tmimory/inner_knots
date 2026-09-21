@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useMemo } from "react";
-import { View } from "react-native";
+import { View, useWindowDimensions } from "react-native";
 
 import { Text } from "@/components/ui";
 import {
@@ -10,7 +10,7 @@ import {
 } from "@/lib/charts/histogram";
 import { formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { useTheme, type Theme } from "@/theme";
+import { layout, useTheme, type Theme } from "@/theme";
 
 /** The token a series is drawn with. Two tracks, then a spread for the rest. */
 export type SeriesColorKey = "track1" | "track2" | "secondary" | "accent" | "primary" | "mutedForeground";
@@ -47,6 +47,12 @@ export type HistogramProps = {
   emptyMessage?: string;
   /** Show the "mean weight 0.71" line under a bar that reported one. */
   showWeights?: boolean;
+  /**
+   * Set the groups beside each other rather than stacked, on a viewport wide
+   * enough for it. Two groups compared head to head — the dilemma's two players —
+   * read better as a pair of columns; a roster of five does not.
+   */
+  sideBySide?: boolean;
   className?: string;
 };
 
@@ -68,11 +74,16 @@ export function Histogram({
   groups,
   emptyMessage = "Nothing counted yet.",
   showWeights = true,
+  sideBySide = false,
   className,
 }: HistogramProps) {
   const theme = useTheme();
+  const { width } = useWindowDimensions();
   const { rows, empty } = useMemo(() => buildHistogram(series, groups), [series, groups]);
   const colors = series.map((spec, index) => colorFor(theme, spec, index));
+  // Every bar still scales against the longest bar in the whole chart, so the
+  // columns compare against each other rather than each filling its own.
+  const columns = sideBySide && width >= layout.wideBreakpoint && rows.length > 1;
 
   return (
     <View className={cn("gap-lg", className)}>
@@ -91,10 +102,11 @@ export function Histogram({
 
       {empty ? <Text variant="muted">{emptyMessage}</Text> : null}
 
+      <View className={cn("gap-lg", columns && "flex-row items-start")}>
       {rows.map((row) => {
         const group = groups.find((entry) => entry.id === row.id);
         return (
-          <View key={row.id} className="gap-xs">
+          <View key={row.id} className={cn("gap-xs", columns && "flex-1")}>
             <View className="flex-row items-center gap-sm">
               {group?.accessory}
               <Text className="font-display text-sm flex-1" numberOfLines={1}>
@@ -133,6 +145,7 @@ export function Histogram({
           </View>
         );
       })}
+      </View>
     </View>
   );
 }
