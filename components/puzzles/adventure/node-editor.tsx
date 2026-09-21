@@ -1,0 +1,189 @@
+import { useState } from "react";
+import { View } from "react-native";
+
+import { Field } from "@/components/characters";
+import {
+  Badge,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Separator,
+  Text,
+  Textarea,
+} from "@/components/ui";
+import { ADVENTURE_LIMITS, type Adventure, type AdventureNode } from "@/lib/domain/adventure";
+import {
+  addOption,
+  removeNode,
+  removeOption,
+  setStartNode,
+  updateNode,
+  updateOption,
+} from "@/lib/puzzles/adventure/edits";
+
+export type NodeEditorProps = {
+  adventure: Adventure;
+  /** The node the canvas has selected. */
+  node: AdventureNode;
+  onChange: (next: Adventure) => void;
+  /** Called once the node is gone, so the screen can drop its selection. */
+  onRemoved: () => void;
+};
+
+/** How many rows each of the long fields opens at. */
+const ROWS = { context: 4, decision: 3, outcome: 2 } as const;
+
+/** The name of the node an option leads to, or the fact that it ends there. */
+function targetLabel(adventure: Adventure, nextNodeId: string | null): string {
+  if (nextNodeId === null) return "ends the adventure";
+  const target = adventure.nodes.find((node) => node.id === nextNodeId);
+  const decision = target?.decision.trim();
+  if (!target) return `points at a node that is gone (${nextNodeId})`;
+  return decision && decision.length > 0 ? `leads to “${decision}”` : `leads to ${target.id}`;
+}
+
+/**
+ * The inspector for the selected decision node.
+ *
+ * Deliberately platform-neutral: it is a form, and it is the half of the builder
+ * that still works where React Flow cannot draw. Nothing here writes an edge by
+ * hand — an option's target is set on the canvas — so what is edited is the node's
+ * own words and the options it offers.
+ */
+export function NodeEditor({ adventure, node, onChange, onRemoved }: NodeEditorProps) {
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const isStart = adventure.startNodeId === node.id;
+  const full = node.options.length >= ADVENTURE_LIMITS.maxOptions;
+
+  function remove() {
+    setConfirmingDelete(false);
+    onChange(removeNode(adventure, node.id));
+    onRemoved();
+  }
+
+  return (
+    <View className="gap-md">
+      <View className="flex-row flex-wrap items-center gap-sm">
+        <Text variant="h4" className="flex-1">
+          Selected node
+        </Text>
+        {isStart ? (
+          <Badge variant="accent">
+            <Text className="font-greek">❧ start</Text>
+          </Badge>
+        ) : (
+          <Button variant="outline" size="sm" onPress={() => onChange(setStartNode(adventure, node.id))}>
+            <Text>Set as start</Text>
+          </Button>
+        )}
+        <Button variant="destructive" size="sm" onPress={() => setConfirmingDelete(true)}>
+          <Text>Delete node</Text>
+        </Button>
+      </View>
+
+      <Text variant="muted" className="font-mono text-xs" numberOfLines={1}>
+        {node.id}
+      </Text>
+
+      <Field label="Context" hint="What the character is shown before the question.">
+        <Textarea
+          rows={ROWS.context}
+          maxLength={ADVENTURE_LIMITS.context}
+          value={node.context}
+          onChangeText={(context) => onChange(updateNode(adventure, node.id, { context }))}
+        />
+      </Field>
+
+      <Field label="Decision" hint="The question this node asks.">
+        <Textarea
+          rows={ROWS.decision}
+          maxLength={ADVENTURE_LIMITS.decision}
+          value={node.decision}
+          onChangeText={(decision) => onChange(updateNode(adventure, node.id, { decision }))}
+        />
+      </Field>
+
+      <Separator />
+
+      <View className="flex-row items-center justify-between gap-md">
+        <Text variant="h4">Options</Text>
+        <Text variant="muted">{`${node.options.length} / ${ADVENTURE_LIMITS.maxOptions}`}</Text>
+      </View>
+
+      {node.options.length === 0 ? (
+        <Text variant="muted">
+          A node with no options is where a walk stops short. Give it at least one.
+        </Text>
+      ) : null}
+
+      {node.options.map((option, index) => (
+        <View key={option.id} className="gap-sm rounded-md border-hairline border-border p-md">
+          <View className="flex-row items-center gap-sm">
+            <Text variant="muted" className="font-mono text-xs">
+              {index + 1}
+            </Text>
+            <Input
+              className="flex-1"
+              maxLength={ADVENTURE_LIMITS.optionLabel}
+              accessibilityLabel={`Label for option ${index + 1}`}
+              value={option.label}
+              onChangeText={(label) => onChange(updateOption(adventure, node.id, option.id, { label }))}
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              accessibilityLabel={`Remove option ${index + 1}`}
+              onPress={() => onChange(removeOption(adventure, node.id, option.id))}
+            >
+              <Text className="font-mono">×</Text>
+            </Button>
+          </View>
+
+          <Textarea
+            rows={ROWS.outcome}
+            maxLength={ADVENTURE_LIMITS.outcome}
+            placeholder="Outcome"
+            accessibilityLabel={`Outcome for option ${index + 1}`}
+            value={option.outcome ?? ""}
+            onChangeText={(outcome) =>
+              onChange(
+                updateOption(adventure, node.id, option.id, {
+                  outcome: outcome === "" ? undefined : outcome,
+                }),
+              )
+            }
+          />
+          <Text variant="muted">Text injected into the next step.</Text>
+          <Text variant="small">{targetLabel(adventure, option.nextNodeId)}</Text>
+        </View>
+      ))}
+
+      <Button variant="outline" disabled={full} onPress={() => onChange(addOption(adventure, node.id))}>
+        <Text>{full ? "Five options is the limit" : "Add option"}</Text>
+      </Button>
+
+      <Dialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete this node?</DialogTitle>
+          </DialogHeader>
+          <Text variant="muted">
+            Every option that led here will end the adventure instead. This cannot be undone.
+          </Text>
+          <DialogFooter>
+            <Button variant="outline" onPress={() => setConfirmingDelete(false)}>
+              <Text>Keep it</Text>
+            </Button>
+            <Button variant="destructive" onPress={remove}>
+              <Text>Delete</Text>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </View>
+  );
+}

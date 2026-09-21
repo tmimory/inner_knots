@@ -65,11 +65,15 @@ module.exports = {
   maxWidth: {
     "menu": "264px",
     "content": "1120px",
+    "canvas": "640px",
+    "inspector": "360px",
     "wideBreakpoint": "900px",
   },
   minWidth: {
     "menu": "264px",
     "content": "1120px",
+    "canvas": "640px",
+    "inspector": "360px",
     "wideBreakpoint": "900px",
   },
   width: {
@@ -95,6 +99,8 @@ module.exports = {
     "thick": "2px",
     "menu": "264px",
     "content": "1120px",
+    "canvas": "640px",
+    "inspector": "360px",
     "wideBreakpoint": "900px",
   },
   borderRadius: {

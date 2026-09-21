@@ -74,6 +74,8 @@
     /* layout */
     --layout-menu: 264px;
     --layout-content: 1120px;
+    --layout-canvas: 640px;
+    --layout-inspector: 360px;
     --layout-wide-breakpoint: 900px;
     /* radius */
     --radius-none: 0px;

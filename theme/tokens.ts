@@ -236,6 +236,10 @@ export const avatarSizes = {
 export const layout = {
   menu: 264,
   content: 1120,
+  /** Height of an embedded graph canvas — the adventure builder and the outcome view. */
+  canvas: 640,
+  /** The inspector column beside a canvas: wide enough for a labelled textarea. */
+  inspector: 360,
   /** Viewport width at and above which the menu is a fixed column, not a drawer. */
   wideBreakpoint: 900,
 } as const;

@@ -2,6 +2,12 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    // Platform files: `foo.web.tsx` is what an import of `./foo` resolves to for
+    // typechecking, while Metro picks `.web` or `.native` per bundle at build time.
+    "moduleSuffixes": [
+      ".web",
+      ""
+    ],
     "noUncheckedIndexedAccess": true,
     "paths": {
       "@/*": [
