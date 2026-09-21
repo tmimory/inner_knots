@@ -1,9 +1,9 @@
 /**
  * Finding a character by typing at it.
  *
- * The roster screen and the roster bar's picker search the same four things, so
- * they share the matcher and the placeholder: adding a fifth searchable field
- * should not be a thing one of them can miss.
+ * The characters screen and the pickers on the puzzle pages search the same four
+ * things, so they share the matcher and the placeholder: adding a fifth
+ * searchable field should not be a thing one of them can miss.
  */
 import { characterDisplayName, type Character } from "@/lib/domain";
 

@@ -16,7 +16,7 @@ export type FilterChipsProps<T extends string> = {
 };
 
 /**
- * One facet of the roster filter. Pressing the chosen chip again clears it, so
+ * One facet of the character filter. Pressing the chosen chip again clears it, so
  * "any" needs no chip of its own.
  */
 export function FilterChips<T extends string>({

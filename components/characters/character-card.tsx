@@ -14,7 +14,7 @@ export type CharacterCardProps = {
 };
 
 /**
- * One character in the roster grid: face, name, and the three facts that decide
+ * One character in the grid: face, name, and the three facts that decide
  * how it will answer — who runs it, in what mode, and how much of a self it was
  * given.
  */

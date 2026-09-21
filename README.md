@@ -43,7 +43,7 @@ Run-wide knobs, also in `.env.example`:
 
 ## Using the app
 
-**Characters** (`/characters`) are the roster: an identifier (unique, no spaces), an avatar (shape + color), a provider and model, an output mode (structured JSON vs. a forced tool call — tool mode is disabled when the model doesn't support it), an optional effort level, and a steering mode — `raw` (no system prompt), `bio` ("You are ..."), or `full` (bio plus lists of principles and values). The editor's Final Prompt panel shows the exact steering text a run will send, composed live from the same prompt fragments a run uses.
+**Characters** (`/characters`) are the cast list every puzzle page seats its own roster from: an identifier (unique, no spaces), an avatar (shape + color), a provider and model, an output mode (structured JSON vs. a forced tool call — tool mode is disabled when the model doesn't support it), an optional effort level, and a steering mode — `raw` (no system prompt), `bio` ("You are ..."), or `full` (bio plus lists of principles and values). The editor's Final Prompt panel shows the exact steering text a run will send, composed live from the same prompt fragments a run uses.
 
 **Puzzles:**
 

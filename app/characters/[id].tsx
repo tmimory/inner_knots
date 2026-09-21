@@ -53,17 +53,17 @@ export default function EditCharacterScreen() {
         />
       ) : loading ? (
         <Scroll>
-          <Text variant="lead">Reading the roster…</Text>
+          <Text variant="lead">Reading characters…</Text>
         </Scroll>
       ) : (
         <Scroll>
           <Text variant="h3">No such character</Text>
           <Text variant="lead">
-            {error ?? `Nobody on the roster answers to "${id ?? ""}".`}
+            {error ?? `Nobody answers to "${id ?? ""}".`}
           </Text>
           <View className="flex-row">
             <Button variant="outline" onPress={() => router.replace("/characters")}>
-              <Text>Back to the roster</Text>
+              <Text>Back to characters</Text>
             </Button>
           </View>
         </Scroll>

@@ -581,7 +581,7 @@ export function CharacterForm({
         open={confirmingDelete}
         onOpenChange={setConfirmingDelete}
         title="Delete this character?"
-        description={`"${draft.id}" leaves the roster. Runs it has already answered keep their record.`}
+        description={`"${draft.id}" is deleted. Runs it has already answered keep their record.`}
         confirmLabel="Delete"
         cancelLabel="Keep"
         destructive

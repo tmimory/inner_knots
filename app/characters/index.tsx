@@ -15,6 +15,7 @@ import { Scroll } from "@/components/shell";
 import { Badge, Button, Input, Separator, Text } from "@/components/ui";
 import { useCharacters } from "@/lib/client/use-characters";
 import { useProviders } from "@/lib/client/use-providers";
+import { pluralize } from "@/lib/format";
 import {
   OUTPUT_MODES,
   STEERING_MODES,
@@ -68,16 +69,21 @@ export default function CharactersScreen() {
         right={
           <>
             <Badge variant={loading ? "muted" : "secondary"}>
-              <Text>{loading ? "reading the roster…" : `${characters.length} on the roster`}</Text>
+              <Text>
+                {loading ? "reading characters…" : pluralize(characters.length, "character")}
+              </Text>
             </Badge>
             {newButton}
           </>
         }
       />
+      <Text variant="lead">
+        Characters are made here; each puzzle page seats its own roster from them.
+      </Text>
 
       {error ? (
         <Scroll ornament={false}>
-          <Text variant="h3">The roster would not open</Text>
+          <Text variant="h3">The characters would not load</Text>
           <Text variant="small" className="text-destructive">
             {error}
           </Text>
@@ -142,11 +148,11 @@ export default function CharactersScreen() {
         </View>
       ) : loading ? null : (
         <Scroll>
-          <Text variant="h3">{filtered ? "Nobody here answers to that" : "An empty roster"}</Text>
+          <Text variant="h3">{filtered ? "Nobody answers to that" : "No characters yet"}</Text>
           <Text variant="lead">
             {filtered
-              ? "No character on the roster matches those filters."
-              : "No characters yet. Every dialogue needs a first interlocutor."}
+              ? "No character matches those filters."
+              : "Every dialogue needs a first interlocutor."}
           </Text>
           {filtered ? null : <View className="flex-row">{newButton}</View>}
         </Scroll>

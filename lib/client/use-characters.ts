@@ -1,5 +1,5 @@
 /**
- * The character roster as screen state.
+ * The character list as screen state.
  *
  * One hook owns the list, its loading and error states, and the three mutations.
  * A mutation folds the store's answer straight into local state rather than

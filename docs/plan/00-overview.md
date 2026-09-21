@@ -11,3 +11,4 @@ Sequential phases. Each phase ends with: type-check passes, app boots, the phase
 7. **Choose your own adventure** — React Flow builder, amnesia toggle, run, outcome visualizer.
 8. **Logs** — run list, run detail with span tree and full context.
 9. **Polish and review** — critic passes, README, CLAUDE.md commands.
+10. **UI cleanup** — menu navigation without a reload, CSS breakpoints, no meander ornament, one spacing rhythm, roster wording.
