@@ -6,6 +6,10 @@
  * and writes the result back into `node.position`, which is the only place a
  * canvas coordinate is ever stored.
  *
+ * The graph flows left to right — a parent's options leave the right edge of its
+ * card and enter the left edge of the card they lead to — so the ranks dagre
+ * builds run across the canvas and siblings stack down it.
+ *
  * The card measurements below are graph geometry rather than design tokens: they
  * are the size React Flow draws a decision card at, down to its line clamps and
  * padding, and `components/flow` reads them from here so the picture and the
@@ -25,11 +29,11 @@ export const ADVENTURE_LAYOUT = {
   nodeHeaderHeight: 132,
   /** Added per option row. */
   nodeOptionHeight: 30,
-  /** Vertical gap between one rank of nodes and the next. */
+  /** Gap between one rank of nodes and the next, across the flow. */
   rankGap: 96,
-  /** Horizontal gap between siblings. */
+  /** Gap between siblings within a rank. */
   nodeGap: 56,
-  /** Horizontal room kept for an edge label between siblings. */
+  /** Room kept for an edge label between siblings. */
   edgeGap: spacing.xl,
   /** Margin around the laid-out graph. */
   margin: spacing["2xl"],
@@ -41,7 +45,7 @@ export function adventureNodeHeight(node: Pick<AdventureNode, "options">): numbe
 }
 
 /**
- * Re-places every node top-to-bottom with dagre, start node first.
+ * Re-places every node left-to-right with dagre, start node first.
  *
  * Deterministic: the same adventure always produces the same coordinates, because
  * nodes and edges are handed to dagre in the order they are stored. Everything but
@@ -53,7 +57,7 @@ export function layoutAdventure(adventure: Adventure): Adventure {
   const graph = new dagre.graphlib.Graph({ multigraph: true });
 
   graph.setGraph({
-    rankdir: "TB",
+    rankdir: "LR",
     ranksep: ADVENTURE_LAYOUT.rankGap,
     nodesep: ADVENTURE_LAYOUT.nodeGap,
     edgesep: ADVENTURE_LAYOUT.edgeGap,

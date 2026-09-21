@@ -44,7 +44,12 @@ export type HistogramGroupSpec = HistogramGroupInput & {
 export type HistogramProps = {
   series: readonly HistogramSeriesSpec[];
   groups: readonly HistogramGroupSpec[];
-  /** What to say when nothing has been counted yet. */
+  /**
+   * Kept for callers that still pass it; the chart renders nothing at all when
+   * there is nothing to count, and the screen owns the sentence that replaces it.
+   *
+   * @deprecated say it on the screen instead.
+   */
   emptyMessage?: string;
   /** Show the "mean weight 0.71" line under a bar that reported one. */
   showWeights?: boolean;
@@ -73,7 +78,6 @@ function colorFor(theme: Theme, spec: HistogramSeriesSpec, index: number): strin
 export function Histogram({
   series,
   groups,
-  emptyMessage = "Nothing counted yet.",
   showWeights = true,
   sideBySide = false,
   className,
@@ -85,6 +89,10 @@ export function Histogram({
   // columns compare against each other rather than each filling its own.
   const wideEnough = useSideBySide(rows.length);
   const columns = sideBySide && wideEnough;
+
+  // Nothing counted yet: draw nothing. A legend over a row of zero-length bars is
+  // a chart pretending to have data, and the screen has a sentence for this.
+  if (empty) return null;
 
   return (
     <View className={cn("gap-lg", className)}>
@@ -101,8 +109,6 @@ export function Histogram({
         ))}
       </View>
 
-      {empty ? <Text variant="muted">{emptyMessage}</Text> : null}
-
       <View className={cn("gap-lg", columns && "flex-row items-start")}>
       {rows.map((row) => {
         const group = groups.find((entry) => entry.id === row.id);
@@ -113,13 +119,13 @@ export function Histogram({
               <Text className="font-display text-sm flex-1" numberOfLines={1}>
                 {row.label}
               </Text>
-              {group?.note ? <Text variant="muted">{group.note}</Text> : null}
+              {group?.note ? <Text variant="meta">{group.note}</Text> : null}
             </View>
 
             {row.bars.map((bar, index) => (
               <View key={bar.seriesId} className="gap-xxs">
                 <View className="flex-row items-center gap-sm">
-                  <Text variant="muted" className="w-4xl" numberOfLines={1}>
+                  <Text variant="meta" className="w-4xl" numberOfLines={1}>
                     {bar.label}
                   </Text>
                   <View className="h-md flex-1 overflow-hidden rounded-sm bg-muted">
@@ -137,7 +143,7 @@ export function Histogram({
                   </Text>
                 </View>
                 {showWeights && bar.weight !== undefined ? (
-                  <Text variant="muted" className="pl-4xl text-xs">
+                  <Text variant="subtle" className="pl-4xl text-xs">
                     {`mean weight ${bar.weight.toFixed(2)} · ${formatPercent(bar.weight)}`}
                   </Text>
                 ) : null}

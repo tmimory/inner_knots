@@ -7,7 +7,7 @@ import { formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 import { JsonTree } from "./json-tree";
-import { LevelBadge } from "./status-badge";
+import { LevelMark } from "./status-mark";
 
 /** One line, with its structured data hidden until asked for. */
 function LogRow({ event }: { event: LogEvent }) {
@@ -26,7 +26,7 @@ function LogRow({ event }: { event: LogEvent }) {
         <Text variant="muted" className="font-mono text-xs">
           {formatTime(event.ts)}
         </Text>
-        <LevelBadge level={event.level} />
+        <LevelMark level={event.level} />
         <Text variant="small" className="flex-1">
           {event.message}
         </Text>

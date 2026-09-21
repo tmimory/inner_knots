@@ -1,7 +1,7 @@
 import { View } from "react-native";
 
 import { ObjectGlyph } from "@/components/icons/objects";
-import { Badge, Separator, Text } from "@/components/ui";
+import { Separator, Text } from "@/components/ui";
 import type { Character } from "@/lib/domain/character";
 import type { Payoffs, RunConfig } from "@/lib/domain/run";
 import type { ObjectEntry } from "@/lib/client/use-runs";
@@ -117,17 +117,16 @@ export function ConfigView({ config, characters, objects, adventureName }: Confi
             <FieldText label="Variant" value={config.variant} />
             <FieldText label="Games" value={String(config.runs)} />
             <FieldText label="Rounds per game" value={String(config.iterations)} />
-            <Field label="Payoffs">
-              <Badge variant="outline">
-                <Text>
-                  {config.payoffs.symmetric
-                    ? "symmetric"
-                    : config.payoffs.playersAware
-                      ? "asymmetric · both told"
-                      : "asymmetric · own only"}
-                </Text>
-              </Badge>
-            </Field>
+            <FieldText
+              label="Payoffs"
+              value={
+                config.payoffs.symmetric
+                  ? "symmetric"
+                  : config.payoffs.playersAware
+                    ? "asymmetric · both told"
+                    : "asymmetric · own only"
+              }
+            />
           </View>
           <FieldText label="Crime" value={config.crime} />
           {config.relationshipsEnabled ? (

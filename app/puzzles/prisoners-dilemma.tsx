@@ -3,14 +3,18 @@ import { View } from "react-native";
 
 import { Avatar } from "@/components/avatars";
 import { CountStepper } from "@/components/puzzles/count-stepper";
-import { PayoffMatrix, PrisonersDilemmaResults } from "@/components/puzzles/prisoners-dilemma";
+import {
+  LabeledToggle,
+  PayoffMatrix,
+  PrisonersDilemmaResults,
+} from "@/components/puzzles/prisoners-dilemma";
 import { PromptView, type PromptPanel } from "@/components/puzzles/prompt-view";
 import { RosterBar } from "@/components/puzzles/roster-bar";
 import { RunProgress } from "@/components/puzzles/run-progress";
 import { Section } from "@/components/puzzles/section";
 import { VariantSelect, type VariantOption } from "@/components/puzzles/variant-select";
 import { Screen } from "@/components/shell";
-import { Button, Label, Slider, Switch, Text, Textarea } from "@/components/ui";
+import { Button, Label, Slider, Text, Textarea } from "@/components/ui";
 import { previewPrisonersDilemmaPrompt } from "@/lib/client/prompts";
 import { useCharacters } from "@/lib/client/use-characters";
 import { usePersistedState } from "@/lib/client/use-persisted-state";
@@ -151,192 +155,176 @@ export default function PrisonersDilemmaScreen() {
       title="Prisoner's Dilemma"
       subtitle="πίστις · two rooms, one bargain, and no way to check"
     >
-      <Text variant="lead">
-        Seat two characters on either side of the same bargain, tell them who the other one is,
-        and see whether trust survives being worth something.
-      </Text>
+      {/*
+        Configuration on the left, the run and its results on the right: the
+        payoffs are what you change and the outcomes are what you change them
+        for, and on a wide screen there is no reason to put a scroll between them.
+      */}
+      <View className="gap-xl wide:flex-row wide:items-start">
+        <View className="flex-1 gap-xl">
+          <Section title="The players">
+            <RosterBar
+              value={setup.roster}
+              onChange={(roster) => patch({ roster })}
+              characters={characters}
+              max={PLAYER_COUNT}
+              min={0}
+              showRuns={false}
+              labels={SLOT_LABELS}
+              fixedSlots={PLAYER_COUNT}
+              allowDuplicates
+            />
+          </Section>
 
-      <Section
-        title="The players"
-        description="Two seats, two rooms. Both have to be filled before anyone is asked anything."
-      >
-        <RosterBar
-          value={setup.roster}
-          onChange={(roster) => patch({ roster })}
-          characters={characters}
-          max={PLAYER_COUNT}
-          min={0}
-          showRuns={false}
-          labels={SLOT_LABELS}
-          fixedSlots={PLAYER_COUNT}
-          allowDuplicates
-        />
-      </Section>
-
-      <Section
-        title="Relationships"
-        description="Who the other one is, in each player's own terms."
-        right={
-          <Switch
-            checked={setup.relationshipsEnabled}
-            onCheckedChange={(relationshipsEnabled) => patch({ relationshipsEnabled })}
-            accessibilityLabel="Give the players a relationship"
-          />
-        }
-      >
-        {setup.relationshipsEnabled ? (
-          <View className="gap-lg">
-            {(["a", "b"] as const).map((side, index) => (
-              <View key={side} className="gap-xs">
-                <Label>{`${SLOT_LABELS[index]} is told…`}</Label>
-                <Textarea
-                  rows={2}
-                  maxLength={RUN_LIMITS.relationship}
-                  value={side === "a" ? setup.relationshipA : setup.relationshipB}
-                  onChangeText={(text) =>
-                    patch(side === "a" ? { relationshipA: text } : { relationshipB: text })
-                  }
-                  placeholder={
-                    side === "a"
-                      ? "You are your opponent's father."
-                      : "You are your opponent's son."
-                  }
-                  accessibilityLabel={`What ${SLOT_LABELS[index]} is told about the other player`}
-                />
+          <Section title="Relationships">
+            <LabeledToggle
+              label="Tell each who the other one is"
+              checked={setup.relationshipsEnabled}
+              onCheckedChange={(relationshipsEnabled) => patch({ relationshipsEnabled })}
+            />
+            {setup.relationshipsEnabled ? (
+              <View className="gap-lg">
+                {(["a", "b"] as const).map((side, index) => (
+                  <View key={side} className="gap-xs">
+                    <Label>{`${SLOT_LABELS[index]} is told…`}</Label>
+                    <Textarea
+                      rows={2}
+                      maxLength={RUN_LIMITS.relationship}
+                      value={side === "a" ? setup.relationshipA : setup.relationshipB}
+                      onChangeText={(text) =>
+                        patch(side === "a" ? { relationshipA: text } : { relationshipB: text })
+                      }
+                      placeholder={
+                        side === "a"
+                          ? "You are your opponent's father."
+                          : "You are your opponent's son."
+                      }
+                      accessibilityLabel={`What ${SLOT_LABELS[index]} is told about the other player`}
+                    />
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
-        ) : (
-          <Text variant="muted">
-            Off, the two of them are strangers who happen to share a charge.
-          </Text>
-        )}
-      </Section>
+            ) : null}
+          </Section>
 
-      <Section
-        title="The framing"
-        description="The same bargain, asked two ways."
-        right={
-          <Button variant="outline" size="sm" onPress={() => void prompt.show()}>
-            <Text>Prompt View</Text>
-          </Button>
-        }
-      >
-        <VariantSelect
-          value={setup.variant}
-          onChange={(variant) => patch({ variant })}
-          options={VARIANTS}
-        />
-      </Section>
+          <Section
+            title="The framing"
+            right={
+              <Button variant="ghost" size="sm" onPress={() => void prompt.show()}>
+                <Text>Prompt view</Text>
+              </Button>
+            }
+          >
+            <VariantSelect
+              value={setup.variant}
+              onChange={(variant) => patch({ variant })}
+              options={VARIANTS}
+            />
+          </Section>
 
-      <Section
-        title="The charge"
-        description="What the two of them are accused of, in the words the prompt will use."
-        right={
-          <>
-            <Text variant="muted">{setup.crimeUnlocked ? "unlocked" : "locked"}</Text>
-            <Switch
+          <Section title="The charge">
+            <LabeledToggle
+              label="Edit the charge"
               checked={setup.crimeUnlocked}
               onCheckedChange={(crimeUnlocked) => patch({ crimeUnlocked })}
-              accessibilityLabel="Edit the charge"
             />
-          </>
-        }
-      >
-        <Textarea
-          rows={3}
-          maxLength={RUN_LIMITS.crime}
-          editable={setup.crimeUnlocked}
-          value={setup.crime}
-          onChangeText={(crime) => patch({ crime })}
-          accessibilityLabel="The charge"
-        />
-        {setup.crime !== DEFAULT_CRIME ? (
-          <View className="flex-row justify-end">
-            <Button variant="ghost" size="sm" onPress={() => patch({ crime: DEFAULT_CRIME })}>
-              <Text>Reset to default</Text>
-            </Button>
-          </View>
-        ) : null}
-      </Section>
+            <Textarea
+              rows={3}
+              maxLength={RUN_LIMITS.crime}
+              editable={setup.crimeUnlocked}
+              value={setup.crime}
+              onChangeText={(crime) => patch({ crime })}
+              accessibilityLabel="The charge"
+            />
+            {setup.crime !== DEFAULT_CRIME ? (
+              <View className="flex-row justify-end">
+                <Button variant="ghost" size="sm" onPress={() => patch({ crime: DEFAULT_CRIME })}>
+                  <Text>Reset to default</Text>
+                </Button>
+              </View>
+            ) : null}
+          </Section>
 
-      <Section
-        title="The payoffs"
-        description="Four outcomes, in whatever currency you like — years, fines, or walking free."
-      >
-        {/* `patch` widens cleanly: every key of the matrix is a key of the setup. */}
-        <PayoffMatrix value={setup} onChange={patch} names={names} />
-      </Section>
+          <Section title="The payoffs">
+            {/* `patch` widens cleanly: every key of the matrix is a key of the setup. */}
+            <PayoffMatrix value={setup} onChange={patch} names={names} />
+          </Section>
 
-      <Section
-        title="Game length"
-        description="Put the bargain once, or put it to the same pair again and again."
-      >
-        <VariantSelect
-          value={setup.iterated ? "iterated" : "single"}
-          onChange={(length) => patch({ iterated: length === "iterated" })}
-          options={LENGTHS}
-          label="Game length"
-        />
+          <Section title="Game length">
+            <VariantSelect
+              value={setup.iterated ? "iterated" : "single"}
+              onChange={(length) => patch({ iterated: length === "iterated" })}
+              options={LENGTHS}
+              label="Game length"
+            />
 
-        {setup.iterated ? (
-          <View className="gap-xs">
-            <View className="flex-row items-center gap-md">
-              <Label>Rounds per game</Label>
-              <View className="flex-1" />
-              <Text className="font-mono">{setup.rounds}</Text>
+            {setup.iterated ? (
+              <View className="gap-xs">
+                <View className="flex-row items-center gap-md">
+                  <Label>Rounds per game</Label>
+                  <View className="flex-1" />
+                  <Text className="font-mono">{setup.rounds}</Text>
+                </View>
+                <Slider
+                  value={setup.rounds}
+                  min={MIN_ITERATED_ROUNDS}
+                  max={RUN_LIMITS.maxIterations}
+                  step={1}
+                  onValueChange={(rounds) => patch({ rounds })}
+                  accessibilityLabel="Rounds per game"
+                />
+              </View>
+            ) : null}
+
+            <View className="flex-row flex-wrap items-center gap-md">
+              <Label>Games</Label>
+              <CountStepper
+                value={setup.runs}
+                onChange={(runs) => patch({ runs })}
+                min={RUN_LIMITS.minRuns}
+                max={RUN_LIMITS.maxRuns}
+                label="Games"
+              />
             </View>
-            <Slider
-              value={setup.rounds}
-              min={MIN_ITERATED_ROUNDS}
-              max={RUN_LIMITS.maxIterations}
-              step={1}
-              onValueChange={(rounds) => patch({ rounds })}
-              accessibilityLabel="Rounds per game"
-            />
-          </View>
-        ) : null}
-
-        <View className="flex-row flex-wrap items-center gap-md">
-          <Label>Games</Label>
-          <CountStepper
-            value={setup.runs}
-            onChange={(runs) => patch({ runs })}
-            min={RUN_LIMITS.minRuns}
-            max={RUN_LIMITS.maxRuns}
-            label="Games"
-          />
-          <Text variant="muted">Each game starts from a clean slate.</Text>
+          </Section>
         </View>
-      </Section>
 
-      <Section
-        title="The run"
-        description={
-          blocked ??
-          `${pluralize(total, "decision")}: ${pluralize(setup.runs, "game")} × ${pluralize(
-            iterations,
-            "round",
-          )} × 2 players.`
-        }
-        right={
-          <Button disabled={blocked !== null || starter.starting} onPress={() => void startRun()}>
-            <Text>{starter.starting ? "Starting…" : "Put them in the rooms"}</Text>
-          </Button>
-        }
-      >
-        <RunProgress run={run ?? null} idleMessage="No run started yet." />
-        {starter.error ? <Text className="text-destructive">{starter.error.message}</Text> : null}
-      </Section>
+        <View className="w-full gap-xl wide:w-inspector">
+          <Section title="The run">
+            {/* The screen's one filled button, kept beside the results it fills. */}
+            <View className="flex-row flex-wrap items-center gap-md">
+              <Button
+                variant={blocked === null ? "default" : "outline"}
+                disabled={blocked !== null || starter.starting}
+                onPress={() => void startRun()}
+              >
+                <Text>{starter.starting ? "Starting…" : "Put them in the rooms"}</Text>
+              </Button>
+              <Text variant="muted">
+                {blocked ??
+                  `${pluralize(total, "decision")}: ${pluralize(setup.runs, "game")} × ${pluralize(
+                    iterations,
+                    "round",
+                  )} × 2 players.`}
+              </Text>
+            </View>
 
-      <Section title="What they chose" description="Counts per player, how the rounds came out.">
-        <PrisonersDilemmaResults
-          summary={dilemma}
-          players={players}
-          iterations={iterations}
-          runId={starter.runId}
-        />
-      </Section>
+            <RunProgress run={run ?? null} />
+            {starter.error ? (
+              <Text className="text-destructive">{starter.error.message}</Text>
+            ) : null}
+          </Section>
+
+          <Section title="What they chose">
+            <PrisonersDilemmaResults
+              summary={dilemma}
+              players={players}
+              iterations={iterations}
+              runId={starter.runId}
+            />
+          </Section>
+        </View>
+      </View>
 
       <PromptView
         open={prompt.open}

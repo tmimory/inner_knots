@@ -21,11 +21,14 @@ export type VariantSelectProps<Id extends string = string> = {
 };
 
 /**
- * A segmented radio group of prompt framings.
+ * A radio list of prompt framings: one row each, name and consequence on the
+ * same line.
  *
- * The description is part of the control rather than a tooltip: choosing between
+ * The description is part of the control rather than a tooltip — choosing between
  * "a thought experiment" and "you work for the trolley company" is the choice the
- * screen is actually about, and it should not need hovering to read.
+ * screen is actually about. As equal-width tiles the copy wrapped at three
+ * different depths and the row read as three unrelated cards; as rows the eye
+ * runs down one edge and compares the sentences.
  */
 export function VariantSelect<Id extends string = string>({
   value,
@@ -38,7 +41,7 @@ export function VariantSelect<Id extends string = string>({
     <View
       accessibilityRole="radiogroup"
       accessibilityLabel={label}
-      className={cn("flex-row flex-wrap gap-sm", className)}
+      className={cn("gap-xs", className)}
     >
       {options.map((option) => {
         const selected = option.id === value;
@@ -51,16 +54,18 @@ export function VariantSelect<Id extends string = string>({
             accessibilityHint={option.description}
             onPress={() => onChange(option.id)}
             className={cn(
-              "min-w-menu flex-1 gap-xs rounded-md border-hairline p-md transition-colors duration-fast",
+              "flex-row flex-wrap items-baseline gap-x-md gap-y-xxs rounded-sm border-hairline px-md py-sm transition-colors duration-fast",
               selected
-                ? "border-thick border-ring bg-muted"
-                : "border-border bg-transparent active:bg-muted web:hover:bg-muted",
+                ? "border-ring bg-muted/subtle"
+                : "border-border bg-transparent active:bg-muted web:hover:bg-muted/subtle",
             )}
           >
-            <Text className={cn("font-display text-sm", selected && "text-primary")}>
+            <Text className={cn("font-body", selected ? "text-primary" : "text-foreground")}>
               {option.label}
             </Text>
-            <Text variant="muted">{option.description}</Text>
+            <Text variant="meta" className="flex-1">
+              {option.description}
+            </Text>
           </Pressable>
         );
       })}

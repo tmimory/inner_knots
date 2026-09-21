@@ -3,13 +3,13 @@ import { useMemo, useState } from "react";
 import { View } from "react-native";
 
 import { AdventureOutcomes } from "@/components/flow";
-import { PathList, issueBadge, pathKey, splitIssues } from "@/components/puzzles/adventure";
+import { PathList, pathKey, splitIssues } from "@/components/puzzles/adventure";
 import { PromptView } from "@/components/puzzles/prompt-view";
 import { RosterBar } from "@/components/puzzles/roster-bar";
 import { RunProgress } from "@/components/puzzles/run-progress";
 import { Section } from "@/components/puzzles/section";
-import { Screen, Scroll } from "@/components/shell";
-import { Badge, Button, Label, Switch, Text } from "@/components/ui";
+import { Screen } from "@/components/shell";
+import { Button, Label, Switch, Text } from "@/components/ui";
 import { describeApiError } from "@/lib/client/errors";
 import { previewAdventurePrompt } from "@/lib/client/prompts";
 import { useAdventure } from "@/lib/client/use-adventures";
@@ -54,7 +54,6 @@ export default function AdventureRunScreen() {
 
   const issues = adventure ? validateAdventure(adventure) : [];
   const { blocking, runnable } = splitIssues(issues);
-  const badge = issueBadge(issues);
 
   const blocked =
     roster.length === 0
@@ -67,14 +66,14 @@ export default function AdventureRunScreen() {
     return (
       <Screen title="Opening the tree" subtitle="ὁδός · branching paths, recorded">
         {error ? (
-          <Scroll>
+          <View className="gap-md">
             <Text variant="lead">{error}</Text>
             <View className="flex-row">
               <Button variant="outline" onPress={() => router.push("/puzzles/adventure")}>
                 <Text>Back to the shelf</Text>
               </Button>
             </View>
-          </Scroll>
+          </View>
         ) : null}
       </Screen>
     );
@@ -86,9 +85,6 @@ export default function AdventureRunScreen() {
       subtitle="ὁδός · branching paths, recorded"
       right={
         <>
-          <Badge variant={badge.variant}>
-            <Text>{badge.label}</Text>
-          </Badge>
           <Button
             variant="outline"
             size="sm"
@@ -191,7 +187,7 @@ export default function AdventureRunScreen() {
           title="Where they went"
           description="Node counts and option frequencies over the tree; pick a walk to trace one path."
           right={
-            <Button variant="outline" size="sm" onPress={() => setFitSignal((signal) => signal + 1)}>
+            <Button variant="ghost" size="sm" onPress={() => setFitSignal((signal) => signal + 1)}>
               <Text>Fit view</Text>
             </Button>
           }

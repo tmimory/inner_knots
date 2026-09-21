@@ -9,7 +9,7 @@ import {
   LogList,
   SpanDetail,
   SpanTree,
-  StatusBadge,
+  StatusMark,
   SummaryView,
   spanDepths,
 } from "@/components/logs";
@@ -61,7 +61,7 @@ export default function RunDetailScreen() {
   if (!run) {
     return (
       <Screen title="Run" subtitle="ὑπόμνημα · one run, in full">
-        <Scroll>
+        <View className="gap-sm">
           <Text variant="lead">
             {loading ? "Reading the run…" : (error ?? `No run is recorded under "${runId}".`)}
           </Text>
@@ -70,7 +70,7 @@ export default function RunDetailScreen() {
               back to the ledger
             </Text>
           </Link>
-        </Scroll>
+        </View>
       </Screen>
     );
   }
@@ -81,7 +81,7 @@ export default function RunDetailScreen() {
       subtitle={run.id}
       right={
         <>
-          <StatusBadge status={run.status} />
+          <StatusMark status={run.status} />
           {isRunActive(run) ? (
             <Button variant="destructive" size="sm" onPress={() => void cancel()}>
               <Text>Cancel</Text>
@@ -91,7 +91,7 @@ export default function RunDetailScreen() {
         </>
       }
     >
-      <Scroll>
+      <View className="gap-lg">
         <View className="flex-row flex-wrap items-center gap-xl">
           <FieldCode label="Started" value={formatDateTime(run.startedAt)} />
           <FieldCode label="Duration" value={formatElapsed(run.startedAt, run.finishedAt)} />
@@ -114,7 +114,7 @@ export default function RunDetailScreen() {
           </View>
         ) : null}
         {error ? <Text variant="muted">the last refresh failed: {error}</Text> : null}
-      </Scroll>
+      </View>
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="self-start">
@@ -130,7 +130,7 @@ export default function RunDetailScreen() {
         </TabsList>
 
         <TabsContent value="overview">
-          <Scroll>
+          <View className="gap-lg">
             <Text variant="h3" className="text-lg">
               Configuration
             </Text>
@@ -145,7 +145,7 @@ export default function RunDetailScreen() {
               Summary
             </Text>
             <SummaryView run={run} characters={characters} />
-          </Scroll>
+          </View>
         </TabsContent>
 
         <TabsContent value="spans">

@@ -4,23 +4,25 @@ import { Pressable, ScrollView, View } from "react-native";
 
 import { isActive, navItems, type NavLeaf } from "@/components/shell/nav-items";
 import { Wordmark } from "@/components/shell/wordmark";
-import { Separator } from "@/components/ui/separator";
+import { Chevron } from "@/components/ui/chevron";
 import { Text } from "@/components/ui/text";
 import { cn } from "@/lib/utils";
 
 /** Shared row chrome, so a leaf link and the group toggle cannot drift apart. */
-function rowClasses(active: boolean): string {
+function rowClasses(selected: boolean): string {
   return cn(
-    "rounded-md px-md py-sm transition-colors duration-fast",
-    active ? "bg-muted" : "bg-transparent web:hover:bg-muted/subtle",
+    "rounded-sm px-md py-sm transition-colors duration-fast",
+    selected ? "bg-muted" : "bg-transparent web:hover:bg-muted/subtle",
   );
 }
 
-/** Shared row label color. */
-function rowTextClasses(active: boolean): string {
-  return cn("font-display", active ? "text-primary" : "text-foreground");
-}
-
+/**
+ * One nav row, at body size.
+ *
+ * Only the leaf you are actually on carries the fill. A parent whose child is
+ * open used to take the same tan block, so two rows claimed to be the current
+ * page at once; the parent says where you are by being open, not by being lit.
+ */
 function MenuLink({
   item,
   nested = false,
@@ -45,10 +47,7 @@ function MenuLink({
         onPress={onNavigate}
         className={cn(rowClasses(active), nested && "ml-md")}
       >
-        <Text
-          variant={nested ? "small" : "p"}
-          className={cn(rowTextClasses(active), nested && "text-sm")}
-        >
+        <Text className={cn("font-display", active ? "text-primary" : "text-foreground")}>
           {item.label}
         </Text>
       </Pressable>
@@ -69,9 +68,8 @@ export function LeftMenu({ onNavigate }: { onNavigate?: () => void }) {
   }
 
   return (
-    <View className="h-full w-full gap-lg border-border bg-card p-lg">
+    <View className="h-full w-full gap-xl border-border bg-card p-lg">
       <Wordmark />
-      <Separator />
       <ScrollView contentContainerClassName="gap-xxs" showsVerticalScrollIndicator={false}>
         {navItems.map((item) => {
           if (item.kind === "leaf") {
@@ -87,17 +85,10 @@ export function LeftMenu({ onNavigate }: { onNavigate?: () => void }) {
                 role="button"
                 aria-expanded={open}
                 onPress={() => toggle(item.label, groupActive)}
-                className={cn(
-                  "flex-row items-center justify-between",
-                  rowClasses(groupActive),
-                )}
+                className={cn("flex-row items-center gap-sm", rowClasses(false))}
               >
-                <Text className={rowTextClasses(groupActive)}>
-                  {item.label}
-                </Text>
-                <Text variant="muted" className="font-mono">
-                  {open ? "▾" : "▸"}
-                </Text>
+                <Text className="font-display text-foreground">{item.label}</Text>
+                <Chevron direction={open ? "down" : "right"} tone="foreground" />
               </Pressable>
               {open
                 ? item.children.map((child) => (
@@ -108,9 +99,7 @@ export function LeftMenu({ onNavigate }: { onNavigate?: () => void }) {
           );
         })}
       </ScrollView>
-      <Text variant="muted" className="text-xs">
-        a bench for philosophical puzzles
-      </Text>
+      <Text variant="subtle">a bench for philosophical puzzles</Text>
     </View>
   );
 }

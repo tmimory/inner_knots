@@ -61,7 +61,10 @@ export function Segmented<T extends string>({
             )}
           >
             <Text
-              className={cn("font-display text-sm", selected ? "text-primary" : "text-foreground")}
+              className={cn(
+                "font-body text-sm",
+                selected ? "text-foreground" : "text-muted-foreground",
+              )}
             >
               {option.label}
             </Text>

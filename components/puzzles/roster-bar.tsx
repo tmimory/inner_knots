@@ -71,9 +71,12 @@ function Medallion({
   const name = character ? characterDisplayName(character) : fallbackId;
 
   return (
-    <View className="w-avatar-xl items-center gap-xs">
+    // Left-aligned rather than centred: a centred 64px face inside a 96px column
+    // sits 16px in from the heading above it, and the indent is the first thing
+    // the eye catches.
+    <View className="w-avatar-xl items-start gap-xs">
       {label ? (
-        <Text variant="muted" className="font-display text-xs" numberOfLines={1}>
+        <Text variant="meta" numberOfLines={1}>
           {label}
         </Text>
       ) : null}
@@ -103,7 +106,7 @@ function Medallion({
           </Button>
         ) : null}
       </View>
-      <Text variant="small" className="text-center" numberOfLines={1}>
+      <Text variant="small" numberOfLines={1}>
         {name}
       </Text>
       {showRuns ? (
@@ -125,16 +128,18 @@ function EmptySlot({
   enabled,
   onPress,
 }: {
-  /** The seat's name; without one the slot reads simply "Add". */
+  /** The seat's name, when the puzzle names its seats. */
   label?: string;
   enabled: boolean;
   onPress: () => void;
 }) {
   return (
-    <View className="w-avatar-xl items-center gap-xs">
-      <Text variant="muted" className="font-display text-xs" numberOfLines={1}>
-        {label ?? "Add"}
-      </Text>
+    <View className="w-avatar-xl items-start gap-xs">
+      {label ? (
+        <Text variant="meta" numberOfLines={1}>
+          {label}
+        </Text>
+      ) : null}
       <Pressable
         role="button"
         accessibilityLabel={label ? `Add a character to ${label}` : "Add a character"}
@@ -150,9 +155,6 @@ function EmptySlot({
           +
         </Text>
       </Pressable>
-      <Text variant="muted" className="text-center text-xs" numberOfLines={1}>
-        empty
-      </Text>
     </View>
   );
 }
@@ -168,7 +170,7 @@ function NoCharacters() {
     <View className="flex-row flex-wrap items-center gap-sm">
       <Text variant="muted">No characters yet.</Text>
       <Link href="/characters" asChild>
-        <Button variant="secondary" size="sm">
+        <Button variant="link" size="sm">
           <Text>Make one</Text>
         </Button>
       </Link>
@@ -281,9 +283,7 @@ export function RosterBar({
         })}
       </View>
 
-      <Text variant="muted">
-        {`${value.length} of ${pluralize(max, "seat")} filled`}
-      </Text>
+      <Text variant="meta">{`${value.length} of ${pluralize(max, "seat")} filled`}</Text>
 
       <Dialog open={picking !== null} onOpenChange={(open) => setPicking(open ? picking : null)}>
         <DialogContent>
@@ -311,7 +311,7 @@ export function RosterBar({
                 <Avatar shape={character.avatar.shape} color={character.avatar.color} size="sm" />
                 <View className="flex-1">
                   <Text numberOfLines={1}>{characterDisplayName(character)}</Text>
-                  <Text variant="muted" numberOfLines={1}>
+                  <Text variant="meta" numberOfLines={1}>
                     {`${character.provider} · ${character.model}`}
                   </Text>
                 </View>

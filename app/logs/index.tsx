@@ -1,3 +1,4 @@
+import { Link } from "expo-router";
 import { useMemo, useState } from "react";
 import { View } from "react-native";
 
@@ -9,8 +10,8 @@ import {
   matchesSearch,
   type RunFilters,
 } from "@/components/logs";
-import { Screen, Scroll } from "@/components/shell";
-import { Badge, Text } from "@/components/ui";
+import { Screen } from "@/components/shell";
+import { Text } from "@/components/ui";
 import { LOGS_POLL_MS, useCharacterIndex, useRuns } from "@/lib/client/use-runs";
 import type { Run } from "@/lib/domain/run";
 import { dayKey, formatDay, pluralize } from "@/lib/format";
@@ -51,32 +52,36 @@ export default function LogsScreen() {
   const groups = useMemo(() => groupByDay(shown), [shown]);
   const narrowed = filterSummary(filters);
 
+  // A filter row over an empty ledger is dead UI: it only appears once there is
+  // something to sift, or once the reader has already narrowed the query.
+  const sifting = runs.length > 0 || narrowed !== undefined;
+
   return (
     <Screen
       title="Logs"
-      subtitle="ὑπομνήματα · every prompt, every answer"
+      subtitle="ὑπομνήματα"
       right={
-        <Badge variant={error ? "destructive" : "muted"}>
-          <Text>
-            {error
-              ? `the ledger could not be read: ${error}`
-              : loading && runs.length === 0
-                ? "opening the ledger…"
-                : pluralize(shown.length, "run")}
+        error ? (
+          <Text variant="small" className="text-destructive">
+            the ledger could not be read: {error}
           </Text>
-        </Badge>
+        ) : loading && runs.length === 0 ? (
+          <Text variant="meta">opening the ledger…</Text>
+        ) : shown.length > 0 ? (
+          <Text variant="meta">{pluralize(shown.length, "run")}</Text>
+        ) : null
       }
     >
-      <Scroll>
+      {sifting ? (
         <RunFiltersBar filters={filters} characters={characters} onChange={setFilters} />
-      </Scroll>
+      ) : null}
 
       {groups.map((group) => (
-        <View key={group.key} className="gap-md">
+        <View key={group.key} className="gap-sm">
           <Text variant="h3" className="text-lg">
             {group.label}
           </Text>
-          <View className="gap-sm">
+          <View>
             {group.runs.map((run) => (
               <RunRow key={run.id} run={run} characters={characters} />
             ))}
@@ -85,13 +90,20 @@ export default function LogsScreen() {
       ))}
 
       {groups.length === 0 && !loading ? (
-        <Scroll>
-          <Text variant="lead">
-            {narrowed
-              ? `Nothing in the ledger answers to ${narrowed}.`
-              : "The ledger is blank. Set a puzzle going and every prompt, every answer and every span it produces will be copied out here."}
-          </Text>
-        </Scroll>
+        narrowed ? (
+          <Text variant="lead">Nothing in the ledger answers to {narrowed}.</Text>
+        ) : (
+          <View className="gap-sm">
+            <Text variant="lead">
+              Nothing has been run yet. Every prompt and every answer will be copied out here.
+            </Text>
+            <Link href="/puzzles/trolley">
+              <Text variant="small" className="text-primary underline">
+                Run the trolley
+              </Text>
+            </Link>
+          </View>
+        )
       ) : null}
     </Screen>
   );

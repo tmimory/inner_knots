@@ -1,16 +1,7 @@
 import { View } from "react-native";
 
-import { Badge, Text, type BadgeProps } from "@/components/ui";
+import { Text } from "@/components/ui";
 import { cn } from "@/lib/utils";
-
-type BadgeVariant = NonNullable<BadgeProps["variant"]>;
-
-/** Who is speaking. An unknown role still gets a label rather than being hidden. */
-const ROLE_VARIANTS: Record<string, BadgeVariant> = {
-  system: "outline",
-  user: "muted",
-  assistant: "secondary",
-};
 
 export type MessageBlockProps = {
   role: string;
@@ -27,9 +18,9 @@ export function MessageBlock({ role, content, className }: MessageBlockProps) {
   return (
     <View className={cn("gap-xs", className)}>
       <View className="flex-row items-center gap-sm">
-        <Badge variant={ROLE_VARIANTS[role] ?? "muted"}>
-          <Text>{role}</Text>
-        </Badge>
+        <Text variant="muted" className="font-display text-xs">
+          {role}
+        </Text>
         <Text variant="muted" className="text-xs">
           {content.length} characters
         </Text>

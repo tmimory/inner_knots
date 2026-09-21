@@ -132,6 +132,16 @@ ${colorBlock(themeColors.nightScroll, "      ")}
     min-height: 0;
     max-height: 100%;
   }
+
+  /*
+   * A select that has nothing chosen yet renders its prompt through Radix, which
+   * marks the trigger \`data-placeholder\`. There is no React prop to reach that
+   * string, so the tertiary ink is applied here: a prompt reads quieter than an
+   * answer, exactly as it does in a text field.
+   */
+  [data-placeholder] {
+    color: rgb(var(${cssVarNames.color("subtleForeground")}) / 1);
+  }
 }
 `;
 

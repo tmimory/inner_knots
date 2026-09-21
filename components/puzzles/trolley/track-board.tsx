@@ -3,7 +3,7 @@ import { useCallback, useState } from "react";
 import { LayoutChangeEvent, Pressable, ScrollView, View } from "react-native";
 import Svg, { Circle, G, Path } from "react-native-svg";
 
-import { Badge, Text } from "@/components/ui";
+import { Text } from "@/components/ui";
 import type { TrolleyObject } from "@/lib/puzzles/trolley/catalogue";
 import { cn } from "@/lib/utils";
 import { useTheme, type Theme } from "@/theme";
@@ -204,16 +204,17 @@ function Lane({
         height: BOARD.laneHeight,
       }}
       className={cn(
-        "justify-end rounded-md border-hairline border-dashed p-xs transition-colors duration-fast",
+        "justify-between rounded-sm border-hairline border-dashed p-xs transition-colors duration-fast",
         hovered ? "border-thick border-ring bg-muted" : "border-transparent",
       )}
     >
+      {/* The empty line sits at the top of the band, in the air above the rail. */}
+      {items.length === 0 ? (
+        <Text variant="muted" className="text-xs">
+          {hovered ? "Drop it here" : `Nothing on track ${track}`}
+        </Text>
+      ) : null}
       <View className="flex-row flex-wrap items-end gap-xs">
-        {items.length === 0 ? (
-          <Text variant="muted" className="text-xs">
-            {hovered ? "Drop it here" : `Track ${track} is empty`}
-          </Text>
-        ) : null}
         {items.map((item, index) => (
           <ObjectChip
             key={`${item.id}-${index}`}
@@ -221,11 +222,7 @@ function Lane({
             onRemove={() => onRemove(item.id, index)}
           />
         ))}
-        {full ? (
-          <Badge variant="muted">
-            <Text>full</Text>
-          </Badge>
-        ) : null}
+        {full ? <Text variant="muted" className="text-xs">full</Text> : null}
       </View>
     </View>
   );
@@ -269,7 +266,9 @@ export function TrackBoard({
   const [width, setWidth] = useState<number>(BOARD.minWidth);
 
   const measure = useCallback((event: LayoutChangeEvent) => {
-    const measured = event.nativeEvent.layout.width;
+    // The gutter is part of the panel but not of the drawing, so the rails are
+    // laid out against whatever is left of the measured width.
+    const measured = event.nativeEvent.layout.width - BOARD.gutter;
     setWidth(Math.max(BOARD.minWidth, Math.round(measured)));
   }, []);
 
@@ -279,12 +278,33 @@ export function TrackBoard({
   ];
 
   return (
-    <View className={cn("gap-xs", className)} onLayout={measure}>
+    <View
+      className={cn(
+        "flex-row overflow-hidden rounded-lg border-hairline border-border bg-background",
+        className,
+      )}
+      onLayout={measure}
+    >
+      {/* The track names live here, left of the drawing, so nothing lands on a rail. */}
+      <View style={{ width: BOARD.gutter, height: BOARD.height }}>
+        {lanes.map(({ track }) => (
+          <View
+            key={`label-${track}`}
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              top: railY(track) - BOARD.labelHalfHeight,
+            }}
+            className="px-md"
+          >
+            <Text variant="meta">{`Track ${track}`}</Text>
+          </View>
+        ))}
+      </View>
+
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View
-          style={{ width, height: BOARD.height }}
-          className="overflow-hidden rounded-lg border-hairline border-border bg-background"
-        >
+        <View style={{ width, height: BOARD.height }}>
           <Rails width={width} theme={theme} />
 
           {lanes.map(({ track, items }) => (
@@ -301,18 +321,6 @@ export function TrackBoard({
           ))}
 
           {overlay?.(width)}
-
-          {lanes.map(({ track }) => (
-            <View
-              key={`label-${track}`}
-              style={{ position: "absolute", left: 0, top: railY(track) + BOARD.railHalfGap }}
-              className="px-sm"
-            >
-              <Text variant="muted" className="font-display text-xs">
-                {`Track ${track}`}
-              </Text>
-            </View>
-          ))}
         </View>
       </ScrollView>
     </View>

@@ -73,15 +73,25 @@ export function nodeCardStyle(theme: Theme, tone: NodeTone): Record<string, stri
   };
 }
 
-/** A connection point. Source handles are rubric, the single target is ink-faint. */
+/**
+ * A connection point. Source handles are rubric, the single target is ink-faint,
+ * and both are pushed clear of the card edge — React Flow centres a handle on
+ * the border by default, which reads as decoration rather than as something to
+ * drag. The cream ring is what separates the dot from the parchment behind it.
+ */
 export function handleStyle(theme: Theme, kind: "source" | "target"): Record<string, string | number> {
+  const size = theme.spacing.md;
+  // The handle is centred on its edge, so half its width plus a gap clears the border.
+  const offset = -(size / 2 + theme.spacing.xs);
+
   return {
-    width: theme.spacing.md,
-    height: theme.spacing.md,
+    width: size,
+    height: size,
     borderRadius: theme.radii.full,
     backgroundColor: kind === "source" ? theme.colors.primary : theme.colors.mutedForeground,
     borderColor: theme.colors.card,
     borderWidth: theme.borderWidths.thick,
+    ...(kind === "source" ? { right: offset } : { left: offset }),
   };
 }
 
@@ -120,12 +130,39 @@ export function canvasStyle(theme: Theme): Record<string, string | number> {
   };
 }
 
-/** The mini-map, in card and muted colors so it reads as a marginal sketch. */
+/**
+ * The mini-map, in card and muted colors so it reads as a marginal sketch, and
+ * a third smaller than React Flow's default so it keeps out of the graph's way.
+ */
 export function miniMapStyle(theme: Theme): Record<string, string | number> {
+  return {
+    width: theme.spacing["4xl"] * 2,
+    height: theme.spacing["3xl"] * 2,
+    margin: theme.spacing.md,
+    backgroundColor: theme.colors.card,
+    borderColor: theme.colors.border,
+    borderWidth: theme.borderWidths.hairline,
+    borderRadius: theme.radii.md,
+  };
+}
+
+/**
+ * The zoom controls, restyled into the outline-button family: one bordered
+ * column on the card surface rather than React Flow's default glyph stack.
+ */
+export function controlsStyle(theme: Theme): Record<string, string | number> {
   return {
     backgroundColor: theme.colors.card,
     borderColor: theme.colors.border,
     borderWidth: theme.borderWidths.hairline,
     borderRadius: theme.radii.md,
+    overflow: "hidden",
+    margin: theme.spacing.md,
+    boxShadow: theme.shadows.inkSoft,
+    "--xy-controls-button-background-color": theme.colors.card,
+    "--xy-controls-button-background-color-hover": theme.colors.muted,
+    "--xy-controls-button-color": theme.colors.mutedForeground,
+    "--xy-controls-button-color-hover": theme.colors.primary,
+    "--xy-controls-button-border-color": theme.colors.border,
   };
 }

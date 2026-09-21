@@ -46,10 +46,10 @@ export function Textarea({
         maxLength={maxLength}
         value={text}
         onChangeText={handleChangeText}
-        placeholderTextColor={theme.colors.mutedForeground}
+        placeholderTextColor={theme.colors.subtleForeground}
         style={{ minHeight: rows * theme.lineHeights.base }}
         className={cn(
-          "rounded-md border-hairline border-border bg-input p-md font-body text-base text-foreground",
+          "rounded-sm border-hairline border-border bg-input p-md font-body text-base text-foreground",
           "web:focus-visible:outline-none web:focus-visible:ring-thick web:focus-visible:ring-ring",
           !editable && "opacity-disabled",
           className,
@@ -57,7 +57,7 @@ export function Textarea({
         {...props}
       />
       {showCount && maxLength !== undefined ? (
-        <Text variant="muted" className="self-end">
+        <Text variant="subtle" className="self-end">
           {`${text.length} / ${maxLength}`}
         </Text>
       ) : null}

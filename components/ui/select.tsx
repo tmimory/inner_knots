@@ -1,6 +1,8 @@
 import * as SelectPrimitive from "@rn-primitives/select";
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
+import { View } from "react-native";
 
+import { Chevron } from "@/components/ui/chevron";
 import { overlayStyle, type PortalledProps } from "@/components/ui/overlay";
 import { TextClassContext } from "@/components/ui/text";
 import { cn } from "@/lib/utils";
@@ -10,22 +12,28 @@ export const SelectGroup = SelectPrimitive.Group;
 export const SelectValue = SelectPrimitive.Value;
 export type SelectOption = SelectPrimitive.Option;
 
-export function SelectTrigger({
-  className,
-  children,
-  ...props
-}: ComponentProps<typeof SelectPrimitive.Trigger>) {
+/** The trigger takes plain children: the chevron is rendered beside them. */
+export type SelectTriggerProps = Omit<
+  ComponentProps<typeof SelectPrimitive.Trigger>,
+  "children"
+> & { children?: ReactNode };
+
+export function SelectTrigger({ className, children, ...props }: SelectTriggerProps) {
   return (
     <TextClassContext value="font-body text-base text-foreground">
       <SelectPrimitive.Trigger
         className={cn(
-          "h-control-md flex-row items-center justify-between gap-sm rounded-md border-hairline border-border bg-input px-md",
+          "h-control-md flex-row items-center justify-between gap-sm rounded-sm border-hairline border-border bg-input px-md",
           "web:focus-visible:outline-none web:focus-visible:ring-thick web:focus-visible:ring-ring",
           className,
         )}
         {...props}
       >
         {children}
+        {/* The chevron is what tells a select apart from a text field at a glance. */}
+        <View className="shrink-0">
+          <Chevron />
+        </View>
       </SelectPrimitive.Trigger>
     </TextClassContext>
   );
@@ -42,7 +50,7 @@ export function SelectContent({
       <SelectPrimitive.Overlay style={overlayStyle}>
         <SelectPrimitive.Content
           className={cn(
-            "z-overlay min-w-menu rounded-md border-hairline border-border bg-popover p-xxs shadow-ink-lifted",
+            "z-overlay min-w-popover rounded-md border-hairline border-border bg-popover p-xxs shadow-ink-lifted",
             className,
           )}
           {...props}
@@ -82,7 +90,7 @@ export function SelectItem({
 export function SelectLabel({ className, ...props }: ComponentProps<typeof SelectPrimitive.Label>) {
   return (
     <SelectPrimitive.Label
-      className={cn("px-md py-xs font-display text-xs text-muted-foreground", className)}
+      className={cn("px-md py-xs font-bodyMedium text-sm text-muted-foreground", className)}
       {...props}
     />
   );

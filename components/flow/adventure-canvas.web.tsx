@@ -27,7 +27,7 @@ import { View } from "react-native";
 import { useTheme } from "@/theme";
 
 import { adventureNodeTypes } from "./decision-node.web";
-import { canvasStyle, miniMapStyle } from "./flow-style";
+import { canvasStyle, controlsStyle, miniMapStyle } from "./flow-style";
 import type { AdventureCanvasProps } from "./types";
 import {
   decorationFromSummary,
@@ -38,6 +38,13 @@ import {
 
 /** How far the reader may zoom out before the cards stop being cards. */
 const ZOOM = { min: 0.15, max: 2 } as const;
+
+/**
+ * How many cards a graph needs before the mini-map earns its corner. Below this
+ * the whole tree fits on screen, and the map is a sketch of what is already there
+ * — drawn over the cards it duplicates.
+ */
+const MINIMAP_FROM_NODES = 6;
 
 function Canvas(props: AdventureCanvasProps) {
   const theme = useTheme();
@@ -98,18 +105,25 @@ function Canvas(props: AdventureCanvasProps) {
       <Background
         variant={BackgroundVariant.Dots}
         gap={theme.spacing.xl}
-        size={theme.borderWidths.thick}
+        size={theme.borderWidths.hairline}
         color={theme.colors.border}
       />
-      <MiniMap
-        pannable
-        zoomable
-        style={miniMapStyle(theme) as CSSProperties}
-        nodeColor={theme.colors.muted}
-        nodeStrokeColor={theme.colors.border}
-        maskColor={theme.colors.background}
+      {props.adventure.nodes.length > MINIMAP_FROM_NODES ? (
+        <MiniMap
+          pannable
+          zoomable
+          position="bottom-right"
+          style={miniMapStyle(theme) as CSSProperties}
+          nodeColor={theme.colors.muted}
+          nodeStrokeColor={theme.colors.border}
+          maskColor={theme.colors.background}
+        />
+      ) : null}
+      <Controls
+        showInteractive={builder}
+        position="bottom-left"
+        style={controlsStyle(theme) as CSSProperties}
       />
-      <Controls showInteractive={builder} />
     </ReactFlow>
   );
 }

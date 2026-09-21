@@ -44,7 +44,7 @@ function Choice({ label, value, options, placeholder, onChange }: ChoiceProps) {
   const current: SelectOption = selected ?? { value: ANY, label: placeholder };
 
   return (
-    <View className="min-w-menu flex-1 gap-xs">
+    <View className="flex-1 gap-xs">
       <Label>{label}</Label>
       <Select
         value={current}
@@ -70,7 +70,7 @@ export type RunFiltersBarProps = {
   onChange: (filters: RunFilters) => void;
 };
 
-/** Puzzle, status, character and a free-text search over the run id. */
+/** A free-text search over the run id, then the three facets that narrow the query. */
 export function RunFiltersBar({ filters, characters, onChange }: RunFiltersBarProps) {
   const characterOptions = [...characters.values()].map((character) => ({
     value: character.id,
@@ -78,36 +78,38 @@ export function RunFiltersBar({ filters, characters, onChange }: RunFiltersBarPr
   }));
 
   return (
-    <View className="flex-row flex-wrap items-end gap-md">
-      <Choice
-        label="Puzzle"
-        placeholder="every puzzle"
-        value={filters.puzzle}
-        options={PUZZLE_IDS.map((id) => ({ value: id, label: id }))}
-        onChange={(value) => onChange({ ...filters, puzzle: value as PuzzleId | undefined })}
-      />
-      <Choice
-        label="Status"
-        placeholder="any status"
-        value={filters.status}
-        options={RUN_STATUSES.map((status) => ({ value: status, label: status }))}
-        onChange={(value) => onChange({ ...filters, status: value as RunStatus | undefined })}
-      />
-      <Choice
-        label="Character"
-        placeholder="anyone"
-        value={filters.characterId}
-        options={characterOptions}
-        onChange={(value) => onChange({ ...filters, characterId: value })}
-      />
-      <View className="min-w-menu flex-1 gap-xs">
-        <Label>Run id</Label>
+    <View className="gap-md wide:flex-row wide:items-end">
+      <View className="flex-1 gap-xs">
+        <Label>Run ID</Label>
         <Input
           value={filters.search}
           placeholder="search the ledger"
           autoCapitalize="none"
           autoCorrect={false}
           onChangeText={(search) => onChange({ ...filters, search })}
+        />
+      </View>
+      <View className="flex-1 flex-row items-end gap-md">
+        <Choice
+          label="Puzzle"
+          placeholder="every puzzle"
+          value={filters.puzzle}
+          options={PUZZLE_IDS.map((id) => ({ value: id, label: id }))}
+          onChange={(value) => onChange({ ...filters, puzzle: value as PuzzleId | undefined })}
+        />
+        <Choice
+          label="Status"
+          placeholder="any status"
+          value={filters.status}
+          options={RUN_STATUSES.map((status) => ({ value: status, label: status }))}
+          onChange={(value) => onChange({ ...filters, status: value as RunStatus | undefined })}
+        />
+        <Choice
+          label="Character"
+          placeholder="anyone"
+          value={filters.characterId}
+          options={characterOptions}
+          onChange={(value) => onChange({ ...filters, characterId: value })}
         />
       </View>
     </View>

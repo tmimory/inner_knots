@@ -1,6 +1,6 @@
 import { Pressable, View } from "react-native";
 
-import { Badge, Text } from "@/components/ui";
+import { Text } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
 export type ChipOption<T extends string> = { value: T; label: string };
@@ -17,7 +17,8 @@ export type FilterChipsProps<T extends string> = {
 
 /**
  * One facet of the character filter. Pressing the chosen chip again clears it, so
- * "any" needs no chip of its own.
+ * "any" needs no chip of its own, and a facet with nothing to choose between
+ * draws nothing at all.
  */
 export function FilterChips<T extends string>({
   label,
@@ -26,11 +27,11 @@ export function FilterChips<T extends string>({
   options,
   className,
 }: FilterChipsProps<T>) {
-  if (options.length === 0) return null;
+  if (options.length < 2) return null;
 
   return (
     <View className={cn("flex-row flex-wrap items-center gap-xs", className)}>
-      <Text variant="muted" className="font-display">
+      <Text variant="muted" className="mr-xxs">
         {label}
       </Text>
       {options.map((option) => {
@@ -41,11 +42,21 @@ export function FilterChips<T extends string>({
             role="checkbox"
             aria-checked={selected}
             onPress={() => onChange(selected ? null : option.value)}
-            className="rounded-full transition-opacity duration-fast active:opacity-hover web:hover:opacity-hover"
+            className={cn(
+              "h-control-sm items-center justify-center rounded-sm px-md transition-colors duration-fast",
+              selected
+                ? "bg-primary active:opacity-hover web:hover:opacity-hover"
+                : "border-hairline border-border bg-transparent active:bg-muted web:hover:bg-muted",
+            )}
           >
-            <Badge variant={selected ? "secondary" : "outline"}>
-              <Text>{option.label}</Text>
-            </Badge>
+            <Text
+              className={cn(
+                "font-body text-sm",
+                selected ? "text-primary-foreground" : "text-foreground",
+              )}
+            >
+              {option.label}
+            </Text>
           </Pressable>
         );
       })}

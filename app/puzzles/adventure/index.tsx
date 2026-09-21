@@ -1,28 +1,43 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 
-import { issueBadge } from "@/components/puzzles/adventure";
-import { Screen, Scroll } from "@/components/shell";
-import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  ConfirmDialog,
-  Text,
-} from "@/components/ui";
+import { issueBadge, type IssueBadge } from "@/components/puzzles/adventure";
+import { Screen } from "@/components/shell";
+import { Button, ConfirmDialog, Text } from "@/components/ui";
 import { describeApiError } from "@/lib/client/errors";
 import { useAdventures } from "@/lib/client/use-adventures";
 import { usePendingDelete } from "@/lib/client/use-pending-delete";
 import { validateAdventure, type Adventure } from "@/lib/domain/adventure";
-import { formatDateTime, pluralize } from "@/lib/format";
+import { UNKNOWN, pluralize } from "@/lib/format";
 import { starterAdventure } from "@/lib/puzzles/adventure/edits";
+import { cn } from "@/lib/utils";
 
-/** One saved tree: what it is called, how big it is, and whether it would run. */
-function AdventureCard({
+/** The bullet a graph's state is shown as: green settled, gilt noted, oxblood blocked. */
+const STATUS_DOTS: Record<IssueBadge["variant"], string> = {
+  secondary: "bg-secondary",
+  accent: "bg-accent",
+  destructive: "bg-destructive",
+};
+
+/** When a tree was last touched, to the minute: `Sep 21, 5:16 PM`. */
+function editedStamp(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return UNKNOWN;
+  return date.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+/**
+ * One saved tree as a row: the title is the way in, Run sits beside it, and the
+ * rarer actions wait behind the overflow so the shelf reads as a list rather
+ * than a wall of buttons.
+ */
+function AdventureRow({
   adventure,
   busy,
   onOpen,
@@ -37,39 +52,61 @@ function AdventureCard({
   onDuplicate: () => void;
   onDelete: () => void;
 }) {
+  const [showActions, setShowActions] = useState(false);
   const badge = issueBadge(validateAdventure(adventure));
-  const nodes = adventure.nodes.length;
 
   return (
-    <Card className="min-w-menu flex-1">
-      <CardHeader>
-        <View className="flex-row items-start justify-between gap-md">
-          <CardTitle numberOfLines={2} className="flex-1">
-            {adventure.name}
-          </CardTitle>
-          <Badge variant={badge.variant}>
-            <Text>{badge.label}</Text>
-          </Badge>
-        </View>
-        <Text variant="muted">
-          {`${pluralize(nodes, "node")} · edited ${formatDateTime(adventure.updatedAt)}`}
+    <View className="flex-row items-center gap-sm border-b-hairline border-border">
+      <Pressable
+        role="link"
+        accessibilityLabel={`Open ${adventure.name}`}
+        className="flex-1 gap-xxs rounded-md px-sm py-md transition-colors duration-fast active:bg-muted web:hover:bg-muted/subtle"
+        onPress={onOpen}
+      >
+        <Text className="font-display text-base" numberOfLines={1}>
+          {adventure.name}
         </Text>
-      </CardHeader>
-      <CardContent className="flex-row flex-wrap gap-sm">
-        <Button size="sm" onPress={onOpen}>
-          <Text>Open</Text>
-        </Button>
-        <Button variant="secondary" size="sm" onPress={onRun}>
-          <Text>Run</Text>
-        </Button>
-        <Button variant="outline" size="sm" disabled={busy} onPress={onDuplicate}>
-          <Text>Duplicate</Text>
-        </Button>
-        <Button variant="ghost" size="sm" disabled={busy} onPress={onDelete}>
-          <Text className="text-destructive">Delete</Text>
-        </Button>
-      </CardContent>
-    </Card>
+        <View className="flex-row items-center gap-xs">
+          <View className={cn("h-sm w-sm rounded-full", STATUS_DOTS[badge.variant])} />
+          <Text variant="meta" numberOfLines={1}>
+            {`${badge.label} · ${pluralize(adventure.nodes.length, "node")} · edited ${editedStamp(adventure.updatedAt)}`}
+          </Text>
+        </View>
+      </Pressable>
+
+      {showActions ? (
+        <>
+          <Button variant="ghost" size="sm" disabled={busy} onPress={onDuplicate}>
+            <Text>Duplicate</Text>
+          </Button>
+          <Button variant="destructive" size="sm" disabled={busy} onPress={onDelete}>
+            <Text>Delete</Text>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            accessibilityLabel="Hide actions"
+            onPress={() => setShowActions(false)}
+          >
+            <Text>×</Text>
+          </Button>
+        </>
+      ) : (
+        <>
+          <Button variant="outline" size="sm" onPress={onRun}>
+            <Text>Run</Text>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            accessibilityLabel={`More for ${adventure.name}`}
+            onPress={() => setShowActions(true)}
+          >
+            <Text>…</Text>
+          </Button>
+        </>
+      )}
+    </View>
   );
 }
 
@@ -103,11 +140,11 @@ export default function AdventureListScreen() {
       subtitle="ὁδός · branching paths, recorded"
       right={
         <>
-          <Badge variant={loading ? "muted" : "secondary"}>
-            <Text>
+          {adventures.length > 0 || loading ? (
+            <Text variant="meta">
               {loading ? "reading the shelf…" : `${adventures.length} on the shelf`}
             </Text>
-          </Badge>
+          ) : null}
           <Button
             disabled={busy}
             onPress={() =>
@@ -123,12 +160,9 @@ export default function AdventureListScreen() {
       }
     >
       {error ? (
-        <Scroll>
-          <Text variant="h3">The shelf would not open</Text>
-          <Text variant="small" className="text-destructive">
-            {error}
-          </Text>
-        </Scroll>
+        <Text variant="small" className="text-destructive">
+          The shelf would not open: {error}
+        </Text>
       ) : null}
 
       {actionError ? (
@@ -138,36 +172,36 @@ export default function AdventureListScreen() {
       ) : null}
 
       {!loading && adventures.length === 0 && error === null ? (
-        <Scroll>
-          <Text variant="lead">
-            Nothing branches here yet. Start a tree, write the first question, and see which way
-            the roster turns.
-          </Text>
-        </Scroll>
+        <Text variant="lead">
+          Nothing branches here yet. Start a tree, write the first question, and see which way the
+          roster turns.
+        </Text>
       ) : null}
 
-      <View className="flex-row flex-wrap gap-lg">
-        {adventures.map((adventure) => (
-          <AdventureCard
-            key={adventure.id}
-            adventure={adventure}
-            busy={busy}
-            onOpen={() => openBuilder(adventure.id)}
-            onRun={() =>
-              router.push({
-                pathname: "/puzzles/adventure/[id]/run",
-                params: { id: adventure.id },
-              })
-            }
-            onDuplicate={() =>
-              void act(async () => {
-                await duplicate(adventure);
-              })
-            }
-            onDelete={() => deleting.request(adventure)}
-          />
-        ))}
-      </View>
+      {adventures.length > 0 ? (
+        <View className="w-full max-w-canvas">
+          {adventures.map((adventure) => (
+            <AdventureRow
+              key={adventure.id}
+              adventure={adventure}
+              busy={busy}
+              onOpen={() => openBuilder(adventure.id)}
+              onRun={() =>
+                router.push({
+                  pathname: "/puzzles/adventure/[id]/run",
+                  params: { id: adventure.id },
+                })
+              }
+              onDuplicate={() =>
+                void act(async () => {
+                  await duplicate(adventure);
+                })
+              }
+              onDelete={() => deleting.request(adventure)}
+            />
+          ))}
+        </View>
+      ) : null}
 
       <ConfirmDialog
         open={deleting.open}

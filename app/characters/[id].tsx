@@ -1,11 +1,11 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { View } from "react-native";
 
-import { CharacterForm } from "@/components/characters";
-import { Screen, Scroll } from "@/components/shell";
-import { Badge, Button, Text, useToast } from "@/components/ui";
+import { CharacterForm, characterTitle } from "@/components/characters";
+import { Screen } from "@/components/shell";
+import { Button, Text, useToast } from "@/components/ui";
 import { useCharacters } from "@/lib/client/use-characters";
-import { characterDisplayName, type CharacterInput } from "@/lib/domain";
+import type { CharacterInput } from "@/lib/domain";
 
 export default function EditCharacterScreen() {
   const params = useLocalSearchParams<{ id: string }>();
@@ -31,13 +31,11 @@ export default function EditCharacterScreen() {
 
   return (
     <Screen
-      title={character ? characterDisplayName(character) : "Character"}
+      title={character ? characterTitle(character) : "Character"}
       subtitle="διόρθωσις · a mask, revised"
       right={
         character ? (
-          <Badge variant="muted">
-            <Text>{`${character.provider} · ${character.model}`}</Text>
-          </Badge>
+          <Text variant="muted">{`${character.provider} · ${character.model}`}</Text>
         ) : null
       }
     >
@@ -50,21 +48,16 @@ export default function EditCharacterScreen() {
           onCancel={() => router.replace("/characters")}
         />
       ) : loading ? (
-        <Scroll>
-          <Text variant="lead">Reading characters…</Text>
-        </Scroll>
+        <Text variant="lead">Reading characters…</Text>
       ) : (
-        <Scroll>
-          <Text variant="h3">No such character</Text>
-          <Text variant="lead">
-            {error ?? `Nobody answers to "${id ?? ""}".`}
-          </Text>
+        <View className="gap-lg">
+          <Text variant="lead">{error ?? `Nobody answers to "${id ?? ""}".`}</Text>
           <View className="flex-row">
             <Button variant="outline" onPress={() => router.replace("/characters")}>
               <Text>Back to characters</Text>
             </Button>
           </View>
-        </Scroll>
+        </View>
       )}
     </Screen>
   );

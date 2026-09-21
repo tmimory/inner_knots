@@ -3,9 +3,9 @@ import { useCallback, useEffect, useState } from "react";
 import { Pressable, View } from "react-native";
 
 import { AdventureBuilder } from "@/components/flow";
-import { NodeEditor, issueBadge, splitIssues } from "@/components/puzzles/adventure";
+import { NodeEditor, splitIssues } from "@/components/puzzles/adventure";
 import { Screen, Scroll } from "@/components/shell";
-import { Badge, Button, Input, Separator, Text, Textarea } from "@/components/ui";
+import { Button, Field, Input, Separator, Text, Textarea } from "@/components/ui";
 import { useAdventure } from "@/lib/client/use-adventures";
 import {
   ADVENTURE_LIMITS,
@@ -14,22 +14,19 @@ import {
   type AdventureNode,
 } from "@/lib/domain/adventure";
 import { addNode } from "@/lib/puzzles/adventure/edits";
-import {
-  ADVENTURE_LAYOUT,
-  adventureNodeHeight,
-  layoutAdventure,
-} from "@/lib/puzzles/adventure/layout";
+import { ADVENTURE_LAYOUT, layoutAdventure } from "@/lib/puzzles/adventure/layout";
+import { cn } from "@/lib/utils";
 import { durations } from "@/theme";
 
 /** How long the builder waits after the last edit before writing the draft back. */
 const AUTOSAVE_DELAY_MS = durations.slow * 4;
 
-/** Where a new node lands: under everything already on the canvas. */
+/** Where a new node lands: to the right of everything already on the canvas, as the graph flows. */
 function nextNodePosition(nodes: readonly AdventureNode[]): { x: number; y: number } {
   if (nodes.length === 0) return { x: 0, y: 0 };
-  const bottom = Math.max(...nodes.map((node) => node.position.y + adventureNodeHeight(node)));
-  const left = Math.min(...nodes.map((node) => node.position.x));
-  return { x: left, y: bottom + ADVENTURE_LAYOUT.rankGap };
+  const right = Math.max(...nodes.map((node) => node.position.x + ADVENTURE_LAYOUT.nodeWidth));
+  const top = Math.min(...nodes.map((node) => node.position.y));
+  return { x: right + ADVENTURE_LAYOUT.rankGap, y: top };
 }
 
 /** One finding from `validateAdventure`, as a row that selects the node it names. */
@@ -45,12 +42,12 @@ function IssueRow({
   return (
     <Pressable
       role="button"
-      className="flex-row items-start gap-sm rounded-md p-sm transition-colors duration-fast active:bg-muted web:hover:bg-muted"
+      className="flex-row items-center gap-sm rounded-md p-sm transition-colors duration-fast active:bg-muted web:hover:bg-muted"
       onPress={onPress}
     >
-      <Badge variant={blocking ? "destructive" : "accent"}>
-        <Text>{blocking ? "blocks" : "note"}</Text>
-      </Badge>
+      <View
+        className={cn("h-sm w-sm rounded-full", blocking ? "bg-destructive" : "bg-accent")}
+      />
       <Text variant="small" className="flex-1">
         {issue.message}
       </Text>
@@ -74,7 +71,7 @@ export default function AdventureBuilderScreen() {
     return () => clearTimeout(timer);
   }, [dirty, saving, save]);
 
-  const addBelow = useCallback(() => {
+  const addBeside = useCallback(() => {
     if (!draft) return;
     const position = nextNodePosition(draft.nodes);
     const next = addNode(draft, position);
@@ -89,50 +86,32 @@ export default function AdventureBuilderScreen() {
   if (!draft) {
     return (
       <Screen title="No such adventure" subtitle="ὁδός · branching paths, recorded">
-        <Scroll>
-          <Text variant="lead">{error ?? "That adventure is not on the shelf any more."}</Text>
-          <View className="flex-row">
-            <Button variant="outline" onPress={() => router.push("/puzzles/adventure")}>
-              <Text>Back to the shelf</Text>
-            </Button>
-          </View>
-        </Scroll>
+        <Text variant="lead">{error ?? "That adventure is not on the shelf any more."}</Text>
+        <View className="flex-row">
+          <Button variant="outline" onPress={() => router.push("/puzzles/adventure")}>
+            <Text>Back to the shelf</Text>
+          </Button>
+        </View>
       </Screen>
     );
   }
 
   const issues = validateAdventure(draft);
   const { blocking, runnable } = splitIssues(issues);
-  const badge = issueBadge(issues);
   const selected = draft.nodes.find((node) => node.id === selectedNodeId);
+  const saveState = saving ? "Saving…" : dirty ? "Unsaved changes" : "Saved";
 
   return (
-    <Screen
-      title={draft.name}
-      subtitle="ὁδός · branching paths, recorded"
-      right={
-        <>
-          <Badge variant={badge.variant}>
-            <Text>{badge.label}</Text>
-          </Badge>
-          <Badge variant={dirty || saving ? "accent" : "muted"}>
-            <Text>{saving ? "saving…" : dirty ? "unsaved" : "saved"}</Text>
-          </Badge>
-        </>
-      }
-    >
+    <Screen title={draft.name} subtitle="ὁδός · branching paths, recorded">
       <View className="flex-row flex-wrap items-center gap-sm">
         <Button variant="ghost" size="sm" onPress={() => router.push("/puzzles/adventure")}>
           <Text>← Shelf</Text>
         </Button>
-        <Button size="sm" disabled={!dirty || saving} onPress={() => void save()}>
-          <Text>Save</Text>
-        </Button>
-        <Button variant="outline" size="sm" onPress={addBelow}>
+        <Button variant="outline" size="sm" onPress={addBeside}>
           <Text>Add node</Text>
         </Button>
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
           onPress={() => {
             setDraft(layoutAdventure(draft));
@@ -141,15 +120,17 @@ export default function AdventureBuilderScreen() {
         >
           <Text>Auto-layout</Text>
         </Button>
-        <Button variant="outline" size="sm" onPress={() => setShowIssues((open) => !open)}>
+        <Button variant="ghost" size="sm" onPress={() => setShowIssues((open) => !open)}>
           <Text>{showIssues ? "Hide problems" : "Validate"}</Text>
         </Button>
-        <Button variant="outline" size="sm" onPress={() => setFitSignal((signal) => signal + 1)}>
-          <Text>Fit view</Text>
-        </Button>
+
         <View className="flex-1" />
+
+        <Text variant="meta">{saveState}</Text>
+        <Button variant="outline" size="sm" disabled={!dirty || saving} onPress={() => void save()}>
+          <Text>Save</Text>
+        </Button>
         <Button
-          variant="secondary"
           size="sm"
           disabled={!runnable}
           onPress={() =>
@@ -161,7 +142,7 @@ export default function AdventureBuilderScreen() {
       </View>
 
       {showIssues ? (
-        <Scroll>
+        <View className="gap-sm">
           <Text variant="h4">What the graph says</Text>
           {issues.length === 0 ? (
             <Text variant="muted">
@@ -180,7 +161,7 @@ export default function AdventureBuilderScreen() {
               />
             ))
           )}
-        </Scroll>
+        </View>
       ) : null}
 
       {error ? (
@@ -198,28 +179,27 @@ export default function AdventureBuilderScreen() {
             onSelectNode={setSelectedNodeId}
             fitSignal={fitSignal}
           />
-          <Text variant="muted" className="pt-xs">
-            Drag an option&apos;s handle onto another card to connect it; double-click an edge to
-            cut it. An option with no edge ends the adventure.
-          </Text>
         </View>
 
         <Scroll className="w-full wide:w-inspector">
-          <Text variant="h3">The tree</Text>
-          <Input
-            maxLength={ADVENTURE_LIMITS.name}
-            accessibilityLabel="Adventure name"
-            value={draft.name}
-            onChangeText={(name) => setDraft({ ...draft, name })}
-          />
-          <Text variant="muted">Briefing — read to every character before every node.</Text>
-          <Textarea
-            rows={5}
-            maxLength={ADVENTURE_LIMITS.briefing}
-            accessibilityLabel="Briefing"
-            value={draft.briefing}
-            onChangeText={(briefing) => setDraft({ ...draft, briefing })}
-          />
+          <Field label="Title">
+            <Input
+              maxLength={ADVENTURE_LIMITS.name}
+              accessibilityLabel="Adventure name"
+              value={draft.name}
+              onChangeText={(name) => setDraft({ ...draft, name })}
+            />
+          </Field>
+          <Field label="Briefing">
+            <Textarea
+              rows={5}
+              maxLength={ADVENTURE_LIMITS.briefing}
+              accessibilityLabel="Briefing"
+              placeholder="Read to every character before every node."
+              value={draft.briefing}
+              onChangeText={(briefing) => setDraft({ ...draft, briefing })}
+            />
+          </Field>
 
           <Separator />
 
@@ -232,7 +212,8 @@ export default function AdventureBuilderScreen() {
             />
           ) : (
             <Text variant="muted">
-              Select a card on the canvas to write its context, its question and the ways out of it.
+              Select a card to write its context, its question and the ways out of it. Drag an
+              option&apos;s handle onto another card to connect them.
             </Text>
           )}
         </Scroll>

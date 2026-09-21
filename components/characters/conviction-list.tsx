@@ -1,6 +1,6 @@
 import { View } from "react-native";
 
-import { Button, Text, Textarea } from "@/components/ui";
+import { Button, Input, Text } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
 export type ConvictionListProps = {
@@ -21,9 +21,10 @@ export type ConvictionListProps = {
 
 /**
  * A short, ordered list of sentences — the principles a character holds itself to,
- * or the values it cares about. Each row is a capped textarea with a remove
- * control; the add button closes once the list is full, so the limit is visible
- * rather than enforced by a refusal at save time.
+ * or the values it cares about. Each row is one capped line whose remove control
+ * sits inside the field's right padding, so every row shares both edges; the add
+ * button closes once the list is full, so the limit is visible rather than
+ * enforced by a refusal at save time.
  */
 export function ConvictionList({
   value,
@@ -50,20 +51,19 @@ export function ConvictionList({
       {value.map((item, index) => (
         // The row's identity is its position: reordering is not offered, and a
         // content key would remount the field on every keystroke.
-        <View key={index} className="flex-row items-start gap-sm">
-          <View className="flex-1">
-            <Textarea
-              value={item}
-              onChangeText={(text) => replace(index, text)}
-              maxLength={maxLength}
-              rows={2}
-              placeholder={placeholder}
-            />
-          </View>
+        <View key={index} className="justify-center">
+          <Input
+            value={item}
+            onChangeText={(text) => replace(index, text)}
+            maxLength={maxLength}
+            placeholder={placeholder}
+            className="pr-control-icon"
+          />
           <Button
             variant="ghost"
             size="icon"
             accessibilityLabel={`Remove ${itemLabel} ${index + 1}`}
+            className="absolute right-none top-none"
             onPress={() => removeAt(index)}
           >
             <Text className="font-mono text-muted-foreground">×</Text>
@@ -72,12 +72,7 @@ export function ConvictionList({
       ))}
 
       <View className="flex-row items-center gap-md">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={full}
-          onPress={() => onChange([...value, ""])}
-        >
+        <Button variant="outline" size="sm" disabled={full} onPress={() => onChange([...value, ""])}>
           <Text>{addLabel}</Text>
         </Button>
         <Text variant="muted">{`${value.length} / ${maxItems}`}</Text>

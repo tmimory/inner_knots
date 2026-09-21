@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { View } from "react-native";
 
 import { Screen } from "@/components/shell";
 import { PromptView } from "@/components/puzzles/prompt-view";
@@ -19,7 +20,7 @@ import {
   type TrackZoneId,
 } from "@/components/puzzles/trolley";
 import { VariantSelect, type VariantOption } from "@/components/puzzles/variant-select";
-import { Badge, Button, Text } from "@/components/ui";
+import { Button, Text } from "@/components/ui";
 import { previewTrolleyPrompt } from "@/lib/client/prompts";
 import { useCatalogue } from "@/lib/client/use-catalogue";
 import { useCharacters } from "@/lib/client/use-characters";
@@ -218,24 +219,8 @@ export default function TrolleyScreen() {
   const total = board.roster.reduce((sum, entry) => sum + entry.runs, 0);
 
   return (
-    <Screen
-      title="Trolley Problems"
-      subtitle="ἁμαξοστοιχία · the lever and the lesser evil"
-      right={
-        <Badge variant="outline">
-          <Text>{`${catalogue.items.length} objects`}</Text>
-        </Badge>
-      }
-    >
-      <Text variant="lead">
-        Load the tracks, choose how to ask, and watch the roster decide who or what the
-        trolley meets.
-      </Text>
-
-      <Section
-        title="The roster"
-        description="Who answers, and how many times each. Up to five characters."
-      >
+    <Screen title="Trolley Problems" subtitle="ἁμαξοστοιχία · the lever and the lesser evil">
+      <Section title="The roster">
         <RosterBar
           value={board.roster}
           onChange={(roster) => patch({ roster })}
@@ -248,10 +233,9 @@ export default function TrolleyScreen() {
 
       <Section
         title="The framing"
-        description="The same tracks, asked three different ways."
         right={
-          <Button variant="outline" size="sm" onPress={() => void prompt.show()}>
-            <Text>Prompt View</Text>
+          <Button variant="ghost" size="sm" onPress={() => void prompt.show()}>
+            <Text>Prompt view</Text>
           </Button>
         }
       >
@@ -298,25 +282,32 @@ export default function TrolleyScreen() {
         {catalogue.error ? <Text className="text-destructive">{catalogue.error}</Text> : null}
       </Section>
 
-      <Section
-        title="The run"
-        description={
-          blocked ??
-          `${pluralize(total, "decision")} across ${pluralize(board.roster.length, "character")}.`
-        }
-        right={
-          <Button disabled={blocked !== null || starter.starting} onPress={() => void startRun()}>
+      <Section title="The run">
+        {/* The only filled button on the screen; blocked, it outlines and says why. */}
+        <View className="flex-row flex-wrap items-center gap-md">
+          <Button
+            variant={blocked === null ? "default" : "outline"}
+            disabled={blocked !== null || starter.starting}
+            onPress={() => void startRun()}
+          >
             <Text>{starter.starting ? "Starting…" : "Pull the lever"}</Text>
           </Button>
-        }
-      >
-        <RunProgress run={run ?? null} idleMessage="No run started yet." />
+          <Text variant="muted">
+            {blocked ??
+              `${pluralize(total, "decision")} across ${pluralize(
+                board.roster.length,
+                "character",
+              )}.`}
+          </Text>
+        </View>
+
+        <RunProgress run={run ?? null} />
         {starter.error ? (
           <Text className="text-destructive">{starter.error.message}</Text>
         ) : null}
       </Section>
 
-      <Section title="What they chose" description="Counts per character, per track.">
+      <Section title="What they chose">
         <TrolleyResults
           summary={trolleySummary}
           roster={board.roster}

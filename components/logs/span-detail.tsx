@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { View } from "react-native";
 
-import { Badge, Separator, Text } from "@/components/ui";
+import { Separator, Text } from "@/components/ui";
 import type { Character } from "@/lib/domain/character";
 import type { PuzzleId } from "@/lib/domain/run";
 import type { Span } from "@/lib/domain/span";
@@ -12,7 +12,7 @@ import { JsonTree } from "./json-tree";
 import { nameOf } from "./roster-avatars";
 import { readModel, SpanInputView } from "./span-input";
 import { spanLabel } from "./span-tree";
-import { StatusDot } from "./status-badge";
+import { StatusDot } from "./status-mark";
 
 /** A titled section, so every part of the pane is introduced the same way. */
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -49,6 +49,14 @@ export function SpanDetail({ span, puzzle, depth = 0, characters }: SpanDetailPr
   }
 
   const model = readModel(span.input);
+  // Who, which turn, which card and which model — as one line of metadata rather
+  // than four pills that each claim to be a control.
+  const facts = [
+    span.characterId ? nameOf(span.characterId, characters) : undefined,
+    span.iteration === undefined ? undefined : `#${span.iteration}`,
+    span.nodeId,
+    model,
+  ].filter((fact): fact is string => fact !== undefined && fact !== "");
 
   return (
     <View className="gap-lg">
@@ -58,26 +66,7 @@ export function SpanDetail({ span, puzzle, depth = 0, characters }: SpanDetailPr
           <Text variant="h4" className="text-base">
             {spanLabel(span, puzzle, depth)}
           </Text>
-          {span.characterId ? (
-            <Badge variant="outline">
-              <Text>{nameOf(span.characterId, characters)}</Text>
-            </Badge>
-          ) : null}
-          {span.iteration === undefined ? null : (
-            <Badge variant="outline">
-              <Text>#{span.iteration}</Text>
-            </Badge>
-          )}
-          {span.nodeId ? (
-            <Badge variant="outline">
-              <Text>{span.nodeId}</Text>
-            </Badge>
-          ) : null}
-          {model ? (
-            <Badge variant="muted">
-              <Text>{model}</Text>
-            </Badge>
-          ) : null}
+          {facts.length > 0 ? <Text variant="meta">{facts.join(" · ")}</Text> : null}
         </View>
         <Text variant="muted" className="font-mono text-xs">
           {formatTime(span.startedAt)}

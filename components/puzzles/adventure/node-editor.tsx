@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { View } from "react-native";
 
-import { Field } from "@/components/characters";
 import {
   Badge,
   Button,
   ConfirmDialog,
+  Field,
   Input,
   Separator,
   Text,
@@ -69,7 +69,7 @@ export function NodeEditor({ adventure, node, onChange, onRemoved }: NodeEditorP
         </Text>
         {isStart ? (
           <Badge variant="accent">
-            <Text className="font-greek">❧ start</Text>
+            <Text>start</Text>
           </Badge>
         ) : (
           <Button variant="outline" size="sm" onPress={() => onChange(setStartNode(adventure, node.id))}>
@@ -85,19 +85,21 @@ export function NodeEditor({ adventure, node, onChange, onRemoved }: NodeEditorP
         {node.id}
       </Text>
 
-      <Field label="Context" hint="What the character is shown before the question.">
+      <Field label="Context">
         <Textarea
           rows={ROWS.context}
           maxLength={ADVENTURE_LIMITS.context}
+          placeholder="What the character is shown before the question."
           value={node.context}
           onChangeText={(context) => onChange(updateNode(adventure, node.id, { context }))}
         />
       </Field>
 
-      <Field label="Decision" hint="The question this node asks.">
+      <Field label="Decision">
         <Textarea
           rows={ROWS.decision}
           maxLength={ADVENTURE_LIMITS.decision}
+          placeholder="The question this node asks."
           value={node.decision}
           onChangeText={(decision) => onChange(updateNode(adventure, node.id, { decision }))}
         />
@@ -117,7 +119,7 @@ export function NodeEditor({ adventure, node, onChange, onRemoved }: NodeEditorP
       ) : null}
 
       {node.options.map((option, index) => (
-        <View key={option.id} className="gap-sm rounded-md border-hairline border-border p-md">
+        <View key={option.id} className="gap-sm border-t-hairline border-border pt-md">
           <View className="flex-row items-center gap-sm">
             <Text variant="muted" className="font-mono text-xs">
               {index + 1}
@@ -142,7 +144,7 @@ export function NodeEditor({ adventure, node, onChange, onRemoved }: NodeEditorP
           <Textarea
             rows={ROWS.outcome}
             maxLength={ADVENTURE_LIMITS.outcome}
-            placeholder="Outcome"
+            placeholder="Outcome, injected into the next step"
             accessibilityLabel={`Outcome for option ${index + 1}`}
             value={option.outcome ?? ""}
             onChangeText={(outcome) =>
@@ -153,8 +155,7 @@ export function NodeEditor({ adventure, node, onChange, onRemoved }: NodeEditorP
               )
             }
           />
-          <Text variant="muted">Text injected into the next step.</Text>
-          <Text variant="small">{targetLabel(adventure, option.nextNodeId)}</Text>
+          <Text variant="muted">{targetLabel(adventure, option.nextNodeId)}</Text>
         </View>
       ))}
 

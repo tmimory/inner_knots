@@ -36,7 +36,10 @@ export type ThemeColors = {
   popoverForeground: string;
   /** Recessed surfaces and disabled fills. */
   muted: string;
+  /** Secondary ink: descriptions, metadata, captions. */
   mutedForeground: string;
+  /** Tertiary ink: placeholders, marginalia, the quietest line on a screen. */
+  subtleForeground: string;
   /** Rubric red: headings, primary actions. */
   primary: string;
   primaryForeground: string;
@@ -70,6 +73,7 @@ const scroll: ThemeColors = {
   popoverForeground: "#2A1F14",
   muted: "#E4D5AF",
   mutedForeground: "#5C4A33",
+  subtleForeground: "#7A6748",
   primary: "#8B2E1F",
   primaryForeground: "#F5EBD2",
   secondary: "#3E5949",
@@ -79,7 +83,7 @@ const scroll: ThemeColors = {
   destructive: "#6E1B14",
   destructiveForeground: "#F5EBD2",
   border: "#C9B68C",
-  input: "#E4D5AF",
+  input: "#FAF3E0",
   ring: "#A8862B",
   track1: "#2F4A6B",
   track2: "#A2611F",
@@ -94,6 +98,7 @@ const nightScroll: ThemeColors = {
   popoverForeground: "#E8DCC0",
   muted: "#2A241B",
   mutedForeground: "#B3A484",
+  subtleForeground: "#948871",
   primary: "#D2705A",
   primaryForeground: "#14110D",
   secondary: "#6E907C",
@@ -103,7 +108,7 @@ const nightScroll: ThemeColors = {
   destructive: "#E2725B",
   destructiveForeground: "#14110D",
   border: "#3C3428",
-  input: "#2A241B",
+  input: "#272219",
   ring: "#D4AC4A",
   track1: "#7FA3C9",
   track2: "#D9A059",
@@ -131,9 +136,13 @@ export const fonts = {
   bodySemiBold: "CormorantGaramond_600SemiBold",
   bodyBold: "CormorantGaramond_700Bold",
   bodyItalic: "CormorantGaramond_400Regular_Italic",
-  /** GFS Neohellenic — Greek-flavored face for subtitles and marginalia. */
-  greek: "GFSNeohellenic_400Regular",
-  greekBold: "GFSNeohellenic_700Bold",
+  /**
+   * EB Garamond Italic — the subtitle voice. A Garamond sibling of the body serif
+   * whose glyph set covers polytonic Greek, so `δεσμοὶ τῆς ψυχῆς` sets in the same
+   * family as everything around it instead of dropping to a sans fallback.
+   */
+  greek: "EBGaramond_400Regular_Italic",
+  greekBold: "EBGaramond_600SemiBold_Italic",
   /** System monospace stack for code, ids and raw payloads. */
   mono: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
 } as const;
@@ -142,7 +151,8 @@ export const fonts = {
 export const fontFallbacks = {
   display: "Cinzel, Georgia, 'Times New Roman', serif",
   body: "'Cormorant Garamond', Garamond, Georgia, serif",
-  greek: "'GFS Neohellenic', 'Cormorant Garamond', Georgia, serif",
+  bodyMedium: "'Cormorant Garamond', Garamond, Georgia, serif",
+  greek: "'EB Garamond', Garamond, Georgia, serif",
   mono: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
 } as const;
 
@@ -255,6 +265,11 @@ export const layout = {
   canvas: 640,
   /** The inspector column beside a canvas: wide enough for a labelled textarea. */
   inspector: 360,
+  /**
+   * Smallest a floating menu may be — a select's list, a dropdown. Named apart
+   * from `menu` (the nav rail) so tuning the sidebar cannot resize every popover.
+   */
+  popover: 264,
   /** Viewport width at and above which the menu is a fixed column, not a drawer. */
   wideBreakpoint: 900,
 } as const;
@@ -267,8 +282,8 @@ export const borderWidths = {
 
 /** Font sizes, in px, named rather than numeric so type scale stays one decision. */
 export const fontSizes = {
-  xs: 12,
-  sm: 14,
+  xs: 13,
+  sm: 15,
   base: 17,
   lg: 20,
   xl: 24,
@@ -279,8 +294,8 @@ export const fontSizes = {
 
 /** Line heights, in px, paired with `fontSizes` by key. */
 export const lineHeights = {
-  xs: 16,
-  sm: 20,
+  xs: 18,
+  sm: 22,
   base: 26,
   lg: 28,
   xl: 32,

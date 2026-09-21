@@ -34,7 +34,7 @@ export const navItems: NavItem[] = [
       },
       {
         kind: "leaf",
-        label: "Choose Your Own Adventure",
+        label: "Adventure",
         href: "/puzzles/adventure",
         match: "/puzzles/adventure",
       },

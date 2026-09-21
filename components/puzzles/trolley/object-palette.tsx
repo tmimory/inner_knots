@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
-import { FlatList, LayoutChangeEvent, View } from "react-native";
+import { FlatList, LayoutChangeEvent, Pressable, View } from "react-native";
 
-import { Badge, Button, Input, Separator, Text } from "@/components/ui";
+import { Button, Input, Separator, Text } from "@/components/ui";
 import type { TrolleyObject } from "@/lib/puzzles/trolley/catalogue";
 import {
   CUSTOM_TAG,
@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { useTheme } from "@/theme";
 
 import { DraggableObject, type DragPoint } from "./draggable-object";
-import { PALETTE, type TrackId } from "./geometry";
+import { PALETTE, paletteHeight, type TrackId } from "./geometry";
 
 export type ObjectPaletteProps = {
   /** The merged catalogue: custom objects first, then the built-ins. */
@@ -36,8 +36,15 @@ export type ObjectPaletteProps = {
   className?: string;
 };
 
-/** A filter chip. Selected chips are ANDed, so they narrow rather than widen. */
-function TagChip({
+/**
+ * One filter, as a word rather than a pill.
+ *
+ * Twenty-one outlined chips read as twenty-one buttons competing with the one
+ * button that matters; the same twenty-one words with the chosen ones underlined
+ * read as what they are — a line of filters. Selected filters are ANDed, so they
+ * narrow rather than widen.
+ */
+function TagToggle({
   tag,
   selected,
   onPress,
@@ -47,18 +54,24 @@ function TagChip({
   onPress: () => void;
 }) {
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      accessibilityState={{ selected }}
+    <Pressable
+      role="checkbox"
+      accessibilityState={{ checked: selected, selected }}
+      accessibilityLabel={`Filter by ${tag}`}
       onPress={onPress}
-      className={cn(
-        "h-control-sm rounded-full border-hairline px-md",
-        selected ? "border-thick border-ring bg-muted" : "border-border",
-      )}
+      className="py-xxs"
     >
-      <Text className={cn("font-display text-xs", selected && "text-primary")}>{tag}</Text>
-    </Button>
+      <Text
+        className={cn(
+          "font-body text-sm transition-colors duration-fast",
+          selected
+            ? "text-primary underline"
+            : "text-muted-foreground web:hover:text-foreground",
+        )}
+      >
+        {tag}
+      </Text>
+    </Pressable>
   );
 }
 
@@ -67,7 +80,9 @@ function TagChip({
  *
  * The built-in catalogue runs to several hundred entries, so the grid is a
  * virtualized list of rows rather than a wrapping flexbox: the search box and the
- * chips are what make it usable, and the list only draws what is on screen.
+ * filters are what make it usable, and the list only draws what is on screen.
+ * The grid is clipped to whole rows and says how many of the matches it is
+ * showing, so the rest are known to be a scroll away rather than missing.
  */
 export function ObjectPalette({
   items,
@@ -96,6 +111,9 @@ export function ObjectPalette({
 
   const filtered = useMemo(() => filterCatalogue(items, { query, tags }), [items, query, tags]);
   const rows = useMemo(() => chunk(filtered, perRow), [filtered, perRow]);
+
+  const filtering = tags.length > 0 || query.trim() !== "";
+  const shown = Math.min(filtered.length, perRow * PALETTE.visibleRows);
 
   const toggleTag = useCallback((tag: string) => {
     setTags((current) =>
@@ -133,33 +151,34 @@ export function ObjectPalette({
         <Button variant="outline" onPress={onClear}>
           <Text>Clear tracks</Text>
         </Button>
-        <Button variant="secondary" onPress={onCreate}>
+        <Button variant="outline" onPress={onCreate}>
           <Text>New object</Text>
         </Button>
       </View>
 
-      <View className="gap-xs">
-        {TAG_GROUP_ORDER.map((family) => (
-          <View key={family} className="flex-row flex-wrap items-center gap-xs">
-            <Text variant="muted" className="w-3xl font-display text-xs">
-              {family}
-            </Text>
-            {(TAG_GROUPS[family] ?? []).map((tag) => (
-              <TagChip
-                key={tag}
-                tag={tag}
-                selected={tags.includes(tag)}
-                onPress={() => toggleTag(tag)}
-              />
-            ))}
-          </View>
-        ))}
+      {/*
+        Each family's own tag is the row's first word, so the family name is the
+        toggle rather than a caption repeating the toggle beside it.
+      */}
+      <View className="gap-xxs">
+        {TAG_GROUP_ORDER.map((family) => {
+          const group = TAG_GROUPS[family] ?? [];
+          return (
+            <View key={family} className="flex-row flex-wrap items-center gap-lg">
+              {group.map((tag) => (
+                <TagToggle
+                  key={tag}
+                  tag={tag}
+                  selected={tags.includes(tag)}
+                  onPress={() => toggleTag(tag)}
+                />
+              ))}
+            </View>
+          );
+        })}
         {hasCustom ? (
-          <View className="flex-row flex-wrap items-center gap-xs">
-            <Text variant="muted" className="w-3xl font-display text-xs">
-              yours
-            </Text>
-            <TagChip
+          <View className="flex-row flex-wrap items-center gap-lg">
+            <TagToggle
               tag={CUSTOM_TAG}
               selected={tags.includes(CUSTOM_TAG)}
               onPress={() => toggleTag(CUSTOM_TAG)}
@@ -168,31 +187,9 @@ export function ObjectPalette({
         ) : null}
       </View>
 
-      <Separator />
-
-      <View className="flex-row items-center gap-sm">
-        <Text variant="muted">
-          {loading
-            ? "Reading your objects…"
-            : `${filtered.length} of ${items.length} objects`}
-        </Text>
-        {tags.length > 0 || query.trim() !== "" ? (
-          <Button
-            variant="link"
-            size="sm"
-            onPress={() => {
-              setQuery("");
-              setTags([]);
-            }}
-          >
-            <Text>reset filters</Text>
-          </Button>
-        ) : null}
-      </View>
-
-      <View onLayout={measure} style={{ height: PALETTE.rowHeight * PALETTE.visibleRows }}>
+      <View onLayout={measure} style={{ height: paletteHeight() }}>
         {filtered.length === 0 ? (
-          <Text variant="muted">Nothing matches. Try fewer words, or fewer chips.</Text>
+          <Text variant="muted">Nothing matches. Try fewer words, or fewer filters.</Text>
         ) : (
           <FlatList
             data={rows}
@@ -201,7 +198,7 @@ export function ObjectPalette({
             initialNumToRender={PALETTE.visibleRows + 1}
             windowSize={3}
             removeClippedSubviews={false}
-            contentContainerClassName="gap-xs pb-xs"
+            contentContainerClassName="gap-xs"
             renderItem={({ item: row }) => (
               <View className="flex-row gap-xs">
                 {row.map((entry) => (
@@ -221,7 +218,7 @@ export function ObjectPalette({
                             left: 0,
                             zIndex: theme.zIndex.menu,
                           }}
-                          className="mt-xxs w-avatar-xl gap-xxs rounded-md border-hairline border-border bg-popover p-xxs shadow-ink-lifted"
+                          className="mt-xxs w-avatar-xl gap-xxs rounded-sm border-hairline border-border bg-popover p-xxs shadow-ink-lifted"
                         >
                           <Button
                             size="sm"
@@ -251,11 +248,29 @@ export function ObjectPalette({
         )}
       </View>
 
-      <View className="flex-row flex-wrap items-center gap-xs">
-        <Badge variant="outline">
-          <Text>drag onto a track</Text>
-        </Badge>
-        <Text variant="muted">or tap a tile and choose one.</Text>
+      {/* The rule is the grid's bottom edge: what is under it is a scroll away. */}
+      <Separator />
+
+      <View className="flex-row flex-wrap items-center gap-md">
+        <Text variant="muted">
+          {loading
+            ? "Reading your objects…"
+            : `Showing ${shown} of ${filtered.length}${filtering ? ` matching objects, from ${items.length}` : " objects"}`}
+        </Text>
+        {filtering ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={() => {
+              setQuery("");
+              setTags([]);
+            }}
+          >
+            <Text>Reset filters</Text>
+          </Button>
+        ) : null}
+        <View className="flex-1" />
+        <Text variant="muted">Drag a tile onto a track, or tap one and choose.</Text>
       </View>
     </View>
   );

@@ -1,6 +1,7 @@
 import { Pressable, View } from "react-native";
 
 import { Text } from "@/components/ui/text";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import { Avatar } from "./avatar";
@@ -15,29 +16,33 @@ export type ShapePickerProps = {
   className?: string;
 };
 
-/** The fifteen shapes as a wrapping grid; the selected one wears the ring. */
+/**
+ * The fifteen faces as an even grid — eight to a row at the form's width, so the
+ * set reads as a plate of medallions rather than a ragged wrap. The selected one
+ * wears the ring, and only the ring; each is named on hover, like the pigments.
+ */
 export function ShapePicker({ value, onChange, color, className }: ShapePickerProps) {
   return (
-    <View className={cn("flex-row flex-wrap gap-md", className)}>
+    <View role="radiogroup" className={cn("flex-row flex-wrap gap-md", className)}>
       {AVATAR_SHAPES.map((shape) => {
         const selected = shape.id === value;
         return (
-          <Pressable
-            key={shape.id}
-            role="radio"
-            aria-checked={selected}
-            accessibilityLabel={shape.label}
-            onPress={() => onChange(shape.id)}
-            className={cn(
-              "items-center gap-xxs rounded-md p-xs transition-colors duration-fast",
-              selected ? "bg-muted" : "bg-transparent web:hover:bg-muted/subtle",
-            )}
-          >
-            <Avatar shape={shape.id} color={color} size="lg" ring={selected} />
-            <Text variant="muted" className="text-xs">
-              {shape.label}
-            </Text>
-          </Pressable>
+          <Tooltip key={shape.id} delayDuration={0}>
+            <TooltipTrigger asChild>
+              <Pressable
+                role="radio"
+                aria-checked={selected}
+                accessibilityLabel={shape.label}
+                onPress={() => onChange(shape.id)}
+                className="rounded-full transition-opacity duration-fast active:opacity-hover web:hover:opacity-hover"
+              >
+                <Avatar shape={shape.id} color={color} size="lg" ring={selected} />
+              </Pressable>
+            </TooltipTrigger>
+            <TooltipContent>
+              <Text>{shape.label}</Text>
+            </TooltipContent>
+          </Tooltip>
         );
       })}
     </View>

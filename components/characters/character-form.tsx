@@ -1,8 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { ScrollView, View } from "react-native";
 
-import { Avatar, ColorPicker, DEFAULT_AVATAR_SHAPE, ShapePicker } from "@/components/avatars";
-import { Scroll } from "@/components/shell";
+import { ColorPicker, DEFAULT_AVATAR_SHAPE, ShapePicker } from "@/components/avatars";
 import {
   Button,
   ConfirmDialog,
@@ -53,6 +52,12 @@ const VISIBLE_MODEL_ROWS = 8;
 
 /** Select values are strings, so "no effort of its own" needs a sentinel. */
 const NO_EFFORT = "default";
+
+/** Server messages start lowercase; a message shown beside a label should not. */
+function sentenceCase(text: string | null): string | null {
+  if (text === null || text === "") return text;
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
 
 type Draft = {
   id: string;
@@ -112,6 +117,10 @@ function draftFrom(character: Character | undefined, defaultColor: string): Draf
  * It owns the draft and its validation; the screens own navigation, toasts and
  * the store calls. The identifier is the key everywhere — in the JSONL store, in
  * run configs, in span records — so it can be chosen once and never again.
+ *
+ * One column, capped at the readable measure, with the avatar grids sized to fill
+ * it exactly; the save row rides the bottom of the viewport so it is never a
+ * scroll away from the field just edited.
  */
 export function CharacterForm({
   character,
@@ -180,12 +189,23 @@ export function CharacterForm({
   }, [draft.id, editing, idConflict, idTouched, takenIds]);
 
   const modelError = model.trim() === "" ? "A model is required." : null;
-  const providerError = provider === undefined ? "A configured provider is required." : null;
+  const providerSummary = providers.providers.find((item) => item.id === provider);
+  /**
+   * Everything the provider row has to say, said once. An unconfigured provider is
+   * the reason the catalogue could not be read, so the catalogue's own complaint is
+   * only worth repeating when the key is there and the request still failed.
+   */
+  const providerMessage =
+    provider === undefined
+      ? "A configured provider is required."
+      : providerSummary !== undefined && !providerSummary.enabled
+        ? `${providerSummary.label} is not configured; add its key to .env and restart.`
+        : sentenceCase(models.error);
   const valid =
     idError === null &&
     draft.id.trim() !== "" &&
     modelError === null &&
-    providerError === null &&
+    provider !== undefined &&
     idConflict === null;
 
   function toInput(): CharacterInput {
@@ -282,225 +302,203 @@ export function CharacterForm({
   );
 
   return (
-    <View className="gap-xl">
-      <Scroll>
-        <FormSection
-          title="Identity"
-          description="The identifier is the key everywhere: in the store, in run configurations and in every span this character leaves behind."
+    <View className="max-w-canvas gap-3xl">
+      <FormSection title="Identity">
+        <Field
+          label="Identifier"
+          error={idError}
+          hint={
+            editing
+              ? "Fixed after creation. Make another character to use a different name."
+              : "Letters, digits, dot, dash or underscore. No spaces."
+          }
         >
-          <Field
-            label="Identifier"
-            error={idError}
-            hint={
-              editing
-                ? "Fixed once created. Make another character to use a different name."
-                : "Letters, digits, dot, dash or underscore. No spaces."
-            }
-          >
-            <View className="flex-row items-center gap-sm">
-              <Input
-                className="flex-1"
-                value={draft.id}
-                editable={!editing}
-                autoCapitalize="none"
-                autoCorrect={false}
-                placeholder="diogenes"
-                onChangeText={(text) => {
+          <View className="flex-row items-center gap-sm">
+            <Input
+              className="flex-1"
+              value={draft.id}
+              editable={!editing}
+              autoCapitalize="none"
+              autoCorrect={false}
+              placeholder="diogenes"
+              onChangeText={(text) => {
+                setIdTouched(true);
+                setIdConflict(null);
+                patch({ id: text });
+              }}
+            />
+            {editing ? null : (
+              <Button
+                variant="outline"
+                onPress={() => {
                   setIdTouched(true);
                   setIdConflict(null);
-                  patch({ id: text });
+                  patch({ id: newId() });
                 }}
+              >
+                <Text>Generate</Text>
+              </Button>
+            )}
+          </View>
+        </Field>
+
+        <Field label="Face">
+          <View className="gap-lg">
+            <ShapePicker
+              value={draft.avatar.shape}
+              color={draft.avatar.color}
+              onChange={(shape) => patch({ avatar: { ...draft.avatar, shape } })}
+            />
+            <ColorPicker
+              value={draft.avatar.color}
+              onChange={(color) => patch({ avatar: { ...draft.avatar, color } })}
+            />
+          </View>
+        </Field>
+      </FormSection>
+
+      <FormSection title="Model">
+        <Field label="Provider" error={providerMessage}>
+          <Select
+            value={
+              provider === undefined
+                ? undefined
+                : {
+                    value: provider,
+                    label: providerSummary?.label ?? provider,
+                  }
+            }
+            onValueChange={(option) => {
+              if (!option) return;
+              setManualModel(false);
+              patch({ provider: option.value as ProviderId, model: "", effort: undefined });
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={providers.loading ? "Reading providers…" : "Choose a provider"} />
+            </SelectTrigger>
+            <SelectContent>
+              {providers.providers.map((provider) => (
+                <SelectItem
+                  key={provider.id}
+                  value={provider.id}
+                  disabled={!provider.enabled}
+                  label={provider.enabled ? provider.label : `${provider.label} — not configured`}
+                />
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+
+        <Field
+          label="Model"
+          error={modelError}
+          action={
+            <>
+              <Text variant="muted">Enter model id manually</Text>
+              <Switch
+                checked={manual}
+                disabled={models.error !== null}
+                onCheckedChange={setManualModel}
+                accessibilityLabel="Enter model id manually"
               />
-              {editing ? null : (
-                <Button
-                  variant="outline"
-                  onPress={() => {
-                    setIdTouched(true);
-                    setIdConflict(null);
-                    patch({ id: newId() });
-                  }}
-                >
-                  <Text>Generate</Text>
-                </Button>
-              )}
-            </View>
-          </Field>
-
-          <Field label="Face" hint="A shape and a pigment. Neither says anything to the model.">
-            <View className="flex-row items-start gap-xl">
-              <Avatar shape={draft.avatar.shape} color={draft.avatar.color} size="xl" ring />
-              <View className="min-w-menu flex-1 gap-lg">
-                <ShapePicker
-                  value={draft.avatar.shape}
-                  color={draft.avatar.color}
-                  onChange={(shape) => patch({ avatar: { ...draft.avatar, shape } })}
-                />
-                <ColorPicker
-                  value={draft.avatar.color}
-                  onChange={(color) => patch({ avatar: { ...draft.avatar, color } })}
-                />
-              </View>
-            </View>
-          </Field>
-        </FormSection>
-      </Scroll>
-
-      <Scroll>
-        <FormSection
-          title="Model"
-          description="Who answers, and in what shape the answer has to arrive."
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-control-sm w-control-sm"
+                accessibilityLabel="Refresh the model list"
+                disabled={models.loading || provider === undefined}
+                onPress={() => void models.refresh()}
+              >
+                <Text className="font-mono">↻</Text>
+              </Button>
+            </>
+          }
         >
-          <Field label="Provider" error={providerError}>
+          {manual ? (
+            <Input
+              value={model}
+              autoCapitalize="none"
+              autoCorrect={false}
+              placeholder="model id"
+              onChangeText={(model) => patch({ model })}
+            />
+          ) : (
             <Select
-              value={
-                provider === undefined
-                  ? undefined
-                  : {
-                      value: provider,
-                      label:
-                        providers.providers.find((item) => item.id === provider)?.label ?? provider,
-                    }
-              }
+              value={model === "" ? undefined : { value: model, label: modelInfo?.label ?? model }}
               onValueChange={(option) => {
-                if (!option) return;
-                setManualModel(false);
-                patch({ provider: option.value as ProviderId, model: "", effort: undefined });
+                if (option) patch({ model: option.value });
               }}
             >
               <SelectTrigger>
-                <SelectValue placeholder={providers.loading ? "Reading providers…" : "Choose a provider"} />
+                <SelectValue placeholder={models.loading ? "Reading the catalogue…" : "Choose a model"} />
               </SelectTrigger>
               <SelectContent>
-                {providers.providers.map((provider) => (
-                  <SelectItem
-                    key={provider.id}
-                    value={provider.id}
-                    disabled={!provider.enabled}
-                    label={provider.enabled ? provider.label : `${provider.label} — not configured`}
-                  />
+                <ScrollView
+                  style={{ maxHeight: VISIBLE_MODEL_ROWS * theme.controlSizes["control-sm"] }}
+                >
+                  {models.models.map((model) => (
+                    <SelectItem key={model.id} value={model.id} label={model.label} />
+                  ))}
+                </ScrollView>
+              </SelectContent>
+            </Select>
+          )}
+        </Field>
+
+        <Field
+          label="Output mode"
+          hint="Structured output asks for JSON; a tool call forces one function with the options as an enum."
+        >
+          <Segmented
+            label="Output mode"
+            value={outputMode}
+            options={outputModeOptions}
+            onChange={(outputMode) => patch({ outputMode })}
+          />
+        </Field>
+
+        {effortLevels.length > 0 ? (
+          <Field label="Reasoning effort">
+            <Select
+              value={{
+                value: effort ?? NO_EFFORT,
+                label: effort ?? PROVIDER_DEFAULT_EFFORT,
+              }}
+              onValueChange={(option) => {
+                if (!option) return;
+                patch({
+                  effort: option.value === NO_EFFORT ? undefined : (option.value as EffortLevel),
+                });
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={PROVIDER_DEFAULT_EFFORT} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_EFFORT} label={PROVIDER_DEFAULT_EFFORT} />
+                {effortLevels.map((level) => (
+                  <SelectItem key={level} value={level} label={level} />
                 ))}
               </SelectContent>
             </Select>
           </Field>
+        ) : null}
 
-          <Field
-            label="Model"
-            error={modelError ?? models.error}
-            hint={modelInfo?.capabilities.contextWindow ? `context window ${modelInfo.capabilities.contextWindow}` : undefined}
-            action={
-              <>
-                <Text variant="muted">enter model id manually</Text>
-                <Switch
-                  checked={manual}
-                  disabled={models.error !== null}
-                  onCheckedChange={setManualModel}
-                  accessibilityLabel="Enter model id manually"
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  accessibilityLabel="Refresh the model list"
-                  disabled={models.loading || provider === undefined}
-                  onPress={() => void models.refresh()}
-                >
-                  <Text className="font-mono">↻</Text>
-                </Button>
-              </>
-            }
+        <View className="flex-row">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={testing || provider === undefined || model.trim() === ""}
+            onPress={() => void handleTest()}
           >
-            {manual ? (
-              <Input
-                value={model}
-                autoCapitalize="none"
-                autoCorrect={false}
-                placeholder="model id"
-                onChangeText={(model) => patch({ model })}
-              />
-            ) : (
-              <Select
-                value={
-                  model === ""
-                    ? undefined
-                    : { value: model, label: modelInfo?.label ?? model }
-                }
-                onValueChange={(option) => {
-                  if (option) patch({ model: option.value });
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={models.loading ? "Reading the catalogue…" : "Choose a model"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <ScrollView
-                    style={{ maxHeight: VISIBLE_MODEL_ROWS * theme.controlSizes["control-sm"] }}
-                  >
-                    {models.models.map((model) => (
-                      <SelectItem key={model.id} value={model.id} label={model.label} />
-                    ))}
-                  </ScrollView>
-                </SelectContent>
-              </Select>
-            )}
-          </Field>
+            <Text>{testing ? "Asking…" : "Test connection"}</Text>
+          </Button>
+        </View>
+      </FormSection>
 
-          <Field
-            label="Output mode"
-            hint="Structured output asks for JSON; a tool call forces one function with the options as an enum."
-          >
-            <Segmented
-              label="Output mode"
-              value={outputMode}
-              options={outputModeOptions}
-              onChange={(outputMode) => patch({ outputMode })}
-            />
-          </Field>
-
-          {effortLevels.length > 0 ? (
-            <Field label="Reasoning effort" hint="How hard the model is asked to think before it answers.">
-              <Select
-                value={{
-                  value: effort ?? NO_EFFORT,
-                  label: effort ?? PROVIDER_DEFAULT_EFFORT,
-                }}
-                onValueChange={(option) => {
-                  if (!option) return;
-                  patch({
-                    effort: option.value === NO_EFFORT ? undefined : (option.value as EffortLevel),
-                  });
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={PROVIDER_DEFAULT_EFFORT} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NO_EFFORT} label={PROVIDER_DEFAULT_EFFORT} />
-                  {effortLevels.map((level) => (
-                    <SelectItem key={level} value={level} label={level} />
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-          ) : null}
-
-          <View className="flex-row items-center gap-md">
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={testing || provider === undefined || model.trim() === ""}
-              onPress={() => void handleTest()}
-            >
-              <Text>{testing ? "Asking…" : "Test connection"}</Text>
-            </Button>
-            <Text variant="muted">One trivial question, through the path a real run takes.</Text>
-          </View>
-        </FormSection>
-      </Scroll>
-
-      <Scroll>
-        <FormSection
-          title="Steering"
-          description="How much of a self the model is handed before it hears the puzzle."
-        >
+      <View className="gap-xl">
+        <FormSection title="Steering">
           <Field label="Mode" hint={STEERING_MODE_HINTS[steering.mode]}>
             <Segmented
               label="Steering mode"
@@ -511,11 +509,12 @@ export function CharacterForm({
           </Field>
 
           {steering.mode === "raw" ? null : (
-            <Field label="You are…" hint="Finish the sentence. The fragment supplies the opening.">
+            <Field label="You are…">
               <Textarea
                 value={steering.bio ?? ""}
                 onChangeText={(bio) => patchSteering({ bio })}
                 maxLength={CHARACTER_LIMITS.bio}
+                rows={3}
                 placeholder="a Cynic philosopher who lives in a barrel and distrusts every institution."
               />
             </Field>
@@ -523,7 +522,7 @@ export function CharacterForm({
 
           {steering.mode === "full" ? (
             <>
-              <Field label="Principles" hint="Rules the character holds itself to.">
+              <Field label="Principles">
                 <ConvictionList
                   value={steering.principles}
                   onChange={(principles) => patchSteering({ principles })}
@@ -531,9 +530,10 @@ export function CharacterForm({
                   maxItems={CHARACTER_LIMITS.maxPrinciples}
                   addLabel="Add principle"
                   itemLabel="principle"
+                  placeholder="Follow the argument."
                 />
               </Field>
-              <Field label="Values" hint="What the character cares about.">
+              <Field label="Values">
                 <ConvictionList
                   value={steering.values}
                   onChange={(values) => patchSteering({ values })}
@@ -541,16 +541,15 @@ export function CharacterForm({
                   maxItems={CHARACTER_LIMITS.maxValues}
                   addLabel="Add value"
                   itemLabel="value"
+                  placeholder="Courage"
                 />
               </Field>
             </>
           ) : null}
         </FormSection>
-      </Scroll>
 
-      <Scroll>
         <FinalPrompt steering={previewSteeringValue} />
-      </Scroll>
+      </View>
 
       {formError ? (
         <Text variant="small" className="text-destructive">
@@ -558,11 +557,11 @@ export function CharacterForm({
         </Text>
       ) : null}
 
-      <View className="flex-row flex-wrap items-center justify-end gap-sm">
+      <View className="web:sticky web:bottom-none flex-row flex-wrap items-center justify-end gap-lg border-t-hairline border-border bg-background py-lg">
         {onDelete ? (
           <Button
             variant="destructive"
-            className="mr-auto"
+            className="mr-auto px-none"
             disabled={deleting}
             onPress={() => setConfirmingDelete(true)}
           >

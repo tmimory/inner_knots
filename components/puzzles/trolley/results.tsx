@@ -74,12 +74,21 @@ export function TrolleyResults({
 
   const answered = summary?.decisions.length ?? 0;
 
+  // Nothing is worth drawing before a decision exists: an empty chart with an
+  // empty legend and a row of zeroes says less than one sentence does.
+  if (answered === 0) {
+    return (
+      <Text variant="muted" className={className}>
+        Nothing decided yet. Pull the lever and the answers appear here.
+      </Text>
+    );
+  }
+
   return (
     <View className={cn("gap-lg", className)}>
       <Histogram
         series={SERIES}
         groups={groups}
-        emptyMessage="No answers yet. Start a run and they will fill in here."
       />
 
       <View className="flex-row flex-wrap items-center gap-md">

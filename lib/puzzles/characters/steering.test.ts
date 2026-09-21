@@ -23,6 +23,18 @@ describe("composeSteeringPrompt", () => {
     expect(prompt).toBe("You are a stoic philosopher.");
   });
 
+  it("lowers a bio that was typed as its own sentence, but not an acronym", async () => {
+    const sentence = await composeSteeringPrompt(
+      character({ mode: "bio", bio: "An old questioner of the agora.", principles: [], values: [] }),
+    );
+    expect(sentence).toBe("You are an old questioner of the agora.");
+
+    const acronym = await composeSteeringPrompt(
+      character({ mode: "bio", bio: "GPT-5 in a toga.", principles: [], values: [] }),
+    );
+    expect(acronym).toBe("You are GPT-5 in a toga.");
+  });
+
   it("stacks bio, principles and values in full mode", async () => {
     const prompt = await composeSteeringPrompt(
       character({

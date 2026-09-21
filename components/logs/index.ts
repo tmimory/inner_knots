@@ -28,5 +28,5 @@ export { RunRow, type RunRowProps } from "./run-row";
 export { SpanDetail, type SpanDetailProps } from "./span-detail";
 export { SpanInputView, readCallInput, readModel, type CallInput, type CallMessage } from "./span-input";
 export { SpanTree, buildSpanTree, spanDepths, spanLabel, type SpanNode, type SpanTreeProps } from "./span-tree";
-export { LevelBadge, StatusBadge, StatusDot } from "./status-badge";
+export { LevelMark, StatusDot, StatusMark } from "./status-mark";
 export { SummaryView, summaryLine, type SummaryViewProps } from "./summary-view";

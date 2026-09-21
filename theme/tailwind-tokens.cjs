@@ -10,6 +10,7 @@ module.exports = {
     "popover-foreground": "rgb(var(--color-popover-foreground) / <alpha-value>)",
     "muted": "rgb(var(--color-muted) / <alpha-value>)",
     "muted-foreground": "rgb(var(--color-muted-foreground) / <alpha-value>)",
+    "subtle-foreground": "rgb(var(--color-subtle-foreground) / <alpha-value>)",
     "primary": "rgb(var(--color-primary) / <alpha-value>)",
     "primary-foreground": "rgb(var(--color-primary-foreground) / <alpha-value>)",
     "secondary": "rgb(var(--color-secondary) / <alpha-value>)",
@@ -27,12 +28,13 @@ module.exports = {
   fontFamily: {
     "display": ["Cinzel_600SemiBold","Cinzel","Georgia","'Times New Roman'","serif"],
     "body": ["CormorantGaramond_400Regular","'Cormorant Garamond'","Garamond","Georgia","serif"],
-    "greek": ["GFSNeohellenic_400Regular","'GFS Neohellenic'","'Cormorant Garamond'","Georgia","serif"],
+    "bodyMedium": ["CormorantGaramond_500Medium","'Cormorant Garamond'","Garamond","Georgia","serif"],
+    "greek": ["EBGaramond_400Regular_Italic","'EB Garamond'","Garamond","Georgia","serif"],
     "mono": ["ui-monospace","SFMono-Regular","Menlo","Consolas","monospace"],
   },
   fontSize: {
-    "xs": ["12px", { lineHeight: "16px" }],
-    "sm": ["14px", { lineHeight: "20px" }],
+    "xs": ["13px", { lineHeight: "18px" }],
+    "sm": ["15px", { lineHeight: "22px" }],
     "base": ["17px", { lineHeight: "26px" }],
     "lg": ["20px", { lineHeight: "28px" }],
     "xl": ["24px", { lineHeight: "32px" }],
@@ -72,6 +74,7 @@ module.exports = {
     "content": "1120px",
     "canvas": "640px",
     "inspector": "360px",
+    "popover": "264px",
     "wideBreakpoint": "900px",
   },
   minWidth: {
@@ -79,6 +82,7 @@ module.exports = {
     "content": "1120px",
     "canvas": "640px",
     "inspector": "360px",
+    "popover": "264px",
     "wideBreakpoint": "900px",
   },
   width: {
@@ -106,6 +110,7 @@ module.exports = {
     "content": "1120px",
     "canvas": "640px",
     "inspector": "360px",
+    "popover": "264px",
     "wideBreakpoint": "900px",
   },
   borderRadius: {

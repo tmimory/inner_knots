@@ -4,13 +4,13 @@ import { View } from "react-native";
 
 import { Avatar } from "@/components/avatars";
 import { Histogram, type HistogramGroupSpec, type HistogramSeriesSpec } from "@/components/charts";
-import { Button, Text } from "@/components/ui";
+import { Button, Label, Text } from "@/components/ui";
 import { characterDisplayName, type Character } from "@/lib/domain/character";
 import type { PlayerTally, PrisonersDilemmaSummary } from "@/lib/domain/summary";
 import { countNote, pluralize } from "@/lib/format";
-import { outcomeTiles } from "@/lib/puzzles/prisoners-dilemma/ui-helpers";
 import { cn } from "@/lib/utils";
 
+import { OutcomeGrid } from "./outcome-grid";
 import { RoundGrid } from "./round-grid";
 
 /** The two moves, pinned to the theme's comparison pair, everywhere on the screen. */
@@ -32,14 +32,11 @@ export type PrisonersDilemmaResultsProps = {
   className?: string;
 };
 
-/** One count of the outcomes strip. */
-function StatTile({ label, value }: { label: string; value: number }) {
+/** One count of the outcome table. */
+function OutcomeCell({ value }: { value: number }) {
   return (
-    <View className="min-w-menu flex-1 gap-xs rounded-md border-hairline border-border bg-muted p-md">
+    <View className="min-h-control-md justify-center">
       <Text className="font-mono text-xl">{value}</Text>
-      <Text variant="muted" numberOfLines={2}>
-        {label}
-      </Text>
     </View>
   );
 }
@@ -50,8 +47,10 @@ function StatTile({ label, value }: { label: string; value: number }) {
  * The histogram's groups are the players and its series are the two moves, so
  * "does this one testify more than that one?" reads off a pair of columns; both
  * are scaled against the same longest bar, which is what makes the columns
- * comparable. Failed decisions are counted beside the bars and shown as gaps in
- * the round grid rather than dropped — a player that would not answer is a result.
+ * comparable. The four outcomes are laid out as the payoff matrix is, so a
+ * count sits where the bargain that produced it sits. Failed decisions are
+ * counted beside the bars and shown as gaps in the round grid rather than
+ * dropped — a player that would not answer is a result.
  */
 export function PrisonersDilemmaResults({
   summary,
@@ -85,35 +84,52 @@ export function PrisonersDilemmaResults({
     });
   }, [names, players, summary]);
 
-  const tiles = useMemo(() => outcomeTiles(summary?.outcomes, names), [names, summary]);
   const rounds = summary?.games.reduce((sum, game) => sum + game.rounds.length, 0) ?? 0;
+
+  // Before a round exists there is nothing to chart: zero tiles and an empty
+  // legend are a dashboard pretending to have data.
+  if (summary === undefined || rounds === 0) {
+    return (
+      <Text variant="muted" className={className}>
+        Nothing decided yet. Put them in the rooms and the outcomes appear here.
+      </Text>
+    );
+  }
+
+  const outcomes = summary.outcomes;
 
   return (
     <View className={cn("gap-lg", className)}>
-      <Histogram
-        series={SERIES}
-        groups={groups}
-        sideBySide
-        emptyMessage="Nothing decided yet. Start a run and the two of them will fill this in."
-      />
+      <Histogram series={SERIES} groups={groups} sideBySide />
 
-      <View className="flex-row flex-wrap gap-sm">
-        {tiles.map((tile) => (
-          <StatTile key={tile.id} label={tile.label} value={tile.value} />
-        ))}
-      </View>
+      {/* The four outcomes where the payoff matrix puts them: A down, B across. */}
+      <OutcomeGrid
+        rowPlayer={names.a}
+        columnPlayer={names.b}
+        cells={[
+          <OutcomeCell key="both-testify" value={outcomes.bothTestify} />,
+          <OutcomeCell key="only-a" value={outcomes.onlyATestifies} />,
+          <OutcomeCell key="only-b" value={outcomes.onlyBTestifies} />,
+          <OutcomeCell key="both-silent" value={outcomes.bothSilent} />,
+        ]}
+        footnote={
+          outcomes.incomplete > 0 ? (
+            <Text variant="muted">
+              {`${pluralize(outcomes.incomplete, "round")} never came out: one of them would not answer.`}
+            </Text>
+          ) : undefined
+        }
+      />
 
       {iterations > 1 ? (
         <View className="gap-sm">
-          <Text className="font-display text-sm">Round by round</Text>
-          <RoundGrid games={summary?.games ?? []} rounds={iterations} names={names} />
+          <Label>Round by round</Label>
+          <RoundGrid games={summary.games} rounds={iterations} names={names} />
         </View>
       ) : null}
 
       <View className="flex-row flex-wrap items-center gap-md">
-        <Text variant="muted">
-          {`${pluralize(rounds, "round")} recorded`}
-        </Text>
+        <Text variant="muted">{`${pluralize(rounds, "round")} recorded`}</Text>
         <View className="flex-1" />
         {runId ? (
           <Link href={`/logs/${runId}`} asChild>

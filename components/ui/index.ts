@@ -11,6 +11,7 @@ export {
   type CardProps,
 } from "./card";
 export { Checkbox, type CheckboxProps } from "./checkbox";
+export { Chevron, type ChevronProps } from "./chevron";
 export { ConfirmDialog, type ConfirmDialogProps } from "./confirm-dialog";
 export {
   Dialog,
@@ -44,6 +45,7 @@ export {
   SelectTrigger,
   SelectValue,
   type SelectOption,
+  type SelectTriggerProps,
 } from "./select";
 export { Separator, type SeparatorProps } from "./separator";
 export { Slider, type SliderProps } from "./slider";

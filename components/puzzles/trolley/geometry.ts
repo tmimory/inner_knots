@@ -32,6 +32,13 @@ export const BOARD = {
   laneInset: 12,
   /** The approach rail the trolley rolls in along, left of the junction. */
   approachRun: 92,
+  /**
+   * The column left of the rails that carries the track names. It sits outside
+   * the drawing, so a label never lands on a rail or on the lever.
+   */
+  gutter: 88,
+  /** Half a gutter label's line box, for centring it on its rail. */
+  labelHalfHeight: 10,
 } as const;
 
 /** The trolley drawing, in its own coordinate box. */
@@ -68,11 +75,22 @@ export const TROLLEY = {
  * before it has drawn one, which is the only reason these are numbers here.
  */
 export const PALETTE = {
-  /** One tile: the avatar-xl step wide, and about as tall with its label. */
-  rowHeight: 96,
+  /**
+   * One tile, fixed: glyph, two lines of label, and the padding around them.
+   * Fixed so a one-word tile and a three-word tile leave the grid on the same
+   * baseline rather than making every row a different height.
+   */
+  tileHeight: 76,
+  /** Tile height plus the `xs` gap between rows; the pitch of the grid. */
+  rowHeight: 80,
   /** How many rows of tiles the palette shows before it scrolls. */
   visibleRows: 4,
 } as const;
+
+/** The height the palette grid is clipped to: whole rows, with no half row. */
+export function paletteHeight(): number {
+  return PALETTE.rowHeight * PALETTE.visibleRows - (PALETTE.rowHeight - PALETTE.tileHeight);
+}
 
 export type TrackId = 1 | 2;
 

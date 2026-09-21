@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 import { CharacterFace, nameOf } from "./roster-avatars";
 import { readModel } from "./span-input";
-import { StatusDot } from "./status-badge";
+import { StatusDot } from "./status-mark";
 
 /** How much of a model id a row shows before it starts to crowd the timings. */
 const MODEL_CHARS = 28;

@@ -8,7 +8,10 @@ import {
   CormorantGaramond_600SemiBold,
   CormorantGaramond_700Bold,
 } from "@expo-google-fonts/cormorant-garamond";
-import { GFSNeohellenic_400Regular, GFSNeohellenic_700Bold } from "@expo-google-fonts/gfs-neohellenic";
+import {
+  EBGaramond_400Regular_Italic,
+  EBGaramond_600SemiBold_Italic,
+} from "@expo-google-fonts/eb-garamond";
 import { PortalHost } from "@rn-primitives/portal";
 import { useFonts } from "expo-font";
 import { Slot } from "expo-router";
@@ -33,8 +36,11 @@ export default function RootLayout() {
     CormorantGaramond_500Medium,
     CormorantGaramond_600SemiBold,
     CormorantGaramond_700Bold,
-    GFSNeohellenic_400Regular,
-    GFSNeohellenic_700Bold,
+    // The Greek subtitle face. Registered under its own family name rather than as
+    // an italic style, because a custom family only gets a real italic when the
+    // italic file is the one loaded.
+    EBGaramond_400Regular_Italic,
+    EBGaramond_600SemiBold_Italic,
   });
 
   useEffect(() => {

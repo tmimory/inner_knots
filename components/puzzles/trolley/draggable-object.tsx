@@ -8,6 +8,7 @@ import type { TrolleyObject } from "@/lib/puzzles/trolley/catalogue";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/theme";
 
+import { PALETTE } from "./geometry";
 import { ObjectGlyph } from "./object-glyph";
 
 /** How far the pointer must travel before this is a drag rather than a tap. */
@@ -123,15 +124,21 @@ export function DraggableObject({
           accessibilityHint={item.prompt}
         >
           <View
+            style={{ height: PALETTE.tileHeight }}
             className={cn(
-              "w-avatar-xl items-center gap-xxs rounded-md border-hairline border-border bg-card p-xs",
+              "w-avatar-xl items-center justify-center gap-xxs rounded-sm border-hairline border-border bg-card p-xs",
               "transition-colors duration-fast web:hover:bg-muted",
               dragging && "border-thick border-ring shadow-ink-lifted",
               disabled && "opacity-disabled",
             )}
           >
             <ObjectGlyph icon={item.icon} />
-            <Text variant="muted" className="text-center text-xs" numberOfLines={2}>
+            <Text
+              variant="muted"
+              className="text-center text-xs"
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
               {item.label}
             </Text>
           </View>

@@ -13,6 +13,7 @@
     --color-popover-foreground: 42 31 20;
     --color-muted: 228 213 175;
     --color-muted-foreground: 92 74 51;
+    --color-subtle-foreground: 122 103 72;
     --color-primary: 139 46 31;
     --color-primary-foreground: 245 235 210;
     --color-secondary: 62 89 73;
@@ -22,7 +23,7 @@
     --color-destructive: 110 27 20;
     --color-destructive-foreground: 245 235 210;
     --color-border: 201 182 140;
-    --color-input: 228 213 175;
+    --color-input: 250 243 224;
     --color-ring: 168 134 43;
     --color-track1: 47 74 107;
     --color-track2: 162 97 31;
@@ -30,13 +31,14 @@
     /* typography */
     --font-display: "Cinzel_600SemiBold", Cinzel, Georgia, 'Times New Roman', serif;
     --font-body: "CormorantGaramond_400Regular", 'Cormorant Garamond', Garamond, Georgia, serif;
-    --font-greek: "GFSNeohellenic_400Regular", 'GFS Neohellenic', 'Cormorant Garamond', Georgia, serif;
+    --font-body-medium: "CormorantGaramond_500Medium", 'Cormorant Garamond', Garamond, Georgia, serif;
+    --font-greek: "EBGaramond_400Regular_Italic", 'EB Garamond', Garamond, Georgia, serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     /* easing */
     --easing-standard: cubic-bezier(0.65, 0, 0.35, 1);
     /* font-size */
-    --font-size-xs: 12px;
-    --font-size-sm: 14px;
+    --font-size-xs: 13px;
+    --font-size-sm: 15px;
     --font-size-base: 17px;
     --font-size-lg: 20px;
     --font-size-xl: 24px;
@@ -44,8 +46,8 @@
     --font-size-3xl: 38px;
     --font-size-4xl: 48px;
     /* line-height */
-    --line-height-xs: 16px;
-    --line-height-sm: 20px;
+    --line-height-xs: 18px;
+    --line-height-sm: 22px;
     --line-height-base: 26px;
     --line-height-lg: 28px;
     --line-height-xl: 32px;
@@ -78,6 +80,7 @@
     --layout-content: 1120px;
     --layout-canvas: 640px;
     --layout-inspector: 360px;
+    --layout-popover: 264px;
     --layout-wide-breakpoint: 900px;
     /* radius */
     --radius-none: 0px;
@@ -124,6 +127,7 @@
     --color-popover-foreground: 232 220 192;
     --color-muted: 42 36 27;
     --color-muted-foreground: 179 164 132;
+    --color-subtle-foreground: 148 136 113;
     --color-primary: 210 112 90;
     --color-primary-foreground: 20 17 13;
     --color-secondary: 110 144 124;
@@ -133,7 +137,7 @@
     --color-destructive: 226 114 91;
     --color-destructive-foreground: 20 17 13;
     --color-border: 60 52 40;
-    --color-input: 42 36 27;
+    --color-input: 39 34 25;
     --color-ring: 212 172 74;
     --color-track1: 127 163 201;
     --color-track2: 217 160 89;
@@ -149,6 +153,7 @@
       --color-popover-foreground: 232 220 192;
       --color-muted: 42 36 27;
       --color-muted-foreground: 179 164 132;
+      --color-subtle-foreground: 148 136 113;
       --color-primary: 210 112 90;
       --color-primary-foreground: 20 17 13;
       --color-secondary: 110 144 124;
@@ -158,7 +163,7 @@
       --color-destructive: 226 114 91;
       --color-destructive-foreground: 20 17 13;
       --color-border: 60 52 40;
-      --color-input: 42 36 27;
+      --color-input: 39 34 25;
       --color-ring: 212 172 74;
       --color-track1: 127 163 201;
       --color-track2: 217 160 89;
@@ -187,5 +192,15 @@
     flex-direction: column;
     min-height: 0;
     max-height: 100%;
+  }
+
+  /*
+   * A select that has nothing chosen yet renders its prompt through Radix, which
+   * marks the trigger `data-placeholder`. There is no React prop to reach that
+   * string, so the tertiary ink is applied here: a prompt reads quieter than an
+   * answer, exactly as it does in a text field.
+   */
+  [data-placeholder] {
+    color: rgb(var(--color-subtle-foreground) / 1);
   }
 }

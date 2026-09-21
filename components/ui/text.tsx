@@ -21,7 +21,16 @@ export const textVariants = cva("text-foreground", {
       lead: "font-body text-lg text-muted-foreground",
       muted: "font-body text-sm text-muted-foreground",
       small: "font-body text-sm text-foreground",
-      greek: "font-greek text-lg text-muted-foreground",
+      /** A metadata line: "anthropic · claude-sonnet-5 · structured". */
+      meta: "font-body text-sm text-muted-foreground",
+      /** The quietest line on a screen: a footer, a marginal note. */
+      subtle: "font-body text-sm text-subtle-foreground",
+      /**
+       * The Greek subtitle voice. Body size, normal tracking, the Garamond italic
+       * that actually carries polytonic glyphs — so it reads as an aside in the
+       * same family rather than as a sans fallback that wandered in.
+       */
+      greek: "font-greek text-base tracking-normal text-muted-foreground",
       code: "font-mono text-sm text-foreground",
     },
   },

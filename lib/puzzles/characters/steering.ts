@@ -19,6 +19,19 @@ function nonEmpty(items: readonly string[]): string[] {
   return items.map((item) => item.trim()).filter((item) => item.length > 0);
 }
 
+/** A capital followed by a lowercase letter: a sentence opening, not an acronym. */
+const SENTENCE_OPENING = /^[A-Z][a-z]/;
+
+/**
+ * The bio finishes the sentence that "You are" begins, so a bio typed as a
+ * sentence of its own ("An old questioner of the agora.") would otherwise land a
+ * capital mid-sentence. An acronym or a shipped product name ("GPT-5 in a toga",
+ * "TypeSafe's evaluator") keeps its capital.
+ */
+function asSentenceFragment(bio: string): string {
+  return SENTENCE_OPENING.test(bio) ? bio.charAt(0).toLowerCase() + bio.slice(1) : bio;
+}
+
 /**
  * The composed system prompt, or `null` when the character contributes none
  * (mode `raw`, or a mode whose every section turned out to be empty).
@@ -29,7 +42,9 @@ export async function composeSteeringPrompt(character: SteerableCharacter): Prom
 
   const sections: string[] = [];
   const trimmedBio = bio?.trim() ?? "";
-  if (trimmedBio.length > 0) sections.push(await render("characters/bio", { bio: trimmedBio }));
+  if (trimmedBio.length > 0) {
+    sections.push(await render("characters/bio", { bio: asSentenceFragment(trimmedBio) }));
+  }
 
   if (mode === "full") {
     const usablePrinciples = nonEmpty(principles);

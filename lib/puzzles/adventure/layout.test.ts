@@ -55,17 +55,17 @@ describe("layoutAdventure", () => {
     }
   });
 
-  it("puts the start node above the nodes its options lead to", () => {
+  it("puts the start node left of the nodes its options lead to", () => {
     const laid = layoutAdventure(tree());
-    expect(positionOf(laid, "start").y).toBeLessThan(positionOf(laid, "left").y);
-    expect(positionOf(laid, "start").y).toBeLessThan(positionOf(laid, "right").y);
+    expect(positionOf(laid, "start").x).toBeLessThan(positionOf(laid, "left").x);
+    expect(positionOf(laid, "start").x).toBeLessThan(positionOf(laid, "right").x);
   });
 
-  it("separates siblings horizontally by at least the node gap", () => {
+  it("separates siblings vertically by at least the node gap", () => {
     const laid = layoutAdventure(tree());
     const left = positionOf(laid, "left");
     const right = positionOf(laid, "right");
-    expect(Math.abs(left.x - right.x)).toBeGreaterThanOrEqual(ADVENTURE_LAYOUT.nodeWidth);
+    expect(Math.abs(left.y - right.y)).toBeGreaterThanOrEqual(ADVENTURE_LAYOUT.nodeGap);
   });
 
   it("is deterministic", () => {
@@ -97,6 +97,6 @@ describe("layoutAdventure", () => {
     const looped = tree();
     looped.nodes[1] = node("left", [option("c", "start")]);
     const laid = layoutAdventure(looped);
-    expect(laid.nodes.every((placed) => Number.isFinite(placed.position.y))).toBe(true);
+    expect(laid.nodes.every((placed) => Number.isFinite(placed.position.x))).toBe(true);
   });
 });

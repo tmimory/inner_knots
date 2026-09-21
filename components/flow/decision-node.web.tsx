@@ -29,10 +29,8 @@ export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
   const counted = hits !== undefined;
 
   return (
-    <View
-      style={nodeCardStyle(theme, { selected, onPath, unvisited })}
-      className="overflow-hidden"
-    >
+    // No `overflow-hidden`: the option handles sit outside the card border.
+    <View style={nodeCardStyle(theme, { selected, onPath, unvisited })}>
       <Handle
         type="target"
         id={NODE_TARGET_HANDLE}
@@ -44,7 +42,7 @@ export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
         <View className="flex-row items-center gap-xs">
           {isStart ? (
             <Badge variant="accent">
-              <Text className="font-greek">❧ start</Text>
+              <Text>start</Text>
             </Badge>
           ) : null}
           {counted ? (
