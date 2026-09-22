@@ -20,10 +20,6 @@ import {
   variantLabel,
 } from "@/components/logs";
 import { PageHeader, Screen, SplitPane } from "@/components/shell";
-// Reached past the barrel deliberately: this is the one screen that draws its own
-// header wrapper, and the reading column has to be the *same* recipe `Screen` and
-// `PageHeader` use, not a second copy of the same three classes.
-import { widthClasses } from "@/components/shell/page-header";
 import {
   Button,
   EmptyState,
@@ -49,18 +45,6 @@ import type { Character } from "@/lib/domain/character";
 import type { Run } from "@/lib/domain/run";
 import { errorMessage } from "@/lib/errors";
 import { formatElapsed, formatStamp } from "@/lib/format";
-import { cn } from "@/lib/utils";
-
-/**
- * The reading column this page is set in.
- *
- * The page is a header with a breadcrumb over it, which `Screen` does not draw, so
- * the column goes on the wrapper instead — and the header, the metadata row, the
- * tabs and every panel under them then end on one right edge. They used not to:
- * the status and Export cluster sat at the window's edge, three hundred pixels
- * past the content it belonged to, and the page read as two.
- */
-const READING_COLUMN = widthClasses("reading");
 
 /** One labelled value in the run's metadata row, sharing the row evenly. */
 function Stat({ label, value }: { label: string; value: string }) {
@@ -115,7 +99,7 @@ export default function RunDetailScreen() {
 
   if (!run) {
     return (
-      <Screen width="reading" title="Run" subtitle="ὑπόμνημα — one run, in full">
+      <Screen title="Run" subtitle="ὑπόμνημα — one run, in full">
         <EmptyState
           title={loading ? "Reading the run…" : "No such run"}
           body={loading ? undefined : (error ?? `No run is recorded under "${runId}".`)}
@@ -128,8 +112,13 @@ export default function RunDetailScreen() {
   const active = isRunActive(run);
   const variant = configVariant(run.config);
 
+  // The page is a header with a breadcrumb over it, which `Screen` does not draw,
+  // so the wrapper carries the screen's rhythm itself. It runs the full content
+  // width like the ledger it was opened from: a span tree beside its inspector, a
+  // log list and a summary table are data, not prose, and set in a reading column
+  // they used half the pane on a wide window and the tree was squeezed to a third.
   return (
-    <View className={cn(READING_COLUMN, "gap-2xl")}>
+    <View className="gap-2xl">
       {/*
         The page is named after the run it is: the puzzle, and the eight
         characters that tell this run from the other six the same puzzle ran

@@ -179,7 +179,6 @@ export default function AdventureListScreen() {
 
   return (
     <Screen
-      width="reading"
       title="Adventures"
       subtitle="ὁδός — branching paths, recorded"
       right={

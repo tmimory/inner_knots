@@ -60,7 +60,6 @@ export default function CharactersScreen() {
     <Screen
       title="Characters"
       subtitle="πρόσωπα · the masks that will answer"
-      width="reading"
       right={
         <Link href="/characters/new" asChild>
           <Button>
