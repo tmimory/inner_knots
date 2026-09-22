@@ -379,6 +379,13 @@ export const layout = {
    */
   seat: 136,
   /**
+   * A tally cell in a roster row: a count, its noun and one qualifier — "ignores
+   * 10 convictions" — on a single line at caption size. Wider than a seat because
+   * the qualifier is the point: a cell that truncates it says the opposite of
+   * what the row means.
+   */
+  tally: 176,
+  /**
    * The smallest a numeric field may be drawn. A two-digit count in a 48px box
    * sits with a pixel either side of it and reads as cramped; 56 gives the
    * numerals room without turning a stepper into a text field.

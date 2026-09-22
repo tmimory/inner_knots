@@ -30,6 +30,7 @@ import {
   characterIdSchema,
   newId,
   OUTPUT_MODES,
+  sendsConvictions,
   STEERING_MODES,
   type Character,
   type CharacterInput,
@@ -49,6 +50,7 @@ import { WarningGlyph } from "./glyphs";
 import {
   OUTPUT_MODE_LABELS,
   PROVIDER_DEFAULT_EFFORT,
+  ignoredConvictionsNote,
   STEERING_MODE_HINTS,
   STEERING_MODE_LABELS,
 } from "./labels";
@@ -340,6 +342,7 @@ export function CharacterForm({
   }));
 
   const steering = draft.steering;
+  const ignoredNote = ignoredConvictionsNote(steering);
   const previewSteeringValue: Steering = useMemo(
     () => ({
       mode: steering.mode,
@@ -649,6 +652,13 @@ export function CharacterForm({
                 onChange={(mode) => patchSteering({ mode })}
               />
               <Text variant="muted">{STEERING_MODE_HINTS[steering.mode]}</Text>
+              {/*
+                The lists below fold away outside Full mode, and what folds away
+                is easy to take for gone — or, from the roster, for sent. One more
+                sentence under the hint says which it is: still on record, not in
+                the prompt, and where to go to change either.
+              */}
+              {ignoredNote === undefined ? null : <Text variant="muted">{ignoredNote}</Text>}
             </View>
 
             {steering.mode === "raw" ? null : (
@@ -663,7 +673,7 @@ export function CharacterForm({
               </Field>
             )}
 
-            {steering.mode === "full" ? (
+            {sendsConvictions(steering.mode) ? (
               <>
                 <Field
                   label="Principles"

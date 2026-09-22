@@ -33,6 +33,18 @@ export const characterIdSchema = z
 export const STEERING_MODES = ["raw", "bio", "full"] as const;
 export type SteeringMode = (typeof STEERING_MODES)[number];
 
+/**
+ * Whether a mode hands the character's principles and values to the model.
+ *
+ * Only `full` does. The lists are stored whatever the mode, so a character
+ * switched from `full` to `bio` keeps its convictions on record without saying
+ * them; every screen that shows the record asks here before counting them as
+ * something the model will hear.
+ */
+export function sendsConvictions(mode: SteeringMode): boolean {
+  return mode === "full";
+}
+
 export const avatarSchema = z.object({
   /** Key into the SVG avatar set in `components/avatars`. */
   shape: z.string().min(1),

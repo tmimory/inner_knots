@@ -5,9 +5,10 @@
  * metadata and the editor's segmented controls cannot drift into calling the same
  * mode two different things.
  */
-import { pluralize } from "@/lib/format";
+import { countNote, pluralize } from "@/lib/format";
 import {
   characterDisplayName,
+  sendsConvictions,
   type Character,
   type DecisionStyle,
   type OutputMode,
@@ -122,19 +123,63 @@ export type CharacterMetaParts = {
   provider: string;
   /** The steering mode as a small-caps token: "raw", "bio", "full". */
   mode: string;
-  /** "6 convictions", or "no convictions" for a character carrying none. */
+  /**
+   * "6 convictions"; "no convictions" for a character carrying none; and
+   * "ignores 6 convictions" for one that has them on record in a mode that does
+   * not send them — the verb leads so it reads as what the row does, not as a
+   * status word tacked onto the count, and the noun stays on the column's edge.
+   */
   convictions: string;
+  /**
+   * True when the convictions are on record but the mode leaves them out of the
+   * prompt, so the row can set the tally in a quieter ink than a fact the model
+   * will actually hear.
+   */
+  convictionsIgnored: boolean;
 };
 
+/**
+ * A raw or bio character keeps the principles and values it was given — a
+ * toggle should not throw away typing — but says none of them. The roster used
+ * to count them anyway, so a raw character reading "4 convictions" looked as
+ * though it were being steered by four things the model never saw.
+ */
 export function characterMetaParts(character: Character): CharacterMetaParts {
   const { mode, principles, values } = character.steering;
-  const convictions = principles.length + values.length;
+  const count = principles.length + values.length;
+  const ignored = count > 0 && !sendsConvictions(mode);
+  const counted = count === 0 ? "no convictions" : pluralize(count, "conviction");
   return {
     model: character.model,
     provider: character.provider,
     mode: STEERING_MODE_META[mode],
-    convictions: convictions === 0 ? "no convictions" : pluralize(convictions, "conviction"),
+    convictions: ignored ? `ignores ${counted}` : counted,
+    convictionsIgnored: ignored,
   };
+}
+
+/**
+ * The sentence the editor puts under the mode control when the draft holds
+ * principles or values that the chosen mode will not send: what is kept, that
+ * it is kept rather than lost, and which mode would send it — one line, since
+ * the rail beside it already shows the prompt they are missing from.
+ * `undefined` when there is nothing to say: the mode sends them, or there are
+ * none.
+ *
+ * Counts what was typed, blank rows included, because the editor shows the rows
+ * it holds; the store drops blanks on save, and the roster counts what the store
+ * kept.
+ */
+export function ignoredConvictionsNote(steering: Character["steering"]): string | undefined {
+  const { mode, principles, values } = steering;
+  if (sendsConvictions(mode)) return undefined;
+  const parts = [countNote(principles.length, "principle"), countNote(values.length, "value")].filter(
+    (part): part is string => part !== undefined,
+  );
+  if (parts.length === 0) return undefined;
+  const kept = parts.join(" and ");
+  const verb = principles.length + values.length === 1 ? "is" : "are";
+  return `${kept} ${verb} kept but ignored until the mode is ${STEERING_MODE_LABELS.full}.`;
 }
 
 /** Shown in the effort select for a character that sets no effort of its own. */

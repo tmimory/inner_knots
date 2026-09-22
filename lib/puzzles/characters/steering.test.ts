@@ -33,6 +33,11 @@ describe("composeSteeringPrompt", () => {
       character({ mode: "bio", bio: "GPT-5 in a toga.", principles: [], values: [] }),
     );
     expect(acronym).toBe("You are GPT-5 in a toga.");
+
+    const article = await composeSteeringPrompt(
+      character({ mode: "bio", bio: "A freed slave.", principles: [], values: [] }),
+    );
+    expect(article).toBe("You are a freed slave.");
   });
 
   it("stacks bio, principles and values in full mode", async () => {

@@ -33,6 +33,10 @@ export type CharacterCardProps = {
  * same fact sits at the same x on every row and the roster can be read down a
  * column instead of re-parsed line by line. The bio is clamped to one line for
  * the same reason: rows of one height are a table, rows of two are a stack.
+ *
+ * A tally the mode ignores — convictions kept on a raw or bio character — says
+ * so in the cell ("ignores 4 convictions") and drops to the subtle ink, so a count the model never hears
+ * is not set as heavily as one it does.
  */
 export function CharacterCard({ character, className }: CharacterCardProps) {
   const meta = characterMetaParts(character);
@@ -80,7 +84,11 @@ export function CharacterCard({ character, className }: CharacterCardProps) {
           >
             {meta.mode}
           </Text>
-          <Text variant="meta" className="w-seat tabular text-right" numberOfLines={1}>
+          <Text
+            variant={meta.convictionsIgnored ? "subtle" : "meta"}
+            className="w-tally tabular text-right"
+            numberOfLines={1}
+          >
             {meta.convictions}
           </Text>
           <Chevron direction="right" />

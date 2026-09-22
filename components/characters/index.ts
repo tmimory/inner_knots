@@ -10,6 +10,7 @@ export {
   characterBlurb,
   characterMetaParts,
   characterTitle,
+  ignoredConvictionsNote,
   OUTPUT_MODE_LABELS,
   OUTPUT_MODE_META,
   PROVIDER_DEFAULT_EFFORT,

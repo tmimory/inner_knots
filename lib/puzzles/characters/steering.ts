@@ -7,7 +7,7 @@
  * - `bio`  — the bio sentence only.
  * - `full` — bio, then principles, then values. Empty sections are omitted.
  */
-import type { Character } from "@/lib/domain/character";
+import { sendsConvictions, type Character } from "@/lib/domain/character";
 import { render } from "@/lib/prompts/compose";
 
 import { joinSections } from "../types";
@@ -19,8 +19,12 @@ function nonEmpty(items: readonly string[]): string[] {
   return items.map((item) => item.trim()).filter((item) => item.length > 0);
 }
 
-/** A capital followed by a lowercase letter: a sentence opening, not an acronym. */
-const SENTENCE_OPENING = /^[A-Z][a-z]/;
+/**
+ * A capital followed by a lowercase letter, or the one-letter article "A" on its
+ * own: a sentence opening, not an acronym. "A freed slave" used to keep its
+ * capital because the article has no lowercase letter after it.
+ */
+const SENTENCE_OPENING = /^(?:[A-Z][a-z]|A\s)/;
 
 /**
  * The bio finishes the sentence that "You are" begins, so a bio typed as a
@@ -46,7 +50,7 @@ export async function composeSteeringPrompt(character: SteerableCharacter): Prom
     sections.push(await render("characters/bio", { bio: asSentenceFragment(trimmedBio) }));
   }
 
-  if (mode === "full") {
+  if (sendsConvictions(mode)) {
     const usablePrinciples = nonEmpty(principles);
     if (usablePrinciples.length > 0) {
       sections.push(await render("characters/principles", { principles: usablePrinciples }));
