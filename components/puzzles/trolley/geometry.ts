@@ -147,19 +147,6 @@ export const TROLLEY = {
   },
 } as const;
 
-/**
- * The catalogue, as a count rather than a grid.
- *
- * The tiles used to be laid into a fixed grid of equal columns, which made the
- * catalogue a centred table of bare words sitting under a left-aligned board —
- * two different objects for one gesture. They wrap from the spine like words, so
- * what the palette measures is how many of them it shows, not how wide a cell is.
- */
-export const PALETTE = {
-  /** How many chips the palette offers before "Show more" is pressed. */
-  pageSize: 18,
-} as const;
-
 export type TrackId = 1 | 2;
 
 /** The rail centre line for a track. */

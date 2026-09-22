@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Pressable, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 
 import { Badge, Button, Input, POPOVER_SURFACE_CLASSES, Text } from "@/components/ui";
 import { familyOf, type TrolleyObject } from "@/lib/puzzles/trolley/catalogue";
@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { useTheme } from "@/theme";
 
 import { DraggableObject, type DragPoint } from "./draggable-object";
-import { PALETTE, type TrackId } from "./geometry";
+import type { TrackId } from "./geometry";
 
 export type ObjectPaletteProps = {
   /** The merged catalogue: custom objects first, then the built-ins. */
@@ -160,10 +160,11 @@ function interleaveFamilies(items: readonly TrolleyObject[]): TrolleyObject[] {
  * Everything that can go on a track, searchable.
  *
  * The built-in catalogue runs to several hundred entries, so the search box and
- * the filters are what make it usable; the flow opens at eighteen chips and grows
- * eighteen at a time. It is deliberately short — the board above is the thing the
+ * the filters are what make it usable; the flow itself is a window a few rows
+ * tall that scrolls. It is deliberately short — the board above is the thing the
  * screen is about, and a wall of four hundred chips was answering a question
- * nobody had asked yet.
+ * nobody had asked yet — but it is a window rather than a page, because the
+ * catalogue keeps growing and "Show more" was a click for every eighteen of them.
  *
  * The chips are the ones that stand on the rails, wrapping left-aligned from the
  * same spine as everything else on the page. The old equal-column grid was a
@@ -189,8 +190,6 @@ export function ObjectPalette({
   const [tags, setTags] = useState<string[]>([]);
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [moreTags, setMoreTags] = useState(false);
-  /** How many chips the flow is clipped to; "Show more" lets out another page. */
-  const [shown, setShown] = useState<number>(PALETTE.pageSize);
 
   const hasCustom = useMemo(() => items.some((item) => item.tags.includes(CUSTOM_TAG)), [items]);
 
@@ -205,8 +204,6 @@ export function ObjectPalette({
   }, [filtered]);
 
   const filtering = tags.length > 0 || query.trim() !== "";
-  const visible = useMemo(() => ordered.slice(0, shown), [ordered, shown]);
-  const more = filtered.length - visible.length;
 
   // A tag hidden behind "More" cannot be the one that is on: the moment one is
   // chosen the rest of the row comes out and stays out.
@@ -217,7 +214,6 @@ export function ObjectPalette({
   }, [menuFor, onArmedChange]);
 
   const toggleTag = useCallback((tag: string) => {
-    setShown(PALETTE.pageSize);
     setTags((current) =>
       current.includes(tag) ? current.filter((entry) => entry !== tag) : [...current, tag],
     );
@@ -237,10 +233,7 @@ export function ObjectPalette({
         <Input
           className="min-w-menu flex-1"
           value={query}
-          onChangeText={(text) => {
-            setShown(PALETTE.pageSize);
-            setQuery(text);
-          }}
+          onChangeText={setQuery}
           placeholder="Search the catalogue"
           autoCapitalize="none"
           autoCorrect={false}
@@ -248,7 +241,7 @@ export function ObjectPalette({
         />
         {/*
           Every text action on this screen is one link in one colour — "View
-          prompt" and "Show more" were red while these two were near-black, which
+          prompt" and "Reset filters" were red while these two were near-black, which
           made four identical-looking words into two unrelated kinds of thing.
         */}
         <View className="flex-row flex-wrap items-center gap-lg">
@@ -316,12 +309,21 @@ export function ObjectPalette({
         A left-aligned flow of the very chips that stand on the rails, wrapping
         from the spine like words. Nothing is centred and no cell is equalised:
         the catalogue is the board's own vocabulary waiting to be picked up.
+
+        The flow lives in a window five and a half rows tall that scrolls: the
+        half row is what says there is more. The trailing padding is room for a
+        tile's track menu, which opens under the tile and would otherwise be cut
+        off when the tile is in the last row.
       */}
-      <View className="flex-row flex-wrap items-start gap-sm">
-        {visible.length === 0 ? (
+      <ScrollView
+        className="max-h-palette"
+        contentContainerClassName="flex-row flex-wrap items-start gap-sm pb-4xl"
+        showsVerticalScrollIndicator
+      >
+        {ordered.length === 0 ? (
           <Text variant="muted">Nothing matches. Try fewer words, or fewer filters.</Text>
         ) : (
-          visible.map((entry) => (
+          ordered.map((entry) => (
             <DraggableObject
               key={entry.id}
               item={entry}
@@ -365,26 +367,20 @@ export function ObjectPalette({
             />
           ))
         )}
-      </View>
+      </ScrollView>
 
       <View className="flex-row flex-wrap items-center gap-md">
         <Text variant="meta">
           {loading
             ? "Reading your objects…"
-            : `Showing ${visible.length} of ${filtered.length}${filtering ? ` matching objects, from ${items.length}` : " objects"}`}
+            : `${filtered.length}${filtering ? ` matching objects, from ${items.length}` : " objects"}`}
         </Text>
-        {more > 0 ? (
-          <Button variant="link" size="sm" onPress={() => setShown(shown + PALETTE.pageSize)}>
-            <Text>Show more</Text>
-          </Button>
-        ) : null}
         <View className="flex-1" />
         {filtering ? (
           <Button
             variant="link"
             size="sm"
             onPress={() => {
-              setShown(PALETTE.pageSize);
               setQuery("");
               setTags([]);
             }}

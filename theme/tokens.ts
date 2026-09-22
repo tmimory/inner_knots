@@ -372,6 +372,16 @@ export const layout = {
   /** The inspector column beside a canvas: wide enough for a labelled textarea. */
   inspector: 360,
   /**
+   * The tallest the trolley's object catalogue grows before it scrolls: five rows
+   * of tiles and the top half of a sixth. Five is enough to browse without the
+   * several hundred objects underneath pushing the board off the screen; the
+   * half row is the cue that there are more, since a window that ends flush on
+   * a row reads as the whole list. Derived from the tile (an `icon-md` glyph
+   * with a step of parchment above and below) and the `sm` gap between rows, so
+   * the cap keeps meaning "five and a half rows" if either token moves.
+   */
+  palette: 5.5 * (iconSizes["icon-md"] + spacing.sm) + 5 * spacing.sm,
+  /**
    * One roster seat: a face, a name and the stepper that says how many times it
    * answers, in a column wide enough to hold the widest of the three. Fixing the
    * column is what keeps the steppers from colliding when two seats are filled

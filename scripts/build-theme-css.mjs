@@ -227,6 +227,9 @@ ${px(layout)}
   minWidth: {
 ${px(layout)}
   },
+  maxHeight: {
+${px(layout)}
+  },
   width: {
 ${px({ ...sizes, ...layout })}
   },
