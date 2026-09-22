@@ -5,8 +5,9 @@ import { Pressable, View } from "react-native";
 import { AdventureBuilder } from "@/components/flow";
 import { NodeEditor, PanelHeading, splitIssues } from "@/components/puzzles/adventure";
 import { PageHeader, Screen } from "@/components/shell";
-import { Button, Field, Input, Text, Textarea } from "@/components/ui";
+import { Button, ConfirmDialog, Field, Input, Text, Textarea } from "@/components/ui";
 import { useAdventure } from "@/lib/client/use-adventures";
+import { usePendingDelete } from "@/lib/client/use-pending-delete";
 import {
   ADVENTURE_LIMITS,
   validateAdventure,
@@ -14,7 +15,7 @@ import {
   type AdventureNode,
 } from "@/lib/domain/adventure";
 import { pluralize, truncate } from "@/lib/format";
-import { addNode } from "@/lib/puzzles/adventure/edits";
+import { addNode, removeNode } from "@/lib/puzzles/adventure/edits";
 import { cn } from "@/lib/utils";
 import { durations } from "@/theme";
 
@@ -62,6 +63,7 @@ export default function AdventureBuilderScreen() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [fitSignal, setFitSignal] = useState(0);
   const [showIssues, setShowIssues] = useState(false);
+  const deleting = usePendingDelete<string>();
 
   // Autosave: the builder is a canvas, and a canvas that loses work is a trap.
   useEffect(() => {
@@ -83,6 +85,21 @@ export default function AdventureBuilderScreen() {
     setDraft(next);
     setSelectedNodeId(next.nodes[next.nodes.length - 1]?.id ?? null);
   }, [draft, setDraft]);
+
+  /**
+   * The one place a card is actually removed.
+   *
+   * Both the inspector's button and the canvas — its toolbar and its delete keys —
+   * only name a card; the question is asked once, here, so the wording cannot
+   * drift between the two and neither of them can delete without asking.
+   */
+  const confirmDelete = useCallback(() => {
+    deleting.confirm((nodeId) => {
+      if (!draft) return;
+      setDraft(removeNode(draft, nodeId));
+      setSelectedNodeId((selectedId) => (selectedId === nodeId ? null : selectedId));
+    });
+  }, [deleting, draft, setDraft]);
 
   if (loading) {
     return <Screen title="Opening the tree" subtitle="ὁδός — branching paths, recorded" />;
@@ -201,18 +218,21 @@ export default function AdventureBuilderScreen() {
         The canvas first, at its own full width and the height the theme gives
         it, and the inspector under it: a tree wants the whole column to be read
         in, and an inspector beside it was a third of the page spent on two text
-        fields. The fields keep the reading measure rather than the width of the
-        canvas, so a title field is a title field and not a rule across the page.
+        fields. The inspector now takes the same full width: capped at the reading
+        measure it was a half-width column with the rest of the page blank beside
+        it, while a card's context, its question and each option's destination
+        want to be read across one row rather than down a narrow well.
       */}
       <AdventureBuilder
         adventure={draft}
         onChange={setDraft}
         selectedNodeId={selectedNodeId}
         onSelectNode={setSelectedNodeId}
+        onRequestDeleteNode={deleting.request}
         fitSignal={fitSignal}
       />
 
-      <View className="max-w-measure gap-lg">
+      <View className="w-full gap-lg">
         {/*
           The panel says what it is about rather than what it is: "Adventure"
           while nothing is picked, and the card's own question once one is. A
@@ -226,7 +246,7 @@ export default function AdventureBuilderScreen() {
             adventure={draft}
             node={selected}
             onChange={setDraft}
-            onRemoved={() => setSelectedNodeId(null)}
+            onRequestDelete={() => deleting.request(selected.id)}
           />
         ) : (
           <>
@@ -251,11 +271,23 @@ export default function AdventureBuilderScreen() {
             {/* The one helper line on the screen, and it is this panel's empty
                 state — what to do to fill it — not a footnote under a counter. */}
             <Text variant="muted">
-              Select a card to write it; drag an option&apos;s handle onto another card.
+              Select a card to write it. Drag an option&apos;s handle onto a card to connect
+              or re-point it; drag an edge&apos;s end onto the pane to cut it.
             </Text>
           </>
         )}
       </View>
+
+      <ConfirmDialog
+        open={deleting.open}
+        onOpenChange={deleting.onOpenChange}
+        title="Delete this node?"
+        description="Every option that led here will end the adventure instead. This cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Keep it"
+        destructive
+        onConfirm={confirmDelete}
+      />
     </View>
   );
 }

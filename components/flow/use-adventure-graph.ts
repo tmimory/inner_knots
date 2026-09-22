@@ -7,6 +7,7 @@
  *
  *   options[].nextNodeId  ->  edges          (one edge per option that leads on)
  *   edge connected        ->  nextNodeId     (the target node's id)
+ *   edge rewired          ->  nextNodeId     (twice: the option it left, the one it landed on)
  *   edge deleted          ->  nextNodeId     (back to null: an ending)
  *
  * — so nothing about the canvas is stored at all. Where a card sits is not the
@@ -25,7 +26,7 @@ import type {
   NodeChange,
   SmoothStepPathOptions,
 } from "@xyflow/react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import type { Adventure } from "@/lib/domain/adventure";
 import type { AdventurePathSummary, AdventureSummary } from "@/lib/domain/summary";
@@ -42,6 +43,7 @@ import { edgePathOptions, edgeLabelBackgroundStyle, edgeLabelStyle, edgeStyle } 
 import {
   DECISION_NODE,
   NODE_TARGET_HANDLE,
+  OPTION_EDGE,
   type AdventureEdgeData,
   type DecisionNodeData,
 } from "./types";
@@ -176,13 +178,17 @@ export function toFlowNodes(
  * edge itself. Its edge is drawn in the primary ink at the width `edgeStyle`
  * raises it to, and lifted above the rest, because the line worth following is
  * the one that has to be followable where it crosses the others.
+ *
+ * `builder` picks the edge component: the builder's own `option` edge, which
+ * carries a delete button where a label would go, or React Flow's `smoothstep`,
+ * whose label is how the outcome view writes a line's traffic on it.
  */
 export function toFlowEdges(
   adventure: Adventure,
   theme: Theme,
-  options: { decoration?: GraphDecoration; focus?: FlowFocus | null } = {},
+  options: { decoration?: GraphDecoration; focus?: FlowFocus | null; builder?: boolean } = {},
 ): AdventureFlowEdge[] {
-  const { decoration, focus = null } = options;
+  const { decoration, focus = null, builder = false } = options;
   const known = new Set(adventure.nodes.map((node) => node.id));
   const edges: AdventureFlowEdge[] = [];
 
@@ -213,7 +219,7 @@ export function toFlowEdges(
         sourceHandle: option.id,
         target: option.nextNodeId,
         targetHandle: NODE_TARGET_HANDLE,
-        type: "smoothstep",
+        type: builder ? OPTION_EDGE : "smoothstep",
         pathOptions: edgePathOptions(theme, index, bundles.get(node.id) ?? 1),
         // An edge leaves from the row of the option it stands for, so repeating
         // that option's name on the edge says nothing the picture has not said —
@@ -252,10 +258,13 @@ function carryMeasurements(
   return seed.map((node) => ({ ...node, measured: measured.get(node.id) }));
 }
 
-/** True when the option an edge would leave from already leads somewhere. */
-function optionIsTaken(adventure: Adventure, nodeId: string, optionId: string): boolean {
-  const node = adventure.nodes.find((candidate) => candidate.id === nodeId);
-  return node?.options.find((option) => option.id === optionId)?.nextNodeId != null;
+/** True when a connection would put an edge back where the one it came from was. */
+function isSameWiring(edge: AdventureFlowEdge, connection: Connection): boolean {
+  return (
+    edge.source === connection.source &&
+    edge.sourceHandle === connection.sourceHandle &&
+    edge.target === connection.target
+  );
 }
 
 export type UseAdventureGraphInput = {
@@ -284,12 +293,19 @@ export type UseAdventureGraph = {
   layoutKey: string;
   onNodesChange: (changes: NodeChange<AdventureFlowNode>[]) => void;
   onEdgesChange: (changes: EdgeChange<AdventureFlowEdge>[]) => void;
+  /** A new edge out of an option, which re-points it when it already led somewhere. */
   onConnect: (connection: Connection) => void;
+  /** Either end of an existing edge dragged onto a new handle. */
+  onReconnect: (edge: AdventureFlowEdge, connection: Connection) => void;
+  /** The end of that drag: let go of over nothing, the edge is cut. */
+  onReconnectEnd: (event: MouseEvent | TouchEvent, edge: AdventureFlowEdge) => void;
   /** Deleting an edge is the option it stood for going back to being an ending. */
   onEdgesDelete: (removed: AdventureFlowEdge[]) => void;
+  /** The same thing said about one option rather than about a drawn edge. */
+  disconnectOption: (nodeId: string, optionId: string) => void;
   /** Deleting a card takes every reference to it with it. */
   onNodesDelete: (removed: AdventureFlowNode[]) => void;
-  /** Refuses a second edge out of one option: an option leads to one node or none. */
+  /** Refuses only what the model cannot hold: a card leading to itself. */
   isValidConnection: (connection: Connection | Edge) => boolean;
 };
 
@@ -312,9 +328,13 @@ export function useAdventureGraph(input: UseAdventureGraphInput): UseAdventureGr
     () => toFlowNodes(adventure, positions, { selectedNodeId, decoration }),
     [adventure, positions, selectedNodeId, decoration],
   );
+  // A boolean rather than `onChange` itself: the screen may well hand down a new
+  // closure on every render, and this memo re-seeding on every render is the one
+  // thing that would spin the render loop that keeps the two states in step.
+  const builder = onChange !== undefined;
   const seedEdges = useMemo(
-    () => toFlowEdges(adventure, theme, { decoration, focus }),
-    [adventure, theme, decoration, focus],
+    () => toFlowEdges(adventure, theme, { decoration, focus, builder }),
+    [adventure, theme, decoration, focus, builder],
   );
 
   const [nodes, setNodes] = useState<AdventureFlowNode[]>(seedNodes);
@@ -339,12 +359,51 @@ export function useAdventureGraph(input: UseAdventureGraphInput): UseAdventureGr
     setEdges((current) => applyEdgeChanges(changes, current));
   }, []);
 
+  // An option leads to one node or none, so a second edge dragged out of a handle
+  // that already has one *moves* it: the newest target wins. Refusing the gesture
+  // meant the author had to find and cut the old line before drawing the new one,
+  // which is two edits for what reads as one.
   const onConnect = useCallback(
     (connection: Connection) => {
       if (!onChange || connection.sourceHandle === null) return;
-      if (optionIsTaken(adventure, connection.source, connection.sourceHandle)) return;
       onChange(
         setOptionTarget(adventure, connection.source, connection.sourceHandle, connection.target),
+      );
+    },
+    [adventure, onChange],
+  );
+
+  /**
+   * Whether the drag that is ending put the edge down on a handle.
+   *
+   * React Flow reports a reconnection and the end of the drag separately, and
+   * only the pair of them says what happened: an end with no reconnection before
+   * it is the edge let go of over the pane, which is how a line is cut by hand.
+   * The flag is cleared at the end rather than set at the start — `onReconnectEnd`
+   * fires whether or not the edge moved, so it is the one place both readings
+   * pass through.
+   */
+  const reconnected = useRef(false);
+
+  const onReconnect = useCallback(
+    (edge: AdventureFlowEdge, connection: Connection) => {
+      reconnected.current = true;
+      if (!onChange || connection.sourceHandle === null) return;
+      // The same wiring redrawn: React Flow reports it, and writing it back would
+      // be a change to the adventure that changed nothing in it.
+      if (isSameWiring(edge, connection)) return;
+
+      // Dragging the *source* end onto another option hands the line to that
+      // option, so the one it left is an ending again. Dragging the target end
+      // leaves the option alone and only moves where it leads.
+      const movedSource =
+        edge.source !== connection.source || edge.sourceHandle !== connection.sourceHandle;
+      let next = adventure;
+      if (movedSource && edge.sourceHandle != null) {
+        next = setOptionTarget(next, edge.source, edge.sourceHandle, null);
+      }
+      onChange(
+        setOptionTarget(next, connection.source, connection.sourceHandle, connection.target),
       );
     },
     [adventure, onChange],
@@ -363,6 +422,22 @@ export function useAdventureGraph(input: UseAdventureGraphInput): UseAdventureGr
     [adventure, onChange],
   );
 
+  const onReconnectEnd = useCallback(
+    (_event: MouseEvent | TouchEvent, edge: AdventureFlowEdge) => {
+      if (!reconnected.current) onEdgesDelete([edge]);
+      reconnected.current = false;
+    },
+    [onEdgesDelete],
+  );
+
+  const disconnectOption = useCallback(
+    (nodeId: string, optionId: string) => {
+      if (!onChange) return;
+      onChange(setOptionTarget(adventure, nodeId, optionId, null));
+    },
+    [adventure, onChange],
+  );
+
   const onNodesDelete = useCallback(
     (removed: AdventureFlowNode[]) => {
       if (!onChange) return;
@@ -373,14 +448,14 @@ export function useAdventureGraph(input: UseAdventureGraphInput): UseAdventureGr
     [adventure, onChange],
   );
 
-  const isValidConnection = useCallback(
-    (connection: Connection | Edge) => {
-      const handle = connection.sourceHandle;
-      if (handle === null || handle === undefined) return false;
-      return !optionIsTaken(adventure, connection.source, handle);
-    },
-    [adventure],
-  );
+  // The only wiring the model cannot hold: an edge has to leave a known option,
+  // and a card cannot lead to itself — the walk would never get past it. An
+  // option that already leads somewhere is *not* refused any more; the new
+  // connection re-points it.
+  const isValidConnection = useCallback((connection: Connection | Edge) => {
+    if (connection.sourceHandle === null || connection.sourceHandle === undefined) return false;
+    return connection.target !== connection.source;
+  }, []);
 
   return {
     nodes,
@@ -389,7 +464,10 @@ export function useAdventureGraph(input: UseAdventureGraphInput): UseAdventureGr
     onNodesChange,
     onEdgesChange,
     onConnect,
+    onReconnect,
+    onReconnectEnd,
     onEdgesDelete,
+    disconnectOption,
     onNodesDelete,
     isValidConnection,
   };

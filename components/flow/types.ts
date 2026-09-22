@@ -9,6 +9,15 @@ import type { AdventurePathSummary, AdventureSummary } from "@/lib/domain/summar
 /** React Flow's node type name for a decision card. */
 export const DECISION_NODE = "decision";
 
+/**
+ * React Flow's edge type name for an option in the builder.
+ *
+ * Only the builder uses it. The outcome view keeps the built-in `smoothstep`
+ * edge, whose label plaque is where it writes how many walks took the line; the
+ * builder has nothing to write there and puts a delete button in its place.
+ */
+export const OPTION_EDGE = "option";
+
 /** The id of the single target handle every node has, centred on its top edge. */
 export const NODE_TARGET_HANDLE = "in";
 
@@ -45,6 +54,16 @@ export type AdventureBuilderProps = {
   onChange: (next: Adventure) => void;
   selectedNodeId: string | null;
   onSelectNode: (nodeId: string | null) => void;
+  /**
+   * Asks for a card to be deleted; the canvas never deletes one itself.
+   *
+   * Backspace, the Delete key and the selected card's own toolbar all arrive
+   * here, and the screen answers them with the one confirmation dialog it owns —
+   * removing a card takes every option that led to it with it, which is the one
+   * edit on this canvas that cannot be undone by repeating the gesture. Edge
+   * edits carry no such cost and go straight through `onChange`.
+   */
+  onRequestDeleteNode: (nodeId: string) => void;
   /**
    * Bumped by the screen to fit the whole graph into view. An incrementing number
    * rather than a ref, so the command survives the canvas being lazily mounted.

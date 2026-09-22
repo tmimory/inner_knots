@@ -123,6 +123,55 @@ export function edgeLabelBackgroundStyle(theme: Theme): Record<string, string | 
 }
 
 /**
+ * How big the × that cuts an edge is drawn. A step over the 12px handles, so it
+ * reads as a button rather than as a fourth kind of dot, and still small enough
+ * to sit on the line without covering the card it runs to.
+ */
+function edgeDeleteButtonSize(theme: Theme): number {
+  return theme.spacing.xl;
+}
+
+/**
+ * The round button drawn on a focused edge, at the midpoint of its path.
+ *
+ * It is positioned rather than translated: `EdgeLabelRenderer` portals it inside
+ * the viewport's own transform, so flow coordinates minus half the button are
+ * exactly the CSS percentage translate React Flow's examples use — and this way
+ * the offset is arithmetic on a token rather than a string only CSS can read.
+ *
+ * `pointerEvents` is spelled out because the renderer's container switches them
+ * off wholesale, so a label that wants to be pressed has to ask.
+ *
+ * `zIndex` is what makes the asking work. The focused edge is lifted to the
+ * `menu` layer so its line clears the bundle it crosses, and React Flow draws
+ * that layer as its own SVG beside the label renderer — above it, in DOM order.
+ * A button under its own line takes no clicks: the wide hit path the edge is
+ * given for hovering caught every one. One step above the line puts the button
+ * where the pointer is.
+ */
+export function edgeDeleteButtonStyle(
+  theme: Theme,
+  at: { x: number; y: number; hovered: boolean },
+): ViewStyle {
+  const size = edgeDeleteButtonSize(theme);
+  return {
+    position: "absolute",
+    left: at.x - size / 2,
+    top: at.y - size / 2,
+    width: size,
+    height: size,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: theme.radii.full,
+    borderWidth: theme.borderWidths.hairline,
+    borderColor: at.hovered ? theme.colors.destructive : theme.colors.border,
+    backgroundColor: theme.colors.card,
+    pointerEvents: "auto",
+    zIndex: theme.zIndex.sticky,
+  };
+}
+
+/**
  * The outline and fill of a decision card.
  *
  * The coloured left edge belongs to the card the author has selected, and to

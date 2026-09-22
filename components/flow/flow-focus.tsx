@@ -51,6 +51,25 @@ export function isFocused(
   return focus !== null && focus.nodeId === nodeId && focus.optionId === optionId;
 }
 
+/**
+ * The pointer handlers that make one element the near end of an option: enter
+ * names it, leave lets go. A row, the handle under it and the × on its edge all
+ * want the same pair, and the subtlety — that the × has to re-name the option
+ * on the way in, or the focus drops and the button vanishes under the pointer
+ * — is only kept if the pair is written once. A plain function rather than a
+ * hook, because a card builds its rows in a loop.
+ */
+export function optionHoverHandlers(
+  hover: FlowFocusValue["hover"],
+  nodeId: string,
+  optionId: string,
+): { onPointerEnter: () => void; onPointerLeave: () => void } {
+  return {
+    onPointerEnter: () => hover({ nodeId, optionId }),
+    onPointerLeave: () => hover(null),
+  };
+}
+
 /** Holds one canvas's focus. Wraps the whole canvas, cards and edges alike. */
 export function FlowFocusProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<{ focus: FlowFocus | null; pinned: boolean }>({

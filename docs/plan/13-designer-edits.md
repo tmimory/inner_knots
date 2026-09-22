@@ -89,4 +89,48 @@ so on a wide page the editor sits in a half-width column beside nothing.
 
 ## Done
 
-_(filled in as items land)_
+Both landed 2026-09-22 in one commit (the inspector's select and its full-width
+layout are the same edit of the same rows); the whole tree passed typecheck, lint
+and 372 tests, and the four critics ran on the stable tree.
+
+- [x] **1.** Canvas: a connection dragged from a taken option re-points it;
+      `edgesReconnectable` in the builder, with `onReconnect` moving the option
+      and `onReconnectEnd` cutting an edge dropped on the pane. The builder's
+      `option` edge type (`components/flow/option-edge.web.tsx`) draws a round ×
+      at the path's midpoint while the edge is focused or selected; the selected
+      card carries a `NodeToolbar` with "Delete node"; Backspace and Delete do
+      the same. No deletion of a card happens on the canvas: `onBeforeDelete`
+      refuses and calls `onRequestDeleteNode`, and the screen owns the one
+      `ConfirmDialog`, fed by the toolbar, the keys and the inspector's button.
+      `BuilderActions` is a small context (`null` in the outcome view) that hands
+      the two callbacks to cards and edges without putting closures in node data.
+      Inspector: each option's "leads to" sentence is a `Select` ("Ends the
+      adventure" or any other card, plus a "gone: id" item for a missing target).
+      Found in the browser after the implementers finished: the × took no clicks,
+      because the focused edge is lifted to the `menu` layer and React Flow draws
+      that layer above the label renderer; the button now sits at `zIndex.sticky`.
+      And the toolbar covered the × of any edge arriving under it, because a
+      selected card is lifted to a vendor z-index and the toolbar one above it;
+      `elevateNodesOnSelect` is off (laid-out cards never overlap).
+- [x] **2.** The inspector is `w-full`; Context and Decision share a row above the
+      `wide` breakpoint (the theme's only one; `md` here is a spacing token); each
+      option is one block with the label, the `w-inspector` "Leads to" select and
+      the remove button on the first row and the Outcome across the second.
+
+Verified with Playwright against the running app: × click with and without the
+target card selected, toolbar and Backspace both open the dialog, drag an edge
+end to another card (re-targeted), drag it to the pane (cut), drag from a taken
+handle (re-pointed, and the inspector's select agrees), and the select itself.
+
+**Critics.** Secrets and design tokens: nothing. Duplication: the screen's
+hand-rolled confirm state became `usePendingDelete`, as the adventure list
+already uses; the hover set-and-clear pair (row, handle, edge ×) is one
+`optionHoverHandlers` in `flow-focus.tsx`. Declined: composing React Flow's
+`SmoothStepEdge` inside the option edge, since the × still needs the path call
+for its midpoint, so nothing would be removed. Visual critic 6.5/10. Taken: the
+option's text field is labelled "Option n" so it shares a baseline with "Leads
+to"; Context and Decision open at the same height; "Add option" is a small
+button rather than a bar across the page. Left: a side rail for the inspector
+(phase 12 chose one column, and this phase asked for the width); one selection
+hue across card, edge and row; hiding counters until near the limit; wider cards
+or wrapping option rows; the vendor attribution.

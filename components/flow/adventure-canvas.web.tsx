@@ -7,6 +7,14 @@
  * writability differ. Everything it needs to draw comes from `useAdventureGraph`,
  * and every color it uses comes from `useTheme()` via `flow-style`.
  *
+ * What the builder can be done to it, in one place: drag from an option's handle
+ * to a card to point it there (again, to re-point it); drag either end of an edge
+ * to move the line, or onto the pane to cut it; press the × that appears on the
+ * line you are on, or double-click it, to cut it. Every one of those is the same
+ * single edit — where one option leads — and goes straight through `onChange`.
+ * Deleting a *card* is the exception: the keys and the card's own toolbar both
+ * end at `onRequestDeleteNode`, and the screen confirms it.
+ *
  * This module is the only one that imports React Flow at runtime, and it is
  * reached through a lazy import, so a server render never evaluates it.
  */
@@ -28,10 +36,12 @@ import { View, useWindowDimensions } from "react-native";
 import { adventureExtent, adventureShape } from "@/lib/puzzles/adventure/layout";
 import { useTheme } from "@/theme";
 
+import { BuilderActionsProvider, type BuilderActions } from "./builder-actions";
 import { useFlowChromeStyle } from "./chrome-style.web";
 import { adventureNodeTypes } from "./decision-node.web";
 import { FlowFocusProvider, useFlowFocus, type FlowFocus } from "./flow-focus";
 import { canvasStyle, miniMapStyle } from "./flow-style";
+import { adventureEdgeTypes } from "./option-edge.web";
 import type { AdventureCanvasProps } from "./types";
 import {
   decorationFromSummary,
@@ -72,6 +82,9 @@ const FIT = { maxZoom: 1 } as const;
  */
 const MINIMAP_FROM_NODES = 6;
 
+/** Both keys a reader might press over a selected card, on either keyboard. */
+const DELETE_KEYS = ["Backspace", "Delete"];
+
 /** Which option an edge stands for, or nothing when it carries no data. */
 function focusOfEdge(edge: AdventureFlowEdge): FlowFocus | null {
   return edge.data ? { nodeId: edge.data.nodeId, optionId: edge.data.optionId } : null;
@@ -95,6 +108,7 @@ function Canvas(props: AdventureCanvasProps) {
   const selectedNodeId = props.mode === "builder" ? props.selectedNodeId : null;
   const onChange = props.mode === "builder" ? props.onChange : undefined;
   const onSelectNode = props.mode === "builder" ? props.onSelectNode : undefined;
+  const onRequestDeleteNode = props.mode === "builder" ? props.onRequestDeleteNode : undefined;
 
   const decoration = useMemo(() => decorationFromSummary(summary, highlight), [summary, highlight]);
 
@@ -106,6 +120,18 @@ function Canvas(props: AdventureCanvasProps) {
     focus,
     onChange,
   });
+
+  // What a card and an edge are allowed to ask for, handed down once rather than
+  // written into every node's and edge's data. `null` in the outcome view, which
+  // is how both of them know they are being read rather than edited.
+  const { disconnectOption } = graph;
+  const actions = useMemo<BuilderActions | null>(
+    () =>
+      onRequestDeleteNode === undefined
+        ? null
+        : { requestDeleteNode: onRequestDeleteNode, disconnectOption },
+    [onRequestDeleteNode, disconnectOption],
+  );
 
   /**
    * Frames the whole graph, centred, at whatever zoom that takes.
@@ -146,64 +172,98 @@ function Canvas(props: AdventureCanvasProps) {
   }, [fitSignal]);
 
   return (
-    <ReactFlow<AdventureFlowNode, AdventureFlowEdge>
-      nodes={graph.nodes}
-      edges={graph.edges}
-      nodeTypes={adventureNodeTypes}
-      onNodesChange={graph.onNodesChange}
-      onEdgesChange={graph.onEdgesChange}
-      onConnect={graph.onConnect}
-      onEdgesDelete={graph.onEdgesDelete}
-      onNodesDelete={graph.onNodesDelete}
-      isValidConnection={graph.isValidConnection}
-      onNodeClick={(_event, node) => onSelectNode?.(node.id)}
-      onPaneClick={() => {
-        onSelectNode?.(null);
-        // The pane is where a selection is let go of, so it is where a pinned
-        // option is let go of too.
-        pin(null);
-      }}
-      // Hovering an edge lights the row it leaves; clicking it pins that, because
-      // reading a card at the far end of the canvas means moving off the line.
-      onEdgeMouseEnter={(_event, edge) => hover(focusOfEdge(edge))}
-      onEdgeMouseLeave={() => hover(null)}
-      onEdgeClick={(_event, edge) => pin(focusOfEdge(edge))}
-      onEdgeDoubleClick={(_event, edge) => graph.onEdgesDelete([edge])}
-      // Cards are placed by the layout, never by hand: an adventure's picture is
-      // its shape, so the same tree draws the same way for the author and for the
-      // reader of a run. Dragging one would only desynchronise the two.
-      nodesDraggable={false}
-      nodesConnectable={builder}
-      elementsSelectable={builder}
-      edgesReconnectable={false}
-      minZoom={ZOOM.min}
-      maxZoom={ZOOM.max}
-      style={canvasStyle(theme) as CSSProperties}
-    >
-      <Background
-        variant={BackgroundVariant.Dots}
-        gap={theme.spacing.xl}
-        size={theme.borderWidths.hairline}
-        color={theme.colors.border}
-      />
-      {props.adventure.nodes.length > MINIMAP_FROM_NODES ? (
-        <MiniMap
-          pannable
-          zoomable
-          position="bottom-right"
-          style={miniMapStyle(theme) as CSSProperties}
-          nodeColor={theme.colors.muted}
-          nodeStrokeColor={theme.colors.border}
-          maskColor={theme.colors.background}
+    <BuilderActionsProvider actions={actions}>
+      <ReactFlow<AdventureFlowNode, AdventureFlowEdge>
+        nodes={graph.nodes}
+        edges={graph.edges}
+        nodeTypes={adventureNodeTypes}
+        edgeTypes={adventureEdgeTypes}
+        onNodesChange={graph.onNodesChange}
+        onEdgesChange={graph.onEdgesChange}
+        onConnect={graph.onConnect}
+        onReconnect={graph.onReconnect}
+        onReconnectEnd={graph.onReconnectEnd}
+        onEdgesDelete={graph.onEdgesDelete}
+        onNodesDelete={graph.onNodesDelete}
+        isValidConnection={graph.isValidConnection}
+        /*
+          A card is never deleted by the canvas. The keys and the card's own
+          toolbar both end up here, and this refuses the deletion and asks the
+          screen for it instead, because removing a card also cuts every option
+          that led to it and that is worth one confirmation. Only the first card of
+          a request is asked for: the screen holds one pending deletion, and the
+          selection this canvas keeps is a single card anyway.
+
+          An edge-only deletion is let through: it is one option going back to
+          being an ending, which is undone by drawing the line again.
+        */
+        onBeforeDelete={async ({ nodes: doomed }) => {
+          const [first] = doomed;
+          if (first === undefined) return true;
+          onRequestDeleteNode?.(first.id);
+          return false;
+        }}
+        onNodeClick={(_event, node) => onSelectNode?.(node.id)}
+        onPaneClick={() => {
+          onSelectNode?.(null);
+          // The pane is where a selection is let go of, so it is where a pinned
+          // option is let go of too.
+          pin(null);
+        }}
+        // Hovering an edge lights the row it leaves; clicking it pins that, because
+        // reading a card at the far end of the canvas means moving off the line.
+        onEdgeMouseEnter={(_event, edge) => hover(focusOfEdge(edge))}
+        onEdgeMouseLeave={() => hover(null)}
+        onEdgeClick={(_event, edge) => pin(focusOfEdge(edge))}
+        onEdgeDoubleClick={(_event, edge) => graph.onEdgesDelete([edge])}
+        // Cards are placed by the layout, never by hand: an adventure's picture is
+        // its shape, so the same tree draws the same way for the author and for the
+        // reader of a run. Dragging one would only desynchronise the two.
+        nodesDraggable={false}
+        // The cards are laid out so that none overlaps another, so lifting the
+        // selected one to React Flow's top layer buys nothing — and its toolbar,
+        // which sits one step above it, would cover the × of any edge arriving
+        // under it. Left at the base layer, the card's chrome stays under the
+        // transient control the reader is actually pointing at.
+        elevateNodesOnSelect={false}
+        nodesConnectable={builder}
+        elementsSelectable={builder}
+        // An edge's ends are draggable in the builder: onto another handle to move
+        // the line, onto the pane to cut it. Both end up in `useAdventureGraph`,
+        // which writes the one thing an edge is — the option's `nextNodeId`.
+        edgesReconnectable={builder}
+        // The keys only do anything where something can be deleted, and what they
+        // reach is `onBeforeDelete`, which asks rather than removes.
+        deleteKeyCode={builder ? DELETE_KEYS : null}
+        minZoom={ZOOM.min}
+        maxZoom={ZOOM.max}
+        style={canvasStyle(theme) as CSSProperties}
+      >
+        <Background
+          variant={BackgroundVariant.Dots}
+          gap={theme.spacing.xl}
+          size={theme.borderWidths.hairline}
+          color={theme.colors.border}
         />
-      ) : null}
-      {/*
-        Zoom, zoom out, fit — and nothing else. The interactivity lock is a
-        fourth glyph nobody reaches for, and a padlock beside two magnifiers
-        reads as a warning rather than as a toggle.
-      */}
-      <Controls showInteractive={false} showZoom showFitView position="bottom-left" />
-    </ReactFlow>
+        {props.adventure.nodes.length > MINIMAP_FROM_NODES ? (
+          <MiniMap
+            pannable
+            zoomable
+            position="bottom-right"
+            style={miniMapStyle(theme) as CSSProperties}
+            nodeColor={theme.colors.muted}
+            nodeStrokeColor={theme.colors.border}
+            maskColor={theme.colors.background}
+          />
+        ) : null}
+        {/*
+          Zoom, zoom out, fit — and nothing else. The interactivity lock is a
+          fourth glyph nobody reaches for, and a padlock beside two magnifiers
+          reads as a warning rather than as a toggle.
+        */}
+        <Controls showInteractive={false} showZoom showFitView position="bottom-left" />
+      </ReactFlow>
+    </BuilderActionsProvider>
   );
 }
 

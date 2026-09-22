@@ -5,6 +5,7 @@ export { FlowNotice, type FlowNoticeProps } from "./flow-notice";
 export {
   DECISION_NODE,
   NODE_TARGET_HANDLE,
+  OPTION_EDGE,
   type AdventureBuilderProps,
   type AdventureCanvasProps,
   type AdventureEdgeData,

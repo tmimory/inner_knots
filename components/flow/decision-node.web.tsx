@@ -13,6 +13,10 @@
  * its handle. In the outcome view the same card shows how many walks came through
  * it and how they split.
  *
+ * In the builder the selected card also carries a toolbar with the one gesture
+ * that is not wiring — "Delete node" — which asks the screen rather than doing
+ * it. Nothing is drawn there in the outcome view, where there is nothing to ask.
+ *
  * Numbering says which is which; the focus says which one you are on. Putting the
  * pointer on a row tells the canvas's `FlowFocus` which option it is, and the edge
  * leaving that row lights up in the primary ink — and the same the other way, so
@@ -25,16 +29,17 @@
  * type. Where a walk begins is a small-caps "Start" in the card's own header; the
  * coloured left edge is reserved for the card the author has selected.
  */
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { Handle, NodeToolbar, Position, type NodeProps } from "@xyflow/react";
 import { View } from "react-native";
 
-import { Badge, Text } from "@/components/ui";
+import { Badge, Button, Text } from "@/components/ui";
 import { formatPercent } from "@/lib/format";
 import { ADVENTURE_LAYOUT } from "@/lib/puzzles/adventure/layout";
 import { useTheme } from "@/theme";
 
+import { useBuilderActions } from "./builder-actions";
 import { TERMINAL_HANDLE_CLASS } from "./chrome-style.web";
-import { isFocused, useFlowFocus } from "./flow-focus";
+import { isFocused, optionHoverHandlers, useFlowFocus } from "./flow-focus";
 import { handleLabelStyle, handleStyle, nodeCardStyle } from "./flow-style";
 import type { AdventureFlowNode } from "./use-adventure-graph";
 import { NODE_TARGET_HANDLE } from "./types";
@@ -54,6 +59,7 @@ const DECISION_LINES = 2;
 export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
   const theme = useTheme();
   const { focus, hover } = useFlowFocus();
+  const actions = useBuilderActions();
   const { node, isStart, isTarget, hits, share, optionHits, onPath, unvisited } = data;
   const counted = hits !== undefined;
   const forks = node.options.length > 1;
@@ -64,6 +70,26 @@ export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
       accessibilityLabel={`${node.decision.trim()} — ${node.context.trim()}`}
       style={nodeCardStyle(theme, { selected, onPath, unvisited })}
     >
+      {/*
+        The one thing the canvas can do to a card that is not wiring, said out
+        loud on the card being written rather than left to a key nothing mentions.
+        Backspace and Delete do the same, and neither removes anything here: both
+        arrive at the screen, which owns the confirmation — deleting a card also
+        cuts every option that led to it.
+
+        Drawn above the card and aligned to its right edge, where it is over the
+        gap between ranks rather than over the card above.
+      */}
+      {actions ? (
+        <NodeToolbar position={Position.Top} align="end" isVisible={selected} offset={theme.spacing.sm}>
+          <View className="rounded-sm bg-card">
+            <Button variant="outline" size="sm" onPress={() => actions.requestDeleteNode(node.id)}>
+              <Text>Delete node</Text>
+            </Button>
+          </View>
+        </NodeToolbar>
+      ) : null}
+
       {/*
         Nothing arrives at the start of an adventure, so it is drawn with no place
         for anything to arrive. A node that is both the start and the target of
@@ -135,8 +161,7 @@ export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
               // the muted fill. Not a CSS `:hover` rule — the focus arrives from the
               // edge as often as from the row, and a rule the pointer owns cannot be
               // told about that.
-              onPointerEnter={() => hover({ nodeId: node.id, optionId: option.id })}
-              onPointerLeave={() => hover(null)}
+              {...optionHoverHandlers(hover, node.id, option.id)}
               className={`flex-row items-center gap-sm px-md transition-colors duration-fast${
                 lit ? " bg-muted" : ""
               }`}
@@ -196,8 +221,7 @@ export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
               index,
               count: node.options.length,
             })}
-            onPointerEnter={() => hover({ nodeId: node.id, optionId: option.id })}
-            onPointerLeave={() => hover(null)}
+            {...optionHoverHandlers(hover, node.id, option.id)}
             aria-label={
               ending
                 ? `${option.label} — option ${index + 1}, ends the adventure`
