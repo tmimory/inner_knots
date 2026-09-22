@@ -8,7 +8,7 @@ import type { Span } from "@/lib/domain/span";
 import { formatElapsed, truncate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-import { CharacterFace, nameOf } from "./roster-avatars";
+import { MiniFace, nameOf } from "./roster-avatars";
 import { readModel } from "./span-input";
 import { StatusDot } from "./status-mark";
 
@@ -37,10 +37,14 @@ export function buildSpanTree(spans: readonly Span[]): SpanNode[] {
     else roots.push(node);
   }
 
-  const byStart = (a: SpanNode, b: SpanNode): number =>
+  // Siblings sit in their own order — game 2 before game 3 — not in the order
+  // the worker pool happened to start them; start time only breaks the ties,
+  // which is what puts a retry after the call it retried.
+  const inOrder = (a: SpanNode, b: SpanNode): number =>
+    (a.span.iteration ?? 0) - (b.span.iteration ?? 0) ||
     a.span.startedAt.localeCompare(b.span.startedAt);
-  for (const node of nodes.values()) node.children.sort(byStart);
-  roots.sort(byStart);
+  for (const node of nodes.values()) node.children.sort(inOrder);
+  roots.sort(inOrder);
   return roots;
 }
 
@@ -81,7 +85,8 @@ export function spanLabel(span: Span, puzzle: PuzzleId | undefined, depth: numbe
     case "provider-call":
       return "provider call";
     case "iteration":
-      if (puzzle === "prisoners-dilemma") return depth <= 1 ? "game" : "round";
+      // run (0) > character (1) > game (2) > round (3).
+      if (puzzle === "prisoners-dilemma") return depth <= 2 ? "game" : "round";
       return "iteration";
   }
 }
@@ -124,7 +129,7 @@ function SpanRow({
   const detail = spanDetail(span);
 
   return (
-    <View className="gap-xxs">
+    <View className="gap-xs">
       <View className="flex-row items-center gap-xs">
         {children.length > 0 ? (
           <Pressable
@@ -146,40 +151,54 @@ function SpanRow({
           role="button"
           aria-selected={selected}
           onPress={() => onSelect(span.spanId)}
+          // The row is one line, and stays one: what does not fit is cut short
+          // rather than wrapped, because a wrapped row is taller than the height
+          // it was given and lands on the row below it. The face is the unframed
+          // ledger size, the one drawn to fit inside a line rather than beside it.
           className={cn(
-            "h-control-sm flex-1 flex-row items-center gap-sm rounded-md px-sm transition-colors duration-fast",
+            "min-h-control-sm min-w-0 flex-1 flex-row items-center gap-sm rounded-md px-sm transition-colors duration-fast",
             selected ? "bg-muted" : "bg-transparent web:hover:bg-muted/subtle",
           )}
         >
           <StatusDot status={span.status} />
-          {span.characterId ? (
-            <CharacterFace character={characters.get(span.characterId)} size="sm" />
-          ) : null}
-          <Text variant="small" className="font-display">
+          {span.characterId ? <MiniFace character={characters.get(span.characterId)} /> : null}
+          <Text variant="small" className="shrink-0 font-display" numberOfLines={1}>
             {spanLabel(span, puzzle, depth)}
           </Text>
           {span.characterId && span.name === "character" ? (
-            <Text variant="small">{nameOf(span.characterId, characters)}</Text>
+            <Text variant="small" className="min-w-0 shrink" numberOfLines={1}>
+              {nameOf(span.characterId, characters)}
+            </Text>
           ) : null}
+          {/* The model id gives way first: it repeats down a character's whole
+              branch and the detail pane says it in full, while the choice is the
+              one fact a row is opened for. */}
           {detail ? (
-            <Text variant="muted" className="font-mono text-xs">
+            <Text variant="muted" className="min-w-0 shrink font-mono text-xs" numberOfLines={1}>
               {detail}
             </Text>
           ) : null}
-          {span.decision ? (
-            <Text variant="muted" className="text-xs">
+          {/* A provider call's choice is the one its parent row already shows —
+              the engine closes the round with the same decision — and its status
+              dot tells a failed retry from the call that answered. So the row
+              spends its width on the model instead of saying the choice twice. */}
+          {span.decision && span.name !== "provider-call" ? (
+            <Text variant="muted" className="shrink-0 text-xs" numberOfLines={1}>
               → {span.decision.choice}
             </Text>
           ) : null}
           <View className="flex-1" />
-          <Text variant="muted" className="font-mono text-xs">
+          <Text variant="muted" className="shrink-0 font-mono text-xs">
             {formatElapsed(span.startedAt, span.endedAt)}
           </Text>
         </Pressable>
       </View>
 
       {open && children.length > 0 ? (
-        <View className="ml-lg gap-xxs border-l-hairline border-border pl-xs">
+        // The guide rule hangs from the centre of the parent's chevron, and the
+        // children step in only as far as that rule needs: at four levels deep
+        // the old indent had taken a third of the column before a row began.
+        <View className="ml-sm gap-xs border-l-hairline border-border pl-xs">
           {children.map((child) => (
             <SpanRow
               key={child.span.spanId}
@@ -262,7 +281,7 @@ export function SpanTree({ spans, puzzle, characters, selectedId, onSelect }: Sp
           </Text>
         </Pressable>
       </View>
-      <View className="gap-xxs">
+      <View className="gap-xs">
         {roots.map((node) => (
           <SpanRow
             key={node.span.spanId}

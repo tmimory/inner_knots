@@ -74,7 +74,7 @@ export function nameOf(characterId: string, characters: ReadonlyMap<string, Char
  * name-plus-faces row into a row of buttons. So the ink goes straight onto the
  * page, with no ring and no fill.
  */
-function MiniFace({ character }: { character?: Character }) {
+export function MiniFace({ character }: { character?: Character }) {
   if (!character) {
     return (
       <View
