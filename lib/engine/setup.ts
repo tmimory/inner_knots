@@ -16,6 +16,7 @@ import type { RosterEntry, RunConfig } from "@/lib/domain/run";
 import { buildCatalogue } from "@/lib/puzzles/trolley/catalogue";
 import type { TrackItem } from "@/lib/puzzles/trolley/prompt";
 import { adventures, characters as charactersStore, trolleyObjects } from "@/lib/storage/collections";
+import { indexById } from "@/lib/utils";
 
 /** A run that cannot start. The API route turns it into a 400. */
 export class RunSetupError extends Error {
@@ -86,7 +87,7 @@ async function resolveRoster(
 
 /** Characters by id, or a `RunSetupError` naming every id that is not in the store. */
 async function resolveCharacters(ids: readonly string[]): Promise<Map<string, Character>> {
-  const byId = new Map((await charactersStore.list()).map((character) => [character.id, character]));
+  const byId = indexById(await charactersStore.list());
   const missing = [...new Set(ids)].filter((id) => !byId.has(id));
   if (missing.length > 0) {
     throw new RunSetupError(`Unknown character ids: ${quote(missing)}.`);

@@ -12,7 +12,7 @@ import { useCallback, useMemo, useState } from "react";
 
 import type { Run, RunConfig } from "../domain/run";
 import { parseRunSummary, type RunSummary } from "../domain/summary";
-import { errorMessage } from "../errors";
+import { describeApiError } from "./errors";
 import { fetchRun, startRun } from "./runs";
 import { DEFAULT_POLL_MS, usePolled } from "./use-polled";
 import { isRunActive } from "./use-runs";
@@ -33,10 +33,6 @@ export type UseRunResult = {
   /** Asks for an immediate read, out of band with the poll. */
   refresh: () => Promise<void>;
 };
-
-function asError(value: unknown): Error {
-  return value instanceof Error ? value : new Error(errorMessage(value));
-}
 
 /**
  * What one poll knows. The id is kept alongside the run so that switching to a
@@ -94,14 +90,21 @@ export type UseRunStarterResult = {
   /** The id of the run most recently started here; `null` before the first. */
   runId: string | null;
   starting: boolean;
-  error: Error | undefined;
+  /**
+   * Why the last start failed, as a sentence ready to render.
+   *
+   * Already through {@link describeApiError}: every screen with a run button put
+   * the same line under it, and the two that rendered `error.message` instead
+   * showed "API request failed with 400" where the route had said what was wrong.
+   */
+  error: string | undefined;
 };
 
 /** Starts runs and hands the id to {@link useRun}. */
 export function useRunStarter(): UseRunStarterResult {
   const [runId, setRunId] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
-  const [error, setError] = useState<Error | undefined>(undefined);
+  const [error, setError] = useState<string | undefined>(undefined);
 
   const start = useCallback(async (config: RunConfig): Promise<Run | undefined> => {
     setStarting(true);
@@ -111,7 +114,7 @@ export function useRunStarter(): UseRunStarterResult {
       setRunId(run.id);
       return run;
     } catch (caught) {
-      setError(asError(caught));
+      setError(describeApiError(caught));
       return undefined;
     } finally {
       setStarting(false);

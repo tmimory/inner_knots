@@ -74,7 +74,7 @@ export { Slider, type SliderProps } from "./slider";
 export { Switch, type SwitchProps } from "./switch";
 export { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs";
 export { Text, TextClassContext, textVariants, type TextProps } from "./text";
-export { Textarea, type TextareaProps } from "./textarea";
+export { COUNTER_REVEAL, shouldShowCounter, Textarea, type TextareaProps } from "./textarea";
 export {
   ToastProvider,
   useToast,

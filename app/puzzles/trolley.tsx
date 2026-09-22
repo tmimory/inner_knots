@@ -33,6 +33,7 @@ import { RUN_LIMITS, TROLLEY_VARIANTS, type RosterEntry, type TrolleyVariant } f
 import type { TrolleySummary } from "@/lib/domain/summary";
 import type { TrolleyObject } from "@/lib/puzzles/trolley/catalogue";
 import { randomSelection } from "@/lib/puzzles/trolley/catalogue";
+import { indexById } from "@/lib/utils";
 import { randomTracks } from "@/lib/puzzles/trolley/search";
 
 /**
@@ -124,10 +125,7 @@ export default function TrolleyScreen() {
   const trolleySummary: TrolleySummary | undefined =
     summary?.kind === "trolley" ? summary : undefined;
 
-  const characterIndex = useMemo(
-    () => new Map(characters.map((character) => [character.id, character])),
-    [characters],
-  );
+  const characterIndex = useMemo(() => indexById(characters), [characters]);
 
   /** Track contents resolved to objects; an id the catalogue lost simply drops out. */
   const resolve = useCallback(
@@ -337,7 +335,9 @@ export default function TrolleyScreen() {
 
         <RunProgress run={run ?? null} />
         {starter.error ? (
-          <Text className="text-destructive">{starter.error.message}</Text>
+          <Text variant="small" className="text-destructive">
+            {starter.error}
+          </Text>
         ) : null}
       </Section>
 

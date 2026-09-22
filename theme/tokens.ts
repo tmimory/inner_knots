@@ -306,6 +306,12 @@ export const controlSizes = {
  * same number through `useTheme().avatarSizes`.
  */
 export const avatarSizes = {
+  /**
+   * The smallest a face is drawn: two or three of them on one line of a ledger,
+   * saying who answered without taking the line over. Unframed, because at this
+   * size the parchment disc and its ring outweigh the drawing inside them.
+   */
+  "avatar-xs": 24,
   "avatar-sm": 32,
   "avatar-md": 40,
   "avatar-lg": 64,

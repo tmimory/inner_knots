@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Pressable, View } from "react-native";
 
 import { Avatar } from "@/components/avatars";
@@ -6,7 +7,7 @@ import { characterDisplayName, type Character } from "@/lib/domain/character";
 import type { Adventure } from "@/lib/domain/adventure";
 import type { AdventurePathSummary, AdventureStepSummary } from "@/lib/domain/summary";
 import { formatDuration, formatPercent, pluralize, truncate } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { cn, indexById } from "@/lib/utils";
 
 /** How much of a node's question or an outcome a row shows before it trails off. */
 const SUMMARY_CHARS = 90;
@@ -101,7 +102,7 @@ function Step({
  * this list hands whole `AdventurePathSummary` objects back rather than ids.
  */
 export function PathList({ adventure, paths, characters, selected, onSelect }: PathListProps) {
-  const byId = new Map(characters.map((character) => [character.id, character]));
+  const byId = useMemo(() => indexById(characters), [characters]);
 
   if (paths.length === 0) {
     return <Text variant="muted">No walk has been taken yet.</Text>;

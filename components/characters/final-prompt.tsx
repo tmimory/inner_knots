@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Platform, View } from "react-native";
+import { View } from "react-native";
 
 import { Button, SectionHeading, Text } from "@/components/ui";
 import type { Steering } from "@/lib/domain";
 import { previewSteering } from "@/lib/client/prompts";
 import { describeApiError } from "@/lib/client/errors";
+import { useClipboardCopy } from "@/lib/client/use-clipboard-copy";
 import { cn } from "@/lib/utils";
 
 /** Long enough that typing a sentence is one request, short enough to feel live. */
@@ -19,23 +20,6 @@ const DEBOUNCE_MS = 300;
  * to show.
  */
 const PUZZLE_SLOT = "< the puzzle >";
-
-/** How long the copy link says it worked before going back to offering it. */
-const COPIED_MS = 1600;
-
-/**
- * Puts the composed prompt on the clipboard, where the platform has one.
- *
- * Guarded rather than assumed: `navigator.clipboard` is absent on native, and on
- * the web it is undefined outside a secure context, so the link simply does
- * nothing rather than throwing into a render.
- */
-function copyToClipboard(text: string): Promise<void> {
-  if (Platform.OS !== "web" || typeof navigator === "undefined") return Promise.resolve();
-  const clipboard: Clipboard | undefined = navigator.clipboard;
-  if (clipboard === undefined) return Promise.resolve();
-  return clipboard.writeText(text);
-}
 
 type PreviewState =
   | { status: "loading" }
@@ -107,15 +91,8 @@ export type FinalPromptProps = {
  */
 export function FinalPrompt({ steering, className }: FinalPromptProps) {
   const state = useSteeringPreview(steering);
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if (!copied) return;
-    const timer = setTimeout(() => setCopied(false), COPIED_MS);
-    return () => clearTimeout(timer);
-  }, [copied]);
-
   const prompt = state.status === "ready" ? state.prompt : null;
+  const { copied, copy } = useClipboardCopy(() => prompt ?? "");
 
   return (
     <View className={cn("gap-md", className)}>
@@ -128,13 +105,7 @@ export function FinalPrompt({ steering, className }: FinalPromptProps) {
         title="Final prompt"
         right={
           prompt === null ? undefined : (
-            <Button
-              variant="link"
-              size="sm"
-              onPress={() => {
-                void copyToClipboard(prompt).then(() => setCopied(true));
-              }}
-            >
+            <Button variant="link" size="sm" onPress={copy}>
               <Text>{copied ? "Copied" : "Copy"}</Text>
             </Button>
           )

@@ -1,5 +1,7 @@
+import type { Href } from "expo-router";
+import { useRouter } from "expo-router";
 import type { ReactNode } from "react";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 
 import { Text } from "@/components/ui/text";
 import { cn } from "@/lib/utils";
@@ -27,8 +29,17 @@ export function widthClasses(width: ScreenWidth): string | undefined {
   return width === "reading" ? "w-full max-w-reading self-center" : undefined;
 }
 
+/** Where a page sits: the one link back up, above the title. */
+export type Breadcrumb = { label: string; href: Href };
+
 export type PageHeaderProps = {
   title: string;
+  /**
+   * The page above this one. Rendered as "← label" over the title block, because
+   * where a page sits is not a thing you do with it and does not belong in the row
+   * of actions on the right.
+   */
+  breadcrumb?: Breadcrumb;
   subtitle?: string;
   /** Actions rendered at the end of the title row: one action, or a muted count. */
   right?: ReactNode;
@@ -51,16 +62,19 @@ export type PageHeaderProps = {
 export function PageHeader({
   title,
   subtitle,
+  breadcrumb,
   right,
   width = "full",
   className,
 }: PageHeaderProps) {
-  return (
+  const router = useRouter();
+
+  const header = (
     <View
       className={cn(
         "gap-md wide:flex-row wide:items-center wide:justify-between",
-        widthClasses(width),
-        className,
+        breadcrumb ? undefined : widthClasses(width),
+        breadcrumb ? undefined : className,
       )}
     >
       <View className="gap-xs wide:flex-1">
@@ -70,6 +84,23 @@ export function PageHeader({
       {right ? (
         <View className="flex-row flex-wrap items-center gap-sm">{right}</View>
       ) : null}
+    </View>
+  );
+
+  if (!breadcrumb) return header;
+
+  return (
+    <View className={cn("gap-xs", widthClasses(width), className)}>
+      <Pressable
+        role="link"
+        className="self-start"
+        onPress={() => router.push(breadcrumb.href)}
+      >
+        <Text variant="meta" className="transition-colors duration-fast web:hover:text-primary">
+          {`← ${breadcrumb.label}`}
+        </Text>
+      </Pressable>
+      {header}
     </View>
   );
 }

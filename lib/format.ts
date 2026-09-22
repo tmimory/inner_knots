@@ -59,15 +59,38 @@ export function formatElapsed(startIso: string, endIso?: string): string {
   return ms === undefined ? UNKNOWN : formatDuration(ms);
 }
 
-/** Wall-clock time in the viewer's locale: `14:32:07`. */
-export function formatTime(iso: string): string {
+export type ClockOptions = {
+  /** Include the seconds. Off by default: a list row is not a stopwatch. */
+  seconds?: boolean;
+  /**
+   * Whether to use a 12-hour clock. Left to the viewer's locale by default; a
+   * column of times is set on a 24-hour clock so every row is the same width.
+   */
+  hour12?: boolean;
+};
+
+/**
+ * Wall-clock time in the viewer's locale: `14:32`, or `14:32:07` with seconds.
+ *
+ * A day's runs are already under the day's own heading, so the date is said once
+ * at the top and each row only has to say when within that day. "3h ago" on every
+ * line of a list made ten rows read as ten identical answers to a question nobody
+ * asked twice.
+ */
+export function formatClock(iso: string, options: ClockOptions = {}): string {
   const date = parseDate(iso);
   if (!date) return UNKNOWN;
   return date.toLocaleTimeString(undefined, {
     hour: "2-digit",
     minute: "2-digit",
-    second: "2-digit",
+    second: options.seconds === true ? "2-digit" : undefined,
+    hour12: options.hour12,
   });
+}
+
+/** Wall-clock time to the second: `14:32:07`. */
+export function formatTime(iso: string): string {
+  return formatClock(iso, { seconds: true });
 }
 
 /**

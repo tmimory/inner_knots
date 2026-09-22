@@ -5,7 +5,7 @@ import { Pressable, View } from "react-native";
 import { Text } from "@/components/ui";
 import type { Character } from "@/lib/domain/character";
 import type { Run } from "@/lib/domain/run";
-import { UNKNOWN } from "@/lib/format";
+import { formatClock } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 import { PUZZLE_LABELS } from "./labels";
@@ -26,20 +26,6 @@ const ID_CHARS = 8;
 /** The distinguishing part of a run id, at a fixed width. */
 export function shortRunId(id: string): string {
   return id.replace(/^run_/, "").slice(0, ID_CHARS).padEnd(ID_CHARS, " ");
-}
-
-/**
- * The clock time a run started, `14:32`.
- *
- * A day's runs are already under the day's own heading, so the date is said once
- * at the top and each row only has to say when within that day. "3h ago" on every
- * line of a list made ten rows read as ten identical answers to a question nobody
- * asked twice.
- */
-function clockTime(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return UNKNOWN;
-  return date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
 /**
@@ -121,7 +107,7 @@ export function RunRow({ run, characters }: RunRowProps) {
           {result}
         </Text>
 
-        <Text variant="meta">{clockTime(run.startedAt)}</Text>
+        <Text variant="meta">{formatClock(run.startedAt, { hour12: false })}</Text>
         <Text variant="data" className={cn(COUNT_COLUMN, "text-right")}>
           {`${run.progress.done} / ${run.progress.total}`}
         </Text>

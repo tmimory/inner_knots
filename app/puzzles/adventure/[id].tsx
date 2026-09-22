@@ -115,20 +115,11 @@ export default function AdventureBuilderScreen() {
 
   return (
     <View className="gap-xl">
-      <View className="gap-xs">
-        {/* Where this tree sits, not a thing to do with it — so it leads the
-            title instead of standing in the row of actions. */}
-        <Pressable
-          role="link"
-          className="self-start"
-          onPress={() => router.push("/puzzles/adventure")}
-        >
-          <Text variant="meta" className="transition-colors duration-fast web:hover:text-primary">
-            ← Adventures
-          </Text>
-        </Pressable>
-        <PageHeader title={draft.name} subtitle="ὁδός — branching paths, recorded" />
-      </View>
+      <PageHeader
+        breadcrumb={{ label: "Adventures", href: "/puzzles/adventure" }}
+        title={draft.name}
+        subtitle="ὁδός — branching paths, recorded"
+      />
 
       <View className="flex-row flex-wrap items-center gap-sm">
         {/* Three verbs in one voice. An outlined "+ Add node" beside two bare ones

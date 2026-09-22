@@ -1,28 +1,5 @@
-import { useState } from "react";
-import { Platform } from "react-native";
-
 import { Button, Text } from "@/components/ui";
-import { durations } from "@/theme";
-
-/** How long the button admits to having copied before going back to the offer. */
-const ACKNOWLEDGED_MS = durations.slow * 4;
-
-/**
- * Puts text on the clipboard where the platform has one.
- *
- * Guarded rather than assumed: `navigator.clipboard` is absent on native and on
- * an insecure origin, and a promise that rejects into nothing is how a button
- * ends up claiming to have done something it did not.
- */
-function copyToClipboard(text: string): Promise<boolean> {
-  if (Platform.OS !== "web" || typeof navigator === "undefined") return Promise.resolve(false);
-  const clipboard: Clipboard | undefined = navigator.clipboard;
-  if (clipboard === undefined) return Promise.resolve(false);
-  return clipboard.writeText(text).then(
-    () => true,
-    () => false,
-  );
-}
+import { useClipboardCopy } from "@/lib/client/use-clipboard-copy";
 
 export type CopyIdProps = {
   /** The whole id, which is what a reader pasting it into a query actually wants. */
@@ -39,20 +16,14 @@ export type CopyIdProps = {
  * line: a utility button that hands them over.
  */
 export function CopyId({ value }: CopyIdProps) {
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useClipboardCopy(() => value);
 
   return (
     <Button
       variant="ghost"
       size="sm"
       accessibilityLabel={`Copy the full run id, ${value}`}
-      onPress={() => {
-        void copyToClipboard(value).then((ok) => {
-          if (!ok) return;
-          setCopied(true);
-          setTimeout(() => setCopied(false), ACKNOWLEDGED_MS);
-        });
-      }}
+      onPress={copy}
     >
       <Text>{copied ? "Copied" : "Copy id"}</Text>
     </Button>

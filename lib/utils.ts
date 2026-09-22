@@ -104,3 +104,19 @@ const twMerge = extendTailwindMerge({
 export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
 }
+
+/**
+ * Items keyed by their own id, for the lookups a screen does once per row.
+ *
+ * Every screen that draws characters beside a run holds one of these, and each
+ * had written the same `new Map(items.map((item) => [item.id, item]))`. A later
+ * entry wins, which is what the engine's catalogue wants: custom objects are
+ * loaded over the built-in ones and replace them by id.
+ */
+export function indexById<T extends { id: string }>(
+  items: Iterable<T>,
+): Map<string, T> {
+  const index = new Map<string, T>();
+  for (const item of items) index.set(item.id, item);
+  return index;
+}

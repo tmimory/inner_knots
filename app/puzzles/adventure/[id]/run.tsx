@@ -10,7 +10,6 @@ import { RunProgress } from "@/components/puzzles/run-progress";
 import { Section } from "@/components/puzzles/section";
 import { Screen } from "@/components/shell";
 import { Button, Label, Switch, Text } from "@/components/ui";
-import { describeApiError } from "@/lib/client/errors";
 import { previewAdventurePrompt } from "@/lib/client/prompts";
 import { useAdventure } from "@/lib/client/use-adventures";
 import { useCharacters } from "@/lib/client/use-characters";
@@ -165,7 +164,7 @@ export default function AdventureRunScreen() {
         {blocked ? <Text variant="muted">{blocked}</Text> : null}
         {starter.error ? (
           <Text variant="small" className="text-destructive">
-            {describeApiError(starter.error)}
+            {starter.error}
           </Text>
         ) : null}
         <RunProgress run={run} idleMessage="No walk has been sent out yet." />

@@ -18,7 +18,7 @@ import {
   VariantSelect,
   type VariantOption,
 } from "@/components/puzzles/variant-select";
-import { Screen } from "@/components/shell";
+import { Screen, SplitPane } from "@/components/shell";
 import { Button, Label, Text, Textarea } from "@/components/ui";
 import { previewPrisonersDilemmaPrompt } from "@/lib/client/prompts";
 import { useCharacters } from "@/lib/client/use-characters";
@@ -33,6 +33,7 @@ import {
 } from "@/lib/domain/run";
 import type { PrisonersDilemmaSummary } from "@/lib/domain/summary";
 import { pluralize } from "@/lib/format";
+import { indexById } from "@/lib/utils";
 import {
   DEFAULT_SETUP,
   MIN_ITERATED_ROUNDS,
@@ -110,10 +111,7 @@ export default function PrisonersDilemmaScreen() {
   const dilemma: PrisonersDilemmaSummary | undefined =
     summary?.kind === "prisoners-dilemma" ? summary : undefined;
 
-  const byId = useMemo(
-    () => new Map(characters.map((character) => [character.id, character])),
-    [characters],
-  );
+  const byId = useMemo(() => indexById(characters), [characters]);
 
   const players = useMemo(() => seatedPlayers(setup, byId), [byId, setup]);
   const names = useMemo(() => playerNames(players), [players]);
@@ -181,17 +179,16 @@ export default function PrisonersDilemmaScreen() {
         payoffs are what you change and the outcomes are what you change them
         for, and on a wide screen there is no reason to put a scroll between them.
 
-        Laid out here rather than through `SplitPane`, and for one reason: the
-        rail has to be sticky AND its hairline has to stop where its contents do.
-        `SplitPane`'s `railRule="content"` draws the rule on a wrapper of its own
-        and hands the caller a box inside it, and a sticky element cannot travel
-        past the box it sits in — so the rule ends correctly and the rail stops
-        moving. Both properties live on one box here: the stretched column gives
-        the sticky element its run, and the rule is drawn on the content that
-        sticks, so it ends where the rail ends.
+        The rail carries the run — the button, what it will cost, the words it
+        will send, and, once there is a run, the answers as they come in — and it
+        sticks on the web so the button stays in view however far down the payoff
+        matrix you are.
       */}
-      <View className="gap-xl pb-xl wide:flex-row wide:items-stretch">
-        <View className="min-w-0 flex-1">
+      <SplitPane
+        className="pb-xl"
+        railRule="content"
+        railSticky
+        main={
           <View className="gap-xl">
             {/* What the puzzle is: who plays it, and how it is put to them. */}
             <Section title="Setup">
@@ -394,16 +391,9 @@ export default function PrisonersDilemmaScreen() {
               </View>
             </Section>
           </View>
-        </View>
-
-        {/*
-          The rail carries the run: the button, what it will cost, the words it
-          will send, and — once there is a run — the answers as they come in. It
-          sticks on the web so the button stays in view however far down the
-          payoff matrix you are.
-        */}
-        <View className="w-full wide:w-inspector wide:self-stretch">
-          <View className="gap-2xl wide:border-l-hairline wide:border-border wide:pl-xl web:sticky web:top-xl">
+        }
+        rail={
+          <>
             <Section title="Run">
               {/*
                 The screen's one filled button, what stops it directly underneath,
@@ -437,8 +427,8 @@ export default function PrisonersDilemmaScreen() {
 
               <RunProgress run={run ?? null} />
               {starter.error ? (
-                <Text className="text-destructive">
-                  {starter.error.message}
+                <Text variant="small" className="text-destructive">
+                  {starter.error}
                 </Text>
               ) : null}
 
@@ -469,9 +459,9 @@ export default function PrisonersDilemmaScreen() {
                 />
               </Section>
             ) : null}
-          </View>
-        </View>
-      </View>
+          </>
+        }
+      />
 
       <PromptView
         open={prompt.open}

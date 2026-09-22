@@ -20,14 +20,26 @@ export type TextareaProps = ComponentProps<typeof TextInput> & {
  * Past it the limit is real news, so the counter stays up whether or not the
  * field has the cursor.
  */
-const COUNT_THRESHOLD = 0.8;
+export const COUNTER_REVEAL = 0.8;
+
+/**
+ * Whether a capped field should be showing how full it is.
+ *
+ * Exported because the counter is drawn in two places — under a `Textarea`, and
+ * on the label row of a capped list — and a rule that appeared at four fifths in
+ * one and at some other fraction in the other would read as a bug in whichever
+ * one the reader noticed second.
+ */
+export function shouldShowCounter(length: number, max: number, focused: boolean): boolean {
+  return focused || length >= Math.floor(max * COUNTER_REVEAL);
+}
 
 /**
  * Multi-line field. Pass `maxLength` to enforce a limit (prompts and briefings all
  * have one) and `showCount` to offer the "n / max" counter.
  *
  * The counter is shown while the field is focused, or once the text is past
- * {@link COUNT_THRESHOLD} of the limit. The row it sits in keeps its height in
+ * {@link COUNTER_REVEAL} of the limit. The row it sits in keeps its height in
  * both states, so a field does not jump when it takes the cursor.
  */
 export function Textarea({
@@ -54,8 +66,7 @@ export function Textarea({
   }
 
   const counted = showCount && maxLength !== undefined;
-  const near =
-    counted && text.length >= Math.floor(maxLength * COUNT_THRESHOLD);
+  const showing = counted && shouldShowCounter(text.length, maxLength, focused);
 
   return (
     <View className="gap-xs">
@@ -86,12 +97,8 @@ export function Textarea({
         {...props}
       />
       {counted ? (
-        <Text
-          variant="meta"
-          className="self-end"
-          aria-hidden={!(focused || near)}
-        >
-          {focused || near ? `${text.length} / ${maxLength}` : " "}
+        <Text variant="meta" className="self-end" aria-hidden={!showing}>
+          {showing ? `${text.length} / ${maxLength}` : " "}
         </Text>
       ) : null}
     </View>

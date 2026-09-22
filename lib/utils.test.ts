@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { cn } from "./utils";
+import { cn, indexById } from "./utils";
 
 describe("cn", () => {
   it("joins class names", () => {
@@ -43,5 +43,23 @@ describe("cn", () => {
     expect(cn(["text-foreground", { "opacity-50": true, hidden: false }])).toBe(
       "text-foreground opacity-50",
     );
+  });
+});
+
+describe("indexById", () => {
+  it("keys every item by its own id", () => {
+    const index = indexById([{ id: "a", n: 1 }, { id: "b", n: 2 }]);
+    expect([...index.keys()]).toEqual(["a", "b"]);
+    expect(index.get("b")).toEqual({ id: "b", n: 2 });
+  });
+
+  it("lets a later entry replace an earlier one with the same id", () => {
+    const index = indexById([{ id: "a", n: 1 }, { id: "a", n: 2 }]);
+    expect(index.size).toBe(1);
+    expect(index.get("a")).toEqual({ id: "a", n: 2 });
+  });
+
+  it("indexes nothing into an empty map", () => {
+    expect(indexById([]).size).toBe(0);
   });
 });

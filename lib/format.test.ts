@@ -5,6 +5,7 @@ import {
   countNote,
   dayKey,
   durationBetween,
+  formatClock,
   formatDay,
   formatDuration,
   formatElapsed,
@@ -190,5 +191,26 @@ describe("countNote", () => {
     expect(countNote(1, "error")).toBe("1 error");
     expect(countNote(4, "error")).toBe("4 errors");
     expect(countNote(2, "ending", "endings")).toBe("2 endings");
+  });
+});
+
+describe("formatClock", () => {
+  it("shows hours and minutes and nothing else", () => {
+    const iso = new Date(2026, 8, 21, 14, 32, 7).toISOString();
+    expect(formatClock(iso, { hour12: false })).toBe("14:32");
+  });
+
+  it("adds the seconds only when asked", () => {
+    const iso = new Date(2026, 8, 21, 14, 32, 7).toISOString();
+    expect(formatClock(iso, { seconds: true, hour12: false })).toBe("14:32:07");
+  });
+
+  it("reports an unreadable timestamp rather than throwing", () => {
+    expect(formatClock("nonsense")).toBe(UNKNOWN);
+  });
+
+  it("is what formatTime is built from", () => {
+    const iso = new Date(2026, 8, 21, 14, 32, 7).toISOString();
+    expect(formatTime(iso)).toBe(formatClock(iso, { seconds: true }));
   });
 });

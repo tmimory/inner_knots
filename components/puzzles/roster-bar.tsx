@@ -24,7 +24,7 @@ import {
   type RosterEntry,
 } from "@/lib/domain";
 import { pluralize } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { cn, indexById } from "@/lib/utils";
 
 export type { RosterEntry };
 
@@ -251,10 +251,7 @@ export function RosterBar({
   const [picking, setPicking] = useState<number | null>(null);
   const [search, setSearch] = useState("");
 
-  const byId = useMemo(
-    () => new Map(characters.map((character) => [character.id, character])),
-    [characters],
-  );
+  const byId = useMemo(() => indexById(characters), [characters]);
 
   // Every seat the puzzle has, drawn whether or not it is taken: a row of dashed
   // circles says "five of these" at a glance, where one lone `+` in a band of air

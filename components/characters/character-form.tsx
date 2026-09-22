@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 
 import { ColorPicker, DEFAULT_AVATAR_SHAPE, ShapePicker } from "@/components/avatars";
+import { SplitPane } from "@/components/shell";
 import {
   Button,
   ConfirmDialog,
@@ -17,6 +18,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  shouldShowCounter,
   useToast,
   type SegmentedOption,
 } from "@/components/ui";
@@ -63,9 +65,6 @@ function sentenceCase(text: string | null): string | null {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-/** How full a field has to be before its counter appears on its own. */
-const COUNTER_REVEAL = 0.8;
-
 /**
  * How full a capped field is, for the end of its label row — once the number is
  * worth knowing.
@@ -90,7 +89,7 @@ function Counter({
   max: number;
   focused?: boolean;
 }) {
-  if (!focused && value < max * COUNTER_REVEAL) return null;
+  if (!shouldShowCounter(value, max, focused)) return null;
   return <Text variant="subtle" className="tabular">{`${value} / ${max}`}</Text>;
 }
 
@@ -383,23 +382,16 @@ export function CharacterForm({
   return (
     <>
       {/*
-        The form and its rail, in the shape `SplitPane` gives every other split
-        screen — a stretched row, the reading column on the left and an inspector
-        column on the right, one gap and one gutter making the 48px between them.
-
-        Laid out here rather than through `SplitPane` itself, for the reason the
-        dilemma screen writes down: the rail has to be sticky AND its hairline has
-        to stop where its contents do. `SplitPane`'s `railRule="content"` draws
-        the rule on a wrapper of its own and hands the caller a box inside it, and
-        a sticky element cannot travel past the box it sits in — so the rule would
-        end correctly and the panel would stop following the form. Both live on
-        one box here: the stretched column gives the sticky element its run, and
-        the rule is drawn on the content that sticks, so it ends with the panel
-        instead of ruling off a thousand pixels of page it has nothing to say
-        about. A rule with nothing beside it reads as a tear.
+        The form and its rail: a stretched row, the reading column on the left and
+        an inspector column on the right, one gap and one gutter making the 48px
+        between them. The rail sticks so the composed prompt stays beside the
+        fields it is the consequence of, and its rule ends where the panel does —
+        a rule with nothing beside it reads as a tear.
       */}
-      <View className="gap-xl wide:flex-row wide:items-stretch">
-        <View className="min-w-0 w-full max-w-reading flex-1 gap-2xl">
+      <SplitPane
+        railRule="content"
+        railSticky
+        main={<View className="w-full max-w-reading gap-2xl">
           {/*
           The first group is a section like the two under it: an untitled block of
           fields above a titled one reads as a preamble that lost its heading, and
@@ -785,20 +777,9 @@ export function CharacterForm({
               <Text>{saving ? "Saving…" : editing ? "Save" : "Create character"}</Text>
             </Button>
           </View>
-        </View>
-
-        {/*
-          The composed prompt rides beside the form where there is room for it: it
-          is the consequence of the fields, not another one of them, and reading it
-          while editing them is the whole reason it is on the page.
-        */}
-        <View className="wide:w-inspector wide:shrink-0">
-          <FinalPrompt
-            steering={previewSteeringValue}
-            className="web:wide:sticky web:wide:top-xl wide:border-l-hairline wide:border-border wide:pl-xl"
-          />
-        </View>
-      </View>
+        </View>}
+        rail={<FinalPrompt steering={previewSteeringValue} />}
+      />
 
       <ConfirmDialog
         open={confirmingDelete}

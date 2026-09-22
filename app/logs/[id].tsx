@@ -1,6 +1,6 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 
 import {
   ConfigView,
@@ -84,7 +84,6 @@ function rosterNames(config: Run["config"], characters: ReadonlyMap<string, Char
 
 export default function RunDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
   const runId = typeof params.id === "string" ? params.id : "";
   const { toast } = useToast();
 
@@ -131,37 +130,29 @@ export default function RunDetailScreen() {
 
   return (
     <View className={cn(READING_COLUMN, "gap-2xl")}>
-      <View className="gap-xs">
-        {/* Where this run sits, not a thing to do with it — so it leads the title,
-            the way the builder's does, rather than joining the row of actions. */}
-        <Pressable role="link" className="self-start" onPress={() => router.push("/logs")}>
-          <Text variant="meta" className="transition-colors duration-fast web:hover:text-primary">
-            ← Logs
-          </Text>
-        </Pressable>
-        {/*
-          The page is named after the run it is: the puzzle, and the eight
-          characters that tell this run from the other six the same puzzle ran
-          today. Titled "Trolley problem" alone it was indistinguishable from the
-          puzzle's own screen and from every other run in the ledger.
-        */}
-        <PageHeader
-          title={`${PUZZLE_LABELS[run.puzzle]} · ${shortRunId(run.id).trim()}`}
-          subtitle="ὑπόμνημα — one run, in full"
-          right={
-            <>
-              <StatusMark status={run.status} />
-              {active ? (
-                <Button variant="destructive" size="sm" onPress={() => void cancel()}>
-                  <Text>Cancel</Text>
-                </Button>
-              ) : null}
-              <CopyId value={run.id} />
-              <ExportButton run={run} spans={spans} logs={logs} />
-            </>
-          }
-        />
-      </View>
+      {/*
+        The page is named after the run it is: the puzzle, and the eight
+        characters that tell this run from the other six the same puzzle ran
+        today. Titled "Trolley problem" alone it was indistinguishable from the
+        puzzle's own screen and from every other run in the ledger.
+      */}
+      <PageHeader
+        breadcrumb={{ label: "Logs", href: "/logs" }}
+        title={`${PUZZLE_LABELS[run.puzzle]} · ${shortRunId(run.id).trim()}`}
+        subtitle="ὑπόμνημα — one run, in full"
+        right={
+          <>
+            <StatusMark status={run.status} />
+            {active ? (
+              <Button variant="destructive" size="sm" onPress={() => void cancel()}>
+                <Text>Cancel</Text>
+              </Button>
+            ) : null}
+            <CopyId value={run.id} />
+            <ExportButton run={run} spans={spans} logs={logs} />
+          </>
+        }
+      />
 
       <View className="gap-lg">
         {/*

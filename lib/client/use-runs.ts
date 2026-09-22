@@ -16,6 +16,7 @@ import type { Character } from "@/lib/domain/character";
 import { isTerminalRunStatus, type Run } from "@/lib/domain/run";
 import type { LogEvent, Span } from "@/lib/domain/span";
 import { buildCatalogue } from "@/lib/puzzles/trolley/catalogue";
+import { indexById } from "@/lib/utils";
 
 import { adventuresApi } from "./adventures";
 import { charactersApi } from "./characters";
@@ -103,7 +104,7 @@ const NO_CHARACTERS: ReadonlyMap<string, Character> = new Map<string, Character>
 
 async function loadCharacterIndex(): Promise<ReadonlyMap<string, Character>> {
   const list = await charactersApi.list();
-  return new Map(list.map((character) => [character.id, character]));
+  return indexById(list);
 }
 
 /** Every character by id, for the avatars and names a stored run only has ids for. */

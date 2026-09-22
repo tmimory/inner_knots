@@ -1,17 +1,10 @@
 import { View } from "react-native";
 
-import {
-  Avatar,
-  avatarShape,
-  medallionVariants,
-  resolveAvatarColor,
-  type AvatarSize,
-} from "@/components/avatars";
+import { Avatar, medallionVariants, type AvatarSize } from "@/components/avatars";
 import { Text } from "@/components/ui";
 import { characterDisplayName, type Character } from "@/lib/domain/character";
 import type { RunConfig } from "@/lib/domain/run";
 import { cn } from "@/lib/utils";
-import { useTheme } from "@/theme";
 
 /** One seat on a run's roster: who answered, and how many times they were asked. */
 export type RosterSeat = {
@@ -76,20 +69,18 @@ export function nameOf(characterId: string, characters: ReadonlyMap<string, Char
  * The smallest a face is drawn: two or three of them on one line of a ledger,
  * saying who answered without taking the line over.
  *
- * Drawn here rather than through {@link CharacterFace} because a medallion at
- * this size is all frame: the parchment disc and its hairline ring outweighed the
- * drawing inside them and turned a name-plus-faces row into a row of buttons. So
- * the ink goes straight onto the page, with no ring and no fill.
+ * Unframed, because a medallion at this size is all frame: the parchment disc and
+ * its hairline ring outweighed the drawing inside them and turned a
+ * name-plus-faces row into a row of buttons. So the ink goes straight onto the
+ * page, with no ring and no fill.
  */
 function MiniFace({ character }: { character?: Character }) {
-  const theme = useTheme();
-
   if (!character) {
     return (
       <View
         accessibilityRole="image"
         accessibilityLabel="a character that no longer exists"
-        className="h-xl w-xl items-center justify-center rounded-full bg-muted"
+        className={cn(medallionVariants({ size: "xs", frame: false }), "bg-muted")}
       >
         <Text variant="muted" className="font-mono text-xs">
           ?
@@ -98,15 +89,13 @@ function MiniFace({ character }: { character?: Character }) {
     );
   }
 
-  const { Component, label } = avatarShape(character.avatar.shape);
   return (
-    <View
-      accessibilityRole="image"
-      accessibilityLabel={label}
-      className="h-xl w-xl items-center justify-center overflow-hidden rounded-full"
-    >
-      <Component color={resolveAvatarColor(theme, character.avatar.color)} size={theme.spacing.xl} />
-    </View>
+    <Avatar
+      shape={character.avatar.shape}
+      color={character.avatar.color}
+      size="xs"
+      frame={false}
+    />
   );
 }
 
