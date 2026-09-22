@@ -1,14 +1,14 @@
 /**
  * `POST /api/prompts/adventure` — the briefing plus the first node's prompt.
  *
- * Body: `{ adventureId, amnesia?, outputMode? }`. Returns the composed prompt,
+ * Body: `{ adventureId, amnesia?, decisionStyle? }`. Returns the composed prompt,
  * the node it was built from, and any structural problems the graph has, so the
  * Prompt View can warn before a run is started on a broken adventure.
  */
 import { z } from "zod";
 
 import { handle, notFound, ok, readBody } from "@/lib/api/http";
-import { previewOutputModeSchema } from "@/lib/api/schemas";
+import { previewDecisionStyleSchema } from "@/lib/api/schemas";
 import { validateAdventure, type AdventureIssue } from "@/lib/domain/adventure";
 import { buildAdventurePrompt } from "@/lib/puzzles/adventure/prompt";
 import type { PuzzlePrompt } from "@/lib/puzzles/types";
@@ -17,7 +17,7 @@ import { adventures } from "@/lib/storage/collections";
 const bodySchema = z.object({
   adventureId: z.string().min(1),
   amnesia: z.boolean().default(false),
-  outputMode: previewOutputModeSchema,
+  decisionStyle: previewDecisionStyleSchema,
 });
 
 export type AdventurePromptResponse = {
@@ -40,7 +40,7 @@ export const POST = handle(async (request: Request) => {
     node: startNode,
     history: [],
     amnesia: body.amnesia,
-    outputMode: body.outputMode,
+    decisionStyle: body.decisionStyle,
   });
 
   return ok({

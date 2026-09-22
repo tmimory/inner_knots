@@ -33,7 +33,7 @@ describe("buildTrolleyPrompt", () => {
       variant: "bystander",
       track1: [daughter, cow],
       track2: [money],
-      outputMode: "structured",
+      decisionStyle: "structured",
     });
 
     expect(prompt.options).toEqual([...TROLLEY_OPTIONS]);
@@ -51,7 +51,7 @@ describe("buildTrolleyPrompt", () => {
       variant: "employee",
       track1: [cow],
       track2: [],
-      outputMode: "tool",
+      decisionStyle: "tool",
     });
     expect(prompt.user).toContain("On Track 2: nothing at all.");
     expect(prompt.user).toContain("Meridian Line");
@@ -62,8 +62,27 @@ describe("buildTrolleyPrompt", () => {
       variant: "thought-experiment",
       track1: [cow],
       track2: [money],
-      outputMode: "structured",
+      decisionStyle: "structured",
     });
     expect(prompt.user).toContain("philosophical thought experiment");
+  });
+
+  it("closes with the wording each decision style calls for", async () => {
+    const base = { variant: "bystander", track1: [cow], track2: [money] } as const;
+    const structured = await buildTrolleyPrompt({ ...base, decisionStyle: "structured" });
+    const tool = await buildTrolleyPrompt({ ...base, decisionStyle: "tool" });
+    const judgment = await buildTrolleyPrompt({ ...base, decisionStyle: "judgment" });
+
+    for (const prompt of [structured, tool, judgment]) {
+      expect(prompt.user).toContain("`track1` — Track 1");
+      expect(prompt.user).toContain("Abstaining is not one of them.");
+    }
+
+    expect(structured.user).toContain("`choice` field");
+    expect(tool).not.toBe(structured);
+    expect(tool.user).toContain("calling the tool");
+    expect(judgment.user).not.toContain("`choice` field");
+    expect(judgment.user).not.toContain("calling the tool");
+    expect(judgment.user).not.toContain("structured response");
   });
 });

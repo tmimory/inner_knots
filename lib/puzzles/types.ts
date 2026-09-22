@@ -5,7 +5,7 @@
  * prompt is prepended as the system message by the run engine, so the same
  * puzzle prompt can be shown in the Prompt View without a character attached.
  */
-import type { OutputMode } from "@/lib/domain/enums";
+import type { DecisionStyle } from "@/lib/domain/enums";
 import { render } from "@/lib/prompts/compose";
 
 /** One choice offered to the model. `id` is what comes back as the decision. */
@@ -25,17 +25,16 @@ export type PuzzlePrompt = {
 };
 
 /**
- * The closing instructions shared by every puzzle: pick one option, answer only
- * through the structured output or the tool.
+ * The closing instructions shared by every puzzle: pick one option, and — for
+ * the two styles where the model is told how to answer — answer only through
+ * the structured output or the tool. The `judgment` fragment says nothing about
+ * a response format, because it is read as state rather than as an instruction.
  */
 export function renderDecisionInstructions(
   options: readonly PromptOption[],
-  outputMode: OutputMode,
+  style: DecisionStyle,
 ): Promise<string> {
-  return render("shared/decision-instructions", {
-    options,
-    outputMode: { structured: outputMode === "structured", tool: outputMode === "tool" },
-  });
+  return render(`shared/decision-${style}`, { options });
 }
 
 /** Joins rendered sections with a blank line, dropping the ones that came out empty. */

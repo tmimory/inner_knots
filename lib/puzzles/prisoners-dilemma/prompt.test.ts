@@ -41,14 +41,14 @@ describe("buildPrisonersDilemmaPrompt", () => {
     const prompt = await buildPrisonersDilemmaPrompt({
       config: symmetric,
       player: "a",
-      outputMode: "structured",
+      decisionStyle: "structured",
     });
     expect(prompt.options).toEqual([...PRISONERS_DILEMMA_OPTIONS]);
   });
 
   it("gives each player their own relationship line", async () => {
-    const a = await buildPrisonersDilemmaPrompt({ config: symmetric, player: "a", outputMode: "tool" });
-    const b = await buildPrisonersDilemmaPrompt({ config: symmetric, player: "b", outputMode: "tool" });
+    const a = await buildPrisonersDilemmaPrompt({ config: symmetric, player: "a", decisionStyle: "tool" });
+    const b = await buildPrisonersDilemmaPrompt({ config: symmetric, player: "b", decisionStyle: "tool" });
 
     expect(a.user).toContain("your brother.");
     expect(b.user).toContain("a man you met last week.");
@@ -59,7 +59,7 @@ describe("buildPrisonersDilemmaPrompt", () => {
     const prompt = await buildPrisonersDilemmaPrompt({
       config: { ...symmetric, relationshipsEnabled: false },
       player: "a",
-      outputMode: "tool",
+      decisionStyle: "tool",
     });
     expect(prompt.user).not.toContain("your brother");
   });
@@ -68,15 +68,15 @@ describe("buildPrisonersDilemmaPrompt", () => {
     const prompt = await buildPrisonersDilemmaPrompt({
       config: symmetric,
       player: "b",
-      outputMode: "tool",
+      decisionStyle: "tool",
     });
     expect(prompt.user).toContain("you each get 2 years");
     expect(prompt.user).toContain("the one who stayed silent gets 5 years");
   });
 
   it("re-keys asymmetric payoffs from each player's side", async () => {
-    const a = await buildPrisonersDilemmaPrompt({ config: asymmetric, player: "a", outputMode: "tool" });
-    const b = await buildPrisonersDilemmaPrompt({ config: asymmetric, player: "b", outputMode: "tool" });
+    const a = await buildPrisonersDilemmaPrompt({ config: asymmetric, player: "a", decisionStyle: "tool" });
+    const b = await buildPrisonersDilemmaPrompt({ config: asymmetric, player: "b", decisionStyle: "tool" });
 
     expect(a.user).toContain("you get 2 years and your partner gets 4 years");
     expect(a.user).toContain("If you testify and your partner stays silent, you get walk free and your partner gets 10 years");
@@ -89,7 +89,7 @@ describe("buildPrisonersDilemmaPrompt", () => {
       ...asymmetric,
       payoffs: { ...asymmetric.payoffs, symmetric: false, playersAware: false } as PrisonersDilemmaConfig["payoffs"],
     };
-    const prompt = await buildPrisonersDilemmaPrompt({ config, player: "a", outputMode: "tool" });
+    const prompt = await buildPrisonersDilemmaPrompt({ config, player: "a", decisionStyle: "tool" });
 
     expect(prompt.user).toContain("you get 2 years.");
     expect(prompt.user).not.toContain("your partner gets");
@@ -97,7 +97,7 @@ describe("buildPrisonersDilemmaPrompt", () => {
   });
 
   it("omits history in a single-round dilemma", async () => {
-    const prompt = await buildPrisonersDilemmaPrompt({ config: symmetric, player: "a", outputMode: "tool" });
+    const prompt = await buildPrisonersDilemmaPrompt({ config: symmetric, player: "a", decisionStyle: "tool" });
     expect(prompt.user).not.toContain("This is round");
   });
 
@@ -105,7 +105,7 @@ describe("buildPrisonersDilemmaPrompt", () => {
     const prompt = await buildPrisonersDilemmaPrompt({
       config: { ...symmetric, iterations: 5 },
       player: "a",
-      outputMode: "tool",
+      decisionStyle: "tool",
       round: 3,
       history: [
         { round: 1, you: "testify", partner: "silent" },
@@ -122,11 +122,29 @@ describe("buildPrisonersDilemmaPrompt", () => {
     const prompt = await buildPrisonersDilemmaPrompt({
       config: { ...symmetric, iterations: 5 },
       player: "a",
-      outputMode: "tool",
+      decisionStyle: "tool",
       round: 1,
       history: [],
     });
     expect(prompt.user).toContain("This is round 1 of 5.");
     expect(prompt.user).not.toContain("So far:");
+  });
+
+  it("closes with the wording each decision style calls for", async () => {
+    const base = { config: symmetric, player: "a" } as const;
+    const structured = await buildPrisonersDilemmaPrompt({ ...base, decisionStyle: "structured" });
+    const tool = await buildPrisonersDilemmaPrompt({ ...base, decisionStyle: "tool" });
+    const judgment = await buildPrisonersDilemmaPrompt({ ...base, decisionStyle: "judgment" });
+
+    for (const prompt of [structured, tool, judgment]) {
+      expect(prompt.user).toContain("`testify` — ");
+      expect(prompt.user).toContain("Abstaining is not one of them.");
+    }
+
+    expect(structured.user).toContain("`choice` field");
+    expect(tool.user).toContain("calling the tool");
+    expect(judgment.user).not.toContain("`choice` field");
+    expect(judgment.user).not.toContain("calling the tool");
+    expect(judgment.user).not.toContain("structured response");
   });
 });

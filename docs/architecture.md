@@ -65,7 +65,7 @@ prompts/                 markdown prompt fragments (editable without touching co
                          relationship.md, payoffs-symmetric.md,
                          payoffs-asymmetric-{aware,own}.md, history.md, question.md
   adventure/             briefing.md, history.md, node.md
-  shared/                decision-instructions.md
+  shared/                decision-{structured,tool,judgment}.md
 data/                    local JSONL data (gitignored). Created on first run.
 docs/                    this documentation
 ```
@@ -119,15 +119,17 @@ The character steering prompt is composed from `prompts/characters/*`:
 
 Each puzzle exports a pure `build…Prompt` function that returns `{ system?, user, options }` — the puzzle side of a call only. The character's steering prompt is prepended as the system message by the run engine, so the same builder serves both a run and the Prompt View, where no character is attached yet.
 
-- **Trolley** — `buildTrolleyPrompt({ variant, track1, track2, outputMode })`. Track contents arrive already resolved to objects, so the builder is testable without the store. `joinNaturalLanguage` produces "a, b and c"; an empty track renders as an empty string and `trolley/situation.md` supplies the wording, so the phrase for a bare track stays in markdown.
-- **Prisoner's dilemma** — `buildPrisonersDilemmaPrompt({ config, player, outputMode, round?, history? })`. Each player gets their own prompt: relationships are per side, and the stored `a`/`b` payoff matrix is re-keyed as "you" / "your partner". When `playersAware` is false a player is shown only their own consequences.
-- **Adventure** — `buildAdventurePrompt({ briefing, node, history?, amnesia, outputMode })`. Each node call is stateless, so the briefing is repeated every time; amnesia simply omits the history section.
+Every builder closes with `renderDecisionInstructions(options, decisionStyle)`, which renders `shared/decision-<style>.md`. `DecisionStyle` (`lib/domain/enums.ts`) is `"structured" | "tool" | "judgment"` and is derived per character by `decisionStyleFor(provider, outputMode)`: TypeSafe is always `judgment`, every other provider takes the character's `outputMode`. The `judgment` fragment lists the options as what the decision resolves to and says nothing about a response format, because Jev reads the prompt as *state* rather than as instructions.
+
+- **Trolley** — `buildTrolleyPrompt({ variant, track1, track2, decisionStyle })`. Track contents arrive already resolved to objects, so the builder is testable without the store. `joinNaturalLanguage` produces "a, b and c"; an empty track renders as an empty string and `trolley/situation.md` supplies the wording, so the phrase for a bare track stays in markdown.
+- **Prisoner's dilemma** — `buildPrisonersDilemmaPrompt({ config, player, decisionStyle, round?, history? })`. Each player gets their own prompt: relationships are per side, and the stored `a`/`b` payoff matrix is re-keyed as "you" / "your partner". When `playersAware` is false a player is shown only their own consequences.
+- **Adventure** — `buildAdventurePrompt({ briefing, node, history?, amnesia, decisionStyle })`. Each node call is stateless, so the briefing is repeated every time; amnesia simply omits the history section.
 
 ## API routes (app/api, lib/api)
 
 Routes are thin. Responses follow one envelope so the typed clients in `lib/client/` need one shape each: `{ items }` for a list, `{ item }` for a single entity, `{ error: string }` for every 4xx and 5xx. `lib/api/http.ts` holds the response helpers and a `handle()` wrapper that turns a `ZodError` into a 400 with a readable message, a `PromptError` into a 400, and anything else into a 500. `lib/api/collection-routes.ts` builds the CRUD handlers once; characters, objects and adventures are each a two-line route file over it. `POST` creates (409 on a taken id) and `PUT` updates (404 when absent), so a typo in an id can never silently overwrite a character.
 
-Prompt previews (`/api/prompts/*`) compose with the same builders a run uses. The trolley preview takes **object ids** and resolves them through the objects collection, answering 400 with the offending ids rather than rendering a prompt with a silent hole in it.
+Prompt previews (`/api/prompts/*`) compose with the same builders a run uses and take an optional `decisionStyle` (`previewDecisionStyleSchema` in `lib/api/schemas.ts`, defaulting to `structured`). The trolley preview takes **object ids** and resolves them through the objects collection, answering 400 with the offending ids rather than rendering a prompt with a silent hole in it.
 
 ## Provider layer (lib/providers)
 

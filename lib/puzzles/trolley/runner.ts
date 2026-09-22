@@ -2,12 +2,12 @@
  * The trolley runner: one decision per character per iteration, all independent.
  *
  * The tracks are resolved once (by `prepareRun`) and the prompt is built once per
- * output mode, because neither varies between iterations — what varies is the
+ * decision style, because neither varies between iterations — what varies is the
  * model's answer, which is the whole point of asking it more than once. Every
  * decision is its own source, so the pool can keep `RUN_CONCURRENCY` of them in
  * flight and a slow character does not hold up a fast one.
  */
-import type { OutputMode } from "@/lib/domain/enums";
+import { decisionStyleFor, type DecisionStyle } from "@/lib/domain/enums";
 import type { TrolleySummary } from "@/lib/domain/summary";
 import { collectDecision } from "@/lib/engine/decide";
 import { mergePool, type Source } from "@/lib/engine/pool";
@@ -19,19 +19,19 @@ import { emptySummary, reduce, type TrolleyDecisionEvent, type TrolleyEventData 
 
 /** Builds the runner for one prepared trolley run. */
 export function createTrolleyRunner(plan: TrolleyPlan): PuzzleRunner<TrolleyEventData, TrolleySummary> {
-  const prompts = new Map<OutputMode, ReturnType<typeof buildTrolleyPrompt>>();
+  const prompts = new Map<DecisionStyle, ReturnType<typeof buildTrolleyPrompt>>();
 
-  /** One prompt per output mode, shared by every character that uses it. */
-  function promptFor(outputMode: OutputMode) {
-    const existing = prompts.get(outputMode);
+  /** One prompt per decision style, shared by every character that uses it. */
+  function promptFor(decisionStyle: DecisionStyle) {
+    const existing = prompts.get(decisionStyle);
     if (existing) return existing;
     const built = buildTrolleyPrompt({
       variant: plan.config.variant,
       track1: plan.track1,
       track2: plan.track2,
-      outputMode,
+      decisionStyle,
     });
-    prompts.set(outputMode, built);
+    prompts.set(decisionStyle, built);
     return built;
   }
 
@@ -51,7 +51,7 @@ export function createTrolleyRunner(plan: TrolleyPlan): PuzzleRunner<TrolleyEven
               iteration,
             });
 
-            const prompt = await promptFor(character.outputMode);
+            const prompt = await promptFor(decisionStyleFor(character.provider, character.outputMode));
             const outcome = await collectDecision({
               character,
               prompt,

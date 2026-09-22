@@ -5,7 +5,7 @@
  * The objects on each track arrive already resolved (see the API route), so this
  * module is pure and can be unit-tested without touching the store.
  */
-import type { OutputMode } from "@/lib/domain/enums";
+import type { DecisionStyle } from "@/lib/domain/enums";
 import type { TrolleyVariant } from "@/lib/domain/run";
 import type { TrolleyObject } from "@/lib/domain/trolley-object";
 import { render } from "@/lib/prompts/compose";
@@ -26,7 +26,7 @@ export type TrolleyPromptInput = {
   /** What the trolley hits if the switch is left alone. */
   track1: readonly TrackItem[];
   track2: readonly TrackItem[];
-  outputMode: OutputMode;
+  decisionStyle: DecisionStyle;
 };
 
 /**
@@ -58,7 +58,7 @@ export async function buildTrolleyPrompt(input: TrolleyPromptInput): Promise<Puz
   const user = joinSections([
     await render(`trolley/variant-${input.variant}`, { situation }),
     question,
-    await renderDecisionInstructions(TROLLEY_OPTIONS, input.outputMode),
+    await renderDecisionInstructions(TROLLEY_OPTIONS, input.decisionStyle),
   ]);
 
   return { user, options: [...TROLLEY_OPTIONS], question: question.trim() };

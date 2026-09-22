@@ -7,13 +7,13 @@
  * exact wording a run would send, and an id neither half knows is a 400 naming
  * it rather than a silently missing item in the middle of a prompt.
  *
- * Body: `{ config: { variant, track1: string[], track2: string[], outputMode? } }`
+ * Body: `{ config: { variant, track1: string[], track2: string[], decisionStyle? } }`
  * Returns: `{ prompt: { user, options, question } }`
  */
 import { z } from "zod";
 
 import { badRequest, handle, ok, readBody } from "@/lib/api/http";
-import { previewOutputModeSchema } from "@/lib/api/schemas";
+import { previewDecisionStyleSchema } from "@/lib/api/schemas";
 import { trolleyConfigSchema } from "@/lib/domain/run";
 import { RunSetupError, resolveTrolleyObjects } from "@/lib/engine/setup";
 import { buildTrolleyPrompt } from "@/lib/puzzles/trolley/prompt";
@@ -22,7 +22,7 @@ import type { PuzzlePrompt } from "@/lib/puzzles/types";
 const bodySchema = z.object({
   config: trolleyConfigSchema
     .omit({ roster: true })
-    .extend({ outputMode: previewOutputModeSchema }),
+    .extend({ decisionStyle: previewDecisionStyleSchema }),
 });
 
 export type TrolleyPromptResponse = { prompt: PuzzlePrompt };
@@ -45,7 +45,7 @@ export const POST = handle(async (request: Request) => {
     variant: config.variant,
     track1,
     track2,
-    outputMode: config.outputMode,
+    decisionStyle: config.decisionStyle,
   });
 
   return ok({ prompt } satisfies TrolleyPromptResponse);

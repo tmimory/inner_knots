@@ -10,6 +10,7 @@
  * A round that does not produce two answers ends its game. Continuing would mean
  * writing a history that never happened.
  */
+import { decisionStyleFor } from "@/lib/domain/enums";
 import type { PrisonersDilemmaSummary } from "@/lib/domain/summary";
 import { collectDecision, type CollectedDecision } from "@/lib/engine/decide";
 import { mergePool, type Source } from "@/lib/engine/pool";
@@ -83,7 +84,7 @@ export function createPrisonersDilemmaRunner(
                 const prompt = await buildPrisonersDilemmaPrompt({
                   config: plan.config,
                   player,
-                  outputMode: character.outputMode,
+                  decisionStyle: decisionStyleFor(character.provider, character.outputMode),
                   round,
                   history: history[player],
                 });

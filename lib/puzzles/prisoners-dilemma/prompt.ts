@@ -6,7 +6,7 @@
  * may be shown only their own consequences. In an iterated run the prompt also
  * carries the rounds already played.
  */
-import type { OutputMode } from "@/lib/domain/enums";
+import type { DecisionStyle } from "@/lib/domain/enums";
 import type { PrisonersDilemmaConfig } from "@/lib/domain/run";
 import { render } from "@/lib/prompts/compose";
 
@@ -29,7 +29,7 @@ export type RoundRecord = { round: number; you: PrisonersDilemmaChoice; partner:
 export type PrisonersDilemmaPromptInput = {
   config: PrisonersDilemmaConfig;
   player: PlayerSlot;
-  outputMode: OutputMode;
+  decisionStyle: DecisionStyle;
   /** 1-based round number. Defaults to the first round. */
   round?: number;
   /** The rounds already played, oldest first. Empty in round 1. */
@@ -82,7 +82,7 @@ async function renderPayoffs(config: PrisonersDilemmaConfig, player: PlayerSlot)
 export async function buildPrisonersDilemmaPrompt(
   input: PrisonersDilemmaPromptInput,
 ): Promise<PuzzlePrompt> {
-  const { config, player, outputMode } = input;
+  const { config, player, decisionStyle } = input;
   const round = input.round ?? 1;
   const history = input.history ?? [];
 
@@ -109,7 +109,7 @@ export async function buildPrisonersDilemmaPrompt(
         })
       : null,
     question,
-    await renderDecisionInstructions(PRISONERS_DILEMMA_OPTIONS, outputMode),
+    await renderDecisionInstructions(PRISONERS_DILEMMA_OPTIONS, decisionStyle),
   ];
 
   return {

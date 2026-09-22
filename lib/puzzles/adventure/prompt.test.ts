@@ -34,7 +34,7 @@ describe("buildAdventurePrompt", () => {
       node,
       history,
       amnesia: false,
-      outputMode: "structured",
+      decisionStyle: "structured",
     });
 
     expect(prompt.user).toContain("You are carrying a message to the capital.");
@@ -56,7 +56,7 @@ describe("buildAdventurePrompt", () => {
       node,
       history,
       amnesia: true,
-      outputMode: "structured",
+      decisionStyle: "structured",
     });
 
     expect(prompt.user).not.toContain("What has happened so far:");
@@ -69,8 +69,26 @@ describe("buildAdventurePrompt", () => {
       node,
       history: [],
       amnesia: false,
-      outputMode: "tool",
+      decisionStyle: "tool",
     });
     expect(prompt.user).not.toContain("What has happened so far:");
+  });
+
+  it("closes with the wording each decision style calls for", async () => {
+    const base = { briefing: "A briefing.", node, history: [], amnesia: false } as const;
+    const structured = await buildAdventurePrompt({ ...base, decisionStyle: "structured" });
+    const tool = await buildAdventurePrompt({ ...base, decisionStyle: "tool" });
+    const judgment = await buildAdventurePrompt({ ...base, decisionStyle: "judgment" });
+
+    for (const prompt of [structured, tool, judgment]) {
+      expect(prompt.user).toContain("`o1` — Swim");
+      expect(prompt.user).toContain("Abstaining is not one of them.");
+    }
+
+    expect(structured.user).toContain("`choice` field");
+    expect(tool.user).toContain("calling the tool");
+    expect(judgment.user).not.toContain("`choice` field");
+    expect(judgment.user).not.toContain("calling the tool");
+    expect(judgment.user).not.toContain("structured response");
   });
 });

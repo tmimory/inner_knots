@@ -10,7 +10,7 @@ import type { PrisonersDilemmaPromptResponse } from "@/app/api/prompts/prisoners
 import type { TrolleyPromptResponse } from "@/app/api/prompts/trolley+api";
 
 import type { Character } from "../domain/character";
-import type { OutputMode } from "../domain/enums";
+import type { DecisionStyle } from "../domain/enums";
 import type { TrolleyVariant } from "../domain/run";
 import type { PrisonersDilemmaConfig } from "../domain/run";
 import { apiFetch } from "./api";
@@ -32,7 +32,7 @@ export type TrolleyPromptRequest = {
   /** Object ids; the server resolves them through the objects collection. */
   track1: string[];
   track2: string[];
-  outputMode?: OutputMode;
+  decisionStyle?: DecisionStyle;
 };
 
 /** The composed trolley prompt for a track layout. */
@@ -42,7 +42,7 @@ export function previewTrolleyPrompt(config: TrolleyPromptRequest): Promise<Trol
 
 /** Round-one prompts for both sides of a prisoner's dilemma. */
 export function previewPrisonersDilemmaPrompt(
-  config: Partial<PrisonersDilemmaConfig> & { outputMode?: OutputMode },
+  config: Partial<PrisonersDilemmaConfig> & { decisionStyle?: DecisionStyle },
 ): Promise<PrisonersDilemmaPromptResponse> {
   return post<PrisonersDilemmaPromptResponse>("/api/prompts/prisoners-dilemma", { config });
 }
@@ -51,9 +51,9 @@ export function previewPrisonersDilemmaPrompt(
 export function previewAdventurePrompt(
   adventureId: string,
   amnesia = false,
-  outputMode?: OutputMode,
+  decisionStyle?: DecisionStyle,
 ): Promise<AdventurePromptResponse> {
-  return post<AdventurePromptResponse>("/api/prompts/adventure", { adventureId, amnesia, outputMode });
+  return post<AdventurePromptResponse>("/api/prompts/adventure", { adventureId, amnesia, decisionStyle });
 }
 
 /** Every markdown fragment on disk, for a "view the prompts" screen. */

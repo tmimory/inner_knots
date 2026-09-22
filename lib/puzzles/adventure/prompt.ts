@@ -6,7 +6,7 @@
  * which case the character meets every node as if for the first time.
  */
 import type { AdventureNode } from "@/lib/domain/adventure";
-import type { OutputMode } from "@/lib/domain/enums";
+import type { DecisionStyle } from "@/lib/domain/enums";
 import { render } from "@/lib/prompts/compose";
 
 import { joinSections, renderDecisionInstructions, type PromptOption, type PuzzlePrompt } from "../types";
@@ -27,7 +27,7 @@ export type AdventurePromptInput = {
   /** Steps already taken, oldest first. Ignored when `amnesia` is true. */
   history?: readonly AdventureStep[];
   amnesia: boolean;
-  outputMode: OutputMode;
+  decisionStyle: DecisionStyle;
 };
 
 /** The options of a node, in the order the builder laid them out. */
@@ -45,7 +45,7 @@ export async function buildAdventurePrompt(input: AdventurePromptInput): Promise
     briefing.length > 0 ? await render("adventure/briefing", { briefing }) : null,
     history.length > 0 ? await render("adventure/history", { steps: history }) : null,
     await render("adventure/node", { context: input.node.context, decision: input.node.decision }),
-    await renderDecisionInstructions(options, input.outputMode),
+    await renderDecisionInstructions(options, input.decisionStyle),
   ];
 
   // The node's own decision text is the question; it is data, not prose in code.

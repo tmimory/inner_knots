@@ -11,7 +11,7 @@
 import { z } from "zod";
 
 import { handle, ok, readBody } from "@/lib/api/http";
-import { previewOutputModeSchema } from "@/lib/api/schemas";
+import { previewDecisionStyleSchema } from "@/lib/api/schemas";
 import { characterIdSchema } from "@/lib/domain/character";
 import { prisonersDilemmaConfigSchema, runCountSchema } from "@/lib/domain/run";
 import { buildPrisonersDilemmaPrompt } from "@/lib/puzzles/prisoners-dilemma/prompt";
@@ -23,7 +23,7 @@ const bodySchema = z.object({
     playerB: characterIdSchema.default("playerB"),
     runs: runCountSchema.default(1),
     iterations: prisonersDilemmaConfigSchema.shape.iterations.default(1),
-    outputMode: previewOutputModeSchema,
+    decisionStyle: previewDecisionStyleSchema,
   }),
 });
 
@@ -31,7 +31,7 @@ export type PrisonersDilemmaPromptResponse = { a: PuzzlePrompt; b: PuzzlePrompt 
 
 export const POST = handle(async (request: Request) => {
   const { config } = await readBody(request, bodySchema);
-  const shared = { config, outputMode: config.outputMode, round: 1, history: [] } as const;
+  const shared = { config, decisionStyle: config.decisionStyle, round: 1, history: [] } as const;
 
   return ok({
     a: await buildPrisonersDilemmaPrompt({ ...shared, player: "a" }),

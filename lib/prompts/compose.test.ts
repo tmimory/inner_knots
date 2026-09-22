@@ -7,7 +7,9 @@ describe("prompt fragments", () => {
   it("loads every fragment on disk without error", async () => {
     const ids = await checkFragments();
     expect(ids).toContain("characters/bio");
-    expect(ids).toContain("shared/decision-instructions");
+    expect(ids).toContain("shared/decision-structured");
+    expect(ids).toContain("shared/decision-tool");
+    expect(ids).toContain("shared/decision-judgment");
     expect(ids.length).toBeGreaterThan(15);
   });
 
@@ -52,21 +54,31 @@ describe("prompt fragments", () => {
     expect(second).toBe(first);
   });
 
-  it("renders the shared decision instructions for both output modes", async () => {
+  it("renders the shared decision instructions for all three styles", async () => {
     const options = [{ id: "track1", label: "Track 1" }];
-    const tool = await render("shared/decision-instructions", {
-      options,
-      outputMode: { tool: true, structured: false },
-    });
-    const structured = await render("shared/decision-instructions", {
-      options,
-      outputMode: { tool: false, structured: true },
-    });
+    const [structured, tool, judgment] = await Promise.all(
+      ["structured", "tool", "judgment"].map((style) => render(`shared/decision-${style}`, { options })),
+    );
 
-    expect(tool).toContain("`track1` — Track 1");
+    for (const text of [structured, tool, judgment]) {
+      expect(text).toContain("`track1` — Track 1");
+      expect(text).toContain("Abstaining is not one of them.");
+    }
+
     expect(tool).toContain("calling the tool");
     expect(tool).not.toContain("`choice` field");
     expect(structured).toContain("`choice` field");
     expect(structured).not.toContain("calling the tool");
+  });
+
+  it("tells a judgment model nothing about how to answer", async () => {
+    const judgment = await render("shared/decision-judgment", {
+      options: [{ id: "track1", label: "Track 1" }],
+    });
+
+    expect(judgment).not.toContain("`choice` field");
+    expect(judgment).not.toContain("calling the tool");
+    expect(judgment).not.toContain("structured response");
+    expect(judgment).not.toMatch(/Answer/i);
   });
 });

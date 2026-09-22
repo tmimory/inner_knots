@@ -11,6 +11,7 @@
  * counts paths: a run of five walks is five units of work however long each walk is.
  */
 import type { AdventureNode } from "@/lib/domain/adventure";
+import { decisionStyleFor } from "@/lib/domain/enums";
 import type { AdventureSummary } from "@/lib/domain/summary";
 import { collectDecision } from "@/lib/engine/decide";
 import { mergePool, type Source } from "@/lib/engine/pool";
@@ -59,7 +60,7 @@ export function createAdventureRunner(plan: AdventurePlan): PuzzleRunner<Adventu
                 node,
                 history,
                 amnesia: plan.config.amnesia,
-                outputMode: character.outputMode,
+                decisionStyle: decisionStyleFor(character.provider, character.outputMode),
               });
 
               const outcome = await collectDecision({
