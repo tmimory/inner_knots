@@ -12,7 +12,7 @@ import {
 } from "@/components/puzzles/prisoners-dilemma";
 import { PromptView, type PromptPanel } from "@/components/puzzles/prompt-view";
 import { RosterBar } from "@/components/puzzles/roster-bar";
-import { RunProgress } from "@/components/puzzles/run-progress";
+import { RunFooter } from "@/components/puzzles/run-footer";
 import { Section } from "@/components/puzzles/section";
 import { Subsection } from "@/components/puzzles/subsection";
 import {
@@ -389,39 +389,19 @@ export default function PrisonersDilemmaScreen() {
           </Subsection>
         </View>
 
-        {/*
-          The run closes the rules rather than opening a section of its own: a
-          hairline across the column, what the run will cost on the left, and the
-          screen's one filled control at the right edge, where a page's terminal
-          action belongs. Blocked, the same line says what is missing instead of
-          counting decisions.
-        */}
-        <View className="flex-row flex-wrap items-center justify-end gap-lg border-t-hairline border-border pt-lg">
-          {/* Body size: the line that says what the button will do is prose, not
-              a caption under it. */}
-          <Text className="flex-1 text-muted-foreground">
-            {blocked ??
-              `${pluralize(total, "decision")}: ${pluralize(setup.runs, "game")} × ${pluralize(
-                iterations,
-                "round",
-              )} × ${pluralize(PLAYER_COUNT, "player")}.`}
-          </Text>
-          <Button
-            disabled={blocked !== null || starter.starting}
-            onPress={() => void startRun()}
-          >
-            <Text>
-              {starter.starting ? "Starting…" : "Put them in the rooms"}
-            </Text>
-          </Button>
-        </View>
-
-        <RunProgress run={run ?? null} />
-        {starter.error ? (
-          <Text variant="small" className="text-destructive">
-            {starter.error}
-          </Text>
-        ) : null}
+        {/* The run closes the rules rather than opening a section of its own. */}
+        <RunFooter
+          blocked={blocked}
+          cost={`${pluralize(total, "decision")}: ${pluralize(setup.runs, "game")} × ${pluralize(
+            iterations,
+            "round",
+          )} × ${pluralize(PLAYER_COUNT, "player")}.`}
+          label="Put them in the rooms"
+          starting={starter.starting}
+          onStart={() => void startRun()}
+          run={run}
+          error={starter.error}
+        />
 
         {/*
           Between the button and the first answer, the shape the results will

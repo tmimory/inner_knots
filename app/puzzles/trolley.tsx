@@ -4,7 +4,7 @@ import { View } from "react-native";
 import { Screen } from "@/components/shell";
 import { PromptView } from "@/components/puzzles/prompt-view";
 import { RosterBar } from "@/components/puzzles/roster-bar";
-import { RunProgress } from "@/components/puzzles/run-progress";
+import { RunFooter } from "@/components/puzzles/run-footer";
 import { Section } from "@/components/puzzles/section";
 import { Subsection } from "@/components/puzzles/subsection";
 import {
@@ -326,35 +326,20 @@ export default function TrolleyScreen() {
         {/*
           The run belongs to the board: a heading and a rule over one button made a
           section out of the thing the section above is for. Instead it closes the
-          section as a footer — a hairline across the column, what the run comes to
-          on the left, and the screen's one filled control at the right edge, where
-          a page's terminal action belongs. Blocked, the same line says what is
-          missing instead of counting decisions.
+          section as a footer.
         */}
-        <View className="flex-row flex-wrap items-center justify-end gap-lg border-t-hairline border-border pt-lg">
-          {/* Body size: the line that says what the button will do is prose, not
-              a caption under it. */}
-          <Text className="flex-1 text-muted-foreground">
-            {blocked ??
-              `${pluralize(total, "decision")} across ${pluralize(
-                board.roster.length,
-                "character",
-              )}.`}
-          </Text>
-          <Button
-            disabled={blocked !== null || starter.starting}
-            onPress={() => void startRun()}
-          >
-            <Text>{starter.starting ? "Starting…" : "Pull the lever"}</Text>
-          </Button>
-        </View>
-
-        <RunProgress run={run ?? null} />
-        {starter.error ? (
-          <Text variant="small" className="text-destructive">
-            {starter.error}
-          </Text>
-        ) : null}
+        <RunFooter
+          blocked={blocked}
+          cost={`${pluralize(total, "decision")} across ${pluralize(
+            board.roster.length,
+            "character",
+          )}.`}
+          label="Pull the lever"
+          starting={starter.starting}
+          onStart={() => void startRun()}
+          run={run}
+          error={starter.error}
+        />
       </Section>
 
       {/*

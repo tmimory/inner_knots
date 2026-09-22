@@ -1,10 +1,9 @@
-import { Link } from "expo-router";
 import { useMemo } from "react";
 import { View } from "react-native";
 
 import { Avatar } from "@/components/avatars";
 import { Histogram, type HistogramGroupSpec, type HistogramSeriesSpec } from "@/components/charts";
-import { Button, Text } from "@/components/ui";
+import { ResultsFooter } from "@/components/puzzles/results-footer";
 import { characterDisplayName, type Character } from "@/lib/domain/character";
 import type { RosterEntry } from "@/lib/domain/run";
 import type { TrolleySummary } from "@/lib/domain/summary";
@@ -86,19 +85,7 @@ export function TrolleyResults({
         groups={groups}
       />
 
-      <View className="flex-row flex-wrap items-center gap-md">
-        <Text variant="muted">
-          {`${pluralize(answered, "decision")} recorded`}
-        </Text>
-        <View className="flex-1" />
-        {runId ? (
-          <Link href={`/logs/${runId}`} asChild>
-            <Button variant="outline" size="sm">
-              <Text>View in Logs</Text>
-            </Button>
-          </Link>
-        ) : null}
-      </View>
+      <ResultsFooter note={`${pluralize(answered, "decision")} recorded`} runId={runId} />
     </View>
   );
 }

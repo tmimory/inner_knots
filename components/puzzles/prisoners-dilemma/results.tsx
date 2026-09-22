@@ -1,10 +1,10 @@
-import { Link } from "expo-router";
 import { useMemo } from "react";
 import { View } from "react-native";
 
 import { Avatar } from "@/components/avatars";
 import { Histogram, type HistogramGroupSpec, type HistogramSeriesSpec } from "@/components/charts";
-import { Button, Label, Text } from "@/components/ui";
+import { ResultsFooter } from "@/components/puzzles/results-footer";
+import { Label, Text } from "@/components/ui";
 import type { Character } from "@/lib/domain/character";
 import type { PlayerTally, PrisonersDilemmaSummary } from "@/lib/domain/summary";
 import { countNote, pluralize } from "@/lib/format";
@@ -132,19 +132,10 @@ export function PrisonersDilemmaResults({
         </View>
       ) : null}
 
-      <View className="flex-row flex-wrap items-center gap-md">
-        <Text variant="muted">
-          {`${pluralize(games, "game")} · ${pluralize(rounds, "round")} recorded`}
-        </Text>
-        <View className="flex-1" />
-        {runId ? (
-          <Link href={`/logs/${runId}`} asChild>
-            <Button variant="outline" size="sm">
-              <Text>View in Logs</Text>
-            </Button>
-          </Link>
-        ) : null}
-      </View>
+      <ResultsFooter
+        note={`${pluralize(games, "game")} · ${pluralize(rounds, "round")} recorded`}
+        runId={runId}
+      />
     </View>
   );
 }
