@@ -6,11 +6,17 @@
  * top edge, and every option has its own source handle along the bottom edge,
  * whose id *is* the option id — that is what lets a connection say which option
  * leads where. The handles come out left to right in the order of the rows above
- * them, and once a card has more than one option the rows are numbered so a
- * reader can say which edge belongs to which line without counting. An option
- * with no outgoing edge is an ending, said by the shape of its handle. In the
- * outcome view the same card shows how many walks came through it and how they
- * split.
+ * them, and once a card has more than one option both the row and the handle
+ * under it carry the same number, so an edge that leaves "2" is visibly the line
+ * that reads "2" — including the square handles of the options that end the
+ * adventure. An option with no outgoing edge is an ending, said by the shape of
+ * its handle. In the outcome view the same card shows how many walks came through
+ * it and how they split.
+ *
+ * Numbering says which is which; the focus says which one you are on. Putting the
+ * pointer on a row tells the canvas's `FlowFocus` which option it is, and the edge
+ * leaving that row lights up in the primary ink — and the same the other way, so
+ * following a line back from the bottom of the canvas lights the row it left.
  *
  * The whole tree is fitted into the canvas, which means a card is read at
  * something near two-thirds of the size it is drawn at. So the card is set a step
@@ -28,7 +34,8 @@ import { ADVENTURE_LAYOUT } from "@/lib/puzzles/adventure/layout";
 import { useTheme } from "@/theme";
 
 import { TERMINAL_HANDLE_CLASS } from "./chrome-style.web";
-import { handleStyle, nodeCardStyle } from "./flow-style";
+import { isFocused, useFlowFocus } from "./flow-focus";
+import { handleLabelStyle, handleStyle, nodeCardStyle } from "./flow-style";
 import type { AdventureFlowNode } from "./use-adventure-graph";
 import { NODE_TARGET_HANDLE } from "./types";
 
@@ -46,6 +53,7 @@ const DECISION_LINES = 2;
 
 export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
   const theme = useTheme();
+  const { focus, hover } = useFlowFocus();
   const { node, isStart, isTarget, hits, share, optionHits, onPath, unvisited } = data;
   const counted = hits !== undefined;
   const forks = node.options.length > 1;
@@ -117,34 +125,50 @@ export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
           </View>
         ) : null}
 
-        {node.options.map((option, index) => (
-          <View
-            key={option.id}
-            // The rows are the key to the handles beneath the card, so the one
-            // under the cursor lights up with the edge the reader is following.
-            className="flex-row items-center gap-sm px-md transition-colors duration-fast web:hover:bg-muted/subtle"
-            style={{ height: ADVENTURE_LAYOUT.nodeOptionHeight }}
-          >
-            {/*
-              Which handle along the bottom edge is this row's. Only worth saying
-              on a card that forks: one option has one handle, centred, and a "1"
-              beside it would be a number for its own sake.
-            */}
-            {forks ? (
-              <Text variant="muted" className="w-lg font-mono text-base tabular">
-                {index + 1}
+        {node.options.map((option, index) => {
+          const lit = isFocused(focus, node.id, option.id);
+          return (
+            <View
+              key={option.id}
+              // The row is the near end of an edge, so the two light together: the
+              // pointer on either one focuses the option, and the row it names takes
+              // the muted fill. Not a CSS `:hover` rule — the focus arrives from the
+              // edge as often as from the row, and a rule the pointer owns cannot be
+              // told about that.
+              onPointerEnter={() => hover({ nodeId: node.id, optionId: option.id })}
+              onPointerLeave={() => hover(null)}
+              className={`flex-row items-center gap-sm px-md transition-colors duration-fast${
+                lit ? " bg-muted" : ""
+              }`}
+              style={{ height: ADVENTURE_LAYOUT.nodeOptionHeight }}
+            >
+              {/*
+                Which handle along the bottom edge is this row's. Only worth saying
+                on a card that forks: one option has one handle, centred, and a "1"
+                beside it would be a number for its own sake.
+              */}
+              {forks ? (
+                <Text
+                  variant="muted"
+                  className={`w-lg font-mono text-base tabular${lit ? " text-primary" : ""}`}
+                >
+                  {index + 1}
+                </Text>
+              ) : null}
+              <Text
+                className={`flex-1 text-lg${lit ? " text-primary" : ""}`}
+                numberOfLines={1}
+              >
+                {option.label}
               </Text>
-            ) : null}
-            <Text className="flex-1 text-lg" numberOfLines={1}>
-              {option.label}
-            </Text>
-            {counted ? (
-              <Text variant="muted" className="font-mono text-base tabular">
-                {optionHits?.[option.id] ?? 0}
-              </Text>
-            ) : null}
-          </View>
-        ))}
+              {counted ? (
+                <Text variant="muted" className="font-mono text-base tabular">
+                  {optionHits?.[option.id] ?? 0}
+                </Text>
+              ) : null}
+            </View>
+          );
+        })}
       </View>
 
       {/*
@@ -172,12 +196,30 @@ export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
               index,
               count: node.options.length,
             })}
+            onPointerEnter={() => hover({ nodeId: node.id, optionId: option.id })}
+            onPointerLeave={() => hover(null)}
             aria-label={
               ending
-                ? `${option.label} — ends the adventure`
-                : `${option.label} — leads on`
+                ? `${option.label} — option ${index + 1}, ends the adventure`
+                : `${option.label} — option ${index + 1}, leads on`
             }
-          />
+          >
+            {/*
+              The handle's own number, written beside it, so the reader follows a
+              line back to "2" rather than counting dots from the left. Drawn on
+              every handle of a forked card, the square endings included: a tree's
+              terminals are options too. A card with one option has one dot in the
+              middle and needs no key. `pointerEvents` off — the numeral is a
+              caption on the dot, not a second thing to drag from.
+            */}
+            {forks ? (
+              <View pointerEvents="none" style={handleLabelStyle(theme)}>
+                <Text variant="muted" className="font-mono text-sm tabular">
+                  {index + 1}
+                </Text>
+              </View>
+            ) : null}
+          </Handle>
         );
       })}
     </View>

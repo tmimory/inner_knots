@@ -29,6 +29,7 @@ import { useTheme } from "@/theme";
 
 import { useFlowChromeStyle } from "./chrome-style.web";
 import { adventureNodeTypes } from "./decision-node.web";
+import { FlowFocusProvider, useFlowFocus, type FlowFocus } from "./flow-focus";
 import { canvasStyle, miniMapStyle } from "./flow-style";
 import type { AdventureCanvasProps } from "./types";
 import {
@@ -70,10 +71,19 @@ const FIT = { maxZoom: 1 } as const;
  */
 const MINIMAP_FROM_NODES = 6;
 
+/** Which option an edge stands for, or nothing when it carries no data. */
+function focusOfEdge(edge: AdventureFlowEdge): FlowFocus | null {
+  return edge.data ? { nodeId: edge.data.nodeId, optionId: edge.data.optionId } : null;
+}
+
 function Canvas(props: AdventureCanvasProps) {
   const theme = useTheme();
   const { fitView } = useReactFlow();
   const nodesReady = useNodesInitialized();
+  // The option the reader is on. The cards set it from their rows and read it
+  // back for themselves; the canvas sets it from the edges and hands it to the
+  // graph, so both ends of an option light at once.
+  const { focus, hover, pin } = useFlowFocus();
 
   // React Flow's own chrome is CSS, not props: this puts the themed sheet in.
   useFlowChromeStyle(theme);
@@ -92,6 +102,7 @@ function Canvas(props: AdventureCanvasProps) {
     theme,
     selectedNodeId,
     decoration,
+    focus,
     onChange,
   });
 
@@ -145,7 +156,17 @@ function Canvas(props: AdventureCanvasProps) {
       onNodesDelete={graph.onNodesDelete}
       isValidConnection={graph.isValidConnection}
       onNodeClick={(_event, node) => onSelectNode?.(node.id)}
-      onPaneClick={() => onSelectNode?.(null)}
+      onPaneClick={() => {
+        onSelectNode?.(null);
+        // The pane is where a selection is let go of, so it is where a pinned
+        // option is let go of too.
+        pin(null);
+      }}
+      // Hovering an edge lights the row it leaves; clicking it pins that, because
+      // reading a card at the far end of the canvas means moving off the line.
+      onEdgeMouseEnter={(_event, edge) => hover(focusOfEdge(edge))}
+      onEdgeMouseLeave={() => hover(null)}
+      onEdgeClick={(_event, edge) => pin(focusOfEdge(edge))}
       onEdgeDoubleClick={(_event, edge) => graph.onEdgesDelete([edge])}
       // Cards are placed by the layout, never by hand: an adventure's picture is
       // its shape, so the same tree draws the same way for the author and for the
@@ -207,9 +228,17 @@ export default function AdventureCanvas(props: AdventureCanvasProps) {
       style={{ minHeight: theme.layout.canvas }}
       className="h-full w-full overflow-hidden"
     >
-      <ReactFlowProvider>
-        <Canvas {...props} />
-      </ReactFlowProvider>
+      {/*
+        The focus wraps the React Flow store rather than sitting inside it,
+        because both halves of the coupling need it: the cards, which React Flow
+        renders, and the canvas itself, which hands it to `useAdventureGraph` so
+        the focused edge is toned.
+      */}
+      <FlowFocusProvider>
+        <ReactFlowProvider>
+          <Canvas {...props} />
+        </ReactFlowProvider>
+      </FlowFocusProvider>
     </View>
   );
 }

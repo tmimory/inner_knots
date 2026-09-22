@@ -37,6 +37,7 @@ import {
 } from "@/lib/puzzles/adventure/layout";
 import type { Theme } from "@/theme";
 
+import { isFocused, type FlowFocus } from "./flow-focus";
 import { edgePathOptions, edgeLabelBackgroundStyle, edgeLabelStyle, edgeStyle } from "./flow-style";
 import {
   DECISION_NODE,
@@ -168,13 +169,20 @@ export function toFlowNodes(
   });
 }
 
-/** One edge per option that leads somewhere the graph actually has. */
+/**
+ * One edge per option that leads somewhere the graph actually has.
+ *
+ * `focus` is the one option the reader is on — from a row of a card, or from the
+ * edge itself. Its edge is drawn in the primary ink at the width `edgeStyle`
+ * raises it to, and lifted above the rest, because the line worth following is
+ * the one that has to be followable where it crosses the others.
+ */
 export function toFlowEdges(
   adventure: Adventure,
   theme: Theme,
-  options: { decoration?: GraphDecoration } = {},
+  options: { decoration?: GraphDecoration; focus?: FlowFocus | null } = {},
 ): AdventureFlowEdge[] {
-  const { decoration } = options;
+  const { decoration, focus = null } = options;
   const known = new Set(adventure.nodes.map((node) => node.id));
   const edges: AdventureFlowEdge[] = [];
 
@@ -192,9 +200,11 @@ export function toFlowEdges(
       placed.set(node.id, index + 1);
       const hits = decoration?.optionHits[node.id]?.[option.id] ?? 0;
       const onPath = decoration?.pathEdgeIds.has(id) ?? false;
+      const focused = isFocused(focus, node.id, option.id);
       const tone = {
         share: decoration ? share(hits, decoration.walks) : undefined,
         onPath,
+        focused,
       };
 
       edges.push({
@@ -222,6 +232,9 @@ export function toFlowEdges(
         // the edge leaves from (a filled dot) and what it arrives at (a hollow
         // ring) is the whole of the direction key.
         animated: onPath,
+        // Above the bundle it is in, so the followed line is not buried under the
+        // three it crosses on its way down the rank gap.
+        zIndex: focused ? theme.zIndex.menu : theme.zIndex.base,
         data: { nodeId: node.id, optionId: option.id, hits: decoration ? hits : undefined, onPath },
       });
     }
@@ -250,6 +263,12 @@ export type UseAdventureGraphInput = {
   theme: Theme;
   selectedNodeId?: string | null;
   decoration?: GraphDecoration;
+  /**
+   * The option the reader is on, from `FlowFocusProvider`. The canvas reads it
+   * here and the cards read it for themselves, so the row and its edge light
+   * together whichever end the pointer came in at.
+   */
+  focus?: FlowFocus | null;
   /** Absent in the outcome view, which never writes back. */
   onChange?: (next: Adventure) => void;
 };
@@ -276,7 +295,7 @@ export type UseAdventureGraph = {
 
 /** Holds React Flow's view of one adventure and writes every gesture back. */
 export function useAdventureGraph(input: UseAdventureGraphInput): UseAdventureGraph {
-  const { adventure, theme, selectedNodeId = null, decoration, onChange } = input;
+  const { adventure, theme, selectedNodeId = null, decoration, focus = null, onChange } = input;
 
   // Dagre is re-run only when the tree's shape changes, not when its prose does:
   // writing a question must not shuffle the cards under the author's cursor.
@@ -294,8 +313,8 @@ export function useAdventureGraph(input: UseAdventureGraphInput): UseAdventureGr
     [adventure, positions, selectedNodeId, decoration],
   );
   const seedEdges = useMemo(
-    () => toFlowEdges(adventure, theme, { decoration }),
-    [adventure, theme, decoration],
+    () => toFlowEdges(adventure, theme, { decoration, focus }),
+    [adventure, theme, decoration, focus],
   );
 
   const [nodes, setNodes] = useState<AdventureFlowNode[]>(seedNodes);

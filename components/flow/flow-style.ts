@@ -7,6 +7,8 @@
  * view honest: a thick edge is thick because more walks took it, between a
  * hairline and the widest stroke the theme has a step for.
  */
+import type { ViewStyle } from "react-native";
+
 import { ADVENTURE_LAYOUT, optionLaneCentre } from "@/lib/puzzles/adventure/layout";
 import type { Theme } from "@/theme";
 
@@ -52,7 +54,16 @@ function clampStep(value: number): number {
 }
 
 /** Style for an edge, given how many walks took it and whether it is highlighted. */
-export type EdgeTone = { share?: number; onPath?: boolean };
+export type EdgeTone = {
+  share?: number;
+  onPath?: boolean;
+  /**
+   * True for the one option the reader is on — hovering its row, hovering the
+   * edge itself, or having clicked either. Not a fourth colour: the edge takes the
+   * primary ink the focused option row takes, so the two read as one thing.
+   */
+  focused?: boolean;
+};
 
 /** Style for a node card, given its state on the canvas. */
 export type NodeTone = {
@@ -74,14 +85,25 @@ function clampShare(share: number | undefined): number {
 export function edgeStrokeWidth(theme: Theme, tone: EdgeTone): number {
   const min = theme.borderWidths.hairline;
   const max = theme.spacing.sm;
-  if (tone.share === undefined) return theme.borderWidths.thick;
-  return min + (max - min) * clampShare(tone.share);
+  const natural =
+    tone.share === undefined
+      ? theme.borderWidths.thick
+      : min + (max - min) * clampShare(tone.share);
+  // The focused edge is never thinner than it was: in the outcome view a stroke's
+  // width is how many walks took it, and a hover must not make a busy line read as
+  // a quiet one. It is only ever raised to the step where one line among twenty is
+  // followable across a fitted canvas.
+  return tone.focused ? Math.max(natural, theme.spacing.xs) : natural;
 }
 
 /** Stroke color and width for one edge. */
 export function edgeStyle(theme: Theme, tone: EdgeTone): { stroke: string; strokeWidth: number } {
   return {
-    stroke: tone.onPath ? theme.colors.accent : theme.colors.mutedForeground,
+    stroke: tone.focused
+      ? theme.colors.primary
+      : tone.onPath
+        ? theme.colors.accent
+        : theme.colors.mutedForeground,
     strokeWidth: edgeStrokeWidth(theme, tone),
   };
 }
@@ -148,7 +170,8 @@ export function nodeCardStyle(theme: Theme, tone: NodeTone): Record<string, stri
  * The tree runs downwards, so the one target sits centred on the card's top edge
  * and the sources sit along its bottom edge: `lane` says which of the card's
  * options this one is, and the handles come out in the order of the option rows,
- * left to right. The rows are numbered to say which is which.
+ * left to right. Row and handle carry the same number — see `handleLabelStyle` —
+ * so an edge that leaves "2" belongs to the line that reads "2".
  */
 export function handleStyle(
   theme: Theme,
@@ -189,6 +212,28 @@ function laneCentre(lane: { index: number; count: number } | undefined): number 
 }
 
 const FULL_PERCENT = 100;
+
+/**
+ * The numeral beside one option's handle.
+ *
+ * The rows inside a forked card are numbered, but the handles beneath it were
+ * not, so saying which line belonged to which choice meant counting dots from the
+ * left. The number is drawn as a child of the handle itself rather than hung off
+ * the card at a percentage, so it cannot drift from the dot it names however the
+ * lanes are divided. It sits to the right of the dot, level with it, rather than
+ * under it: the edge leaves the dot straight downwards, and a numeral written
+ * under the dot was a numeral with a line drawn through it.
+ */
+export function handleLabelStyle(theme: Theme): ViewStyle {
+  const handle = theme.spacing.md;
+  return {
+    position: "absolute",
+    top: 0,
+    left: handle + theme.spacing.xxs,
+    height: handle,
+    justifyContent: "center",
+  };
+}
 
 /**
  * The canvas itself. React Flow reads its edges, handles and selection box from
