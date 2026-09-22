@@ -11,15 +11,14 @@ import { ADVENTURE_LAYOUT } from "@/lib/puzzles/adventure/layout";
 import type { Theme } from "@/theme";
 
 /**
- * How far one edge's bend is pushed off the shared corridor.
+ * How far one edge's sideways jog is pushed off its neighbours'.
  *
- * Three options leaving one card draw three right-angled runs across the same
- * gap, and where they share a vertical segment what looks like one edge is three.
- * So each edge in the bundle *leaving a card* gets its own step-out distance and
- * its own bend position — lanes assigned by source rather than by target, because
- * that is where a fork actually happens: "The stranger", "The donor" and "Split
- * the dose" leave one card within ninety pixels of each other and used to share a
- * trunk all the way across the rank.
+ * The tree runs top to bottom, so an edge leaves the bottom of a card, runs
+ * straight down, jogs across to sit over its target, and turns down into the
+ * target's top handle. Each option already leaves from its own place along the
+ * bottom edge, so a bundle fans out the moment it is drawn — what is left to
+ * separate is the *depth* at which two of those runs cross the gap between ranks.
+ * Two edges jogging across at the same height read as one bracket.
  *
  * `index` is the edge's place in the bundle leaving one node; `size` is how many
  * there are. A lone edge gets the plain middle bend.
@@ -32,18 +31,20 @@ export function edgePathOptions(
   const middle = (size - 1) / 2;
   const rank = index - middle;
   return {
-    // The straight run out of a handle before the first corner: one step longer
-    // per lane, so the corners themselves are staggered too.
-    offset: theme.spacing.md + index * theme.spacing.sm,
+    // The straight run down out of the handle before the first corner, and the
+    // matching run down into the target. One hair longer per lane, so the corners
+    // are staggered too — and small enough that both ends fit inside the rank gap
+    // with room left for the jogs to spread.
+    offset: theme.spacing.md + index * theme.spacing.xxs,
     borderRadius: theme.radii.sm,
-    // Where along the gap the vertical run sits, 0 at the source and 1 at the
-    // target. Spread around the midpoint, and never so far out that a bend
-    // touches the card it left.
+    // How far down the gap the sideways run sits, 0 at the card it left and 1 at
+    // the card it arrives on. Spread around the midpoint, and never so far out
+    // that a bend touches either card.
     stepPosition: clampStep(EDGE_STEP.center + rank * EDGE_STEP.spread),
   };
 }
 
-/** How the bends of a bundle of edges are spread around the midpoint of the gap. */
+/** How the jogs of a bundle of edges are spread down the gap between two ranks. */
 const EDGE_STEP = { center: 0.5, spread: 0.18, min: 0.18, max: 0.82 } as const;
 
 function clampStep(value: number): number {
@@ -115,7 +116,7 @@ export function nodeCardStyle(theme: Theme, tone: NodeTone): Record<string, stri
       : theme.colors.border;
 
   return {
-    // The card is exactly as wide as the auto-layout believes it is.
+    // The card is exactly as wide as the layout believes it is.
     width: ADVENTURE_LAYOUT.nodeWidth,
     backgroundColor: theme.colors.card,
     borderColor,
@@ -143,13 +144,19 @@ export function nodeCardStyle(theme: Theme, tone: NodeTone): Record<string, stri
  * pixels beside it. All three are pushed clear of the card edge — React Flow
  * centres a handle on the border by default, which reads as decoration rather
  * than as something to drag.
+ *
+ * The tree runs downwards, so the one target sits centred on the card's top edge
+ * and the sources sit along its bottom edge: `lane` says which of the card's
+ * options this one is, and the handles come out in the order of the option rows,
+ * left to right. The rows are numbered to say which is which.
  */
 export function handleStyle(
   theme: Theme,
   kind: "source" | "target" | "terminal",
+  lane?: { index: number; count: number },
 ): Record<string, string | number> {
   const size = theme.spacing.md;
-  // The handle is centred on its edge, so half its width plus a gap clears the border.
+  // The handle is centred on its edge, so half its height plus a gap clears the border.
   const offset = -(size / 2 + theme.spacing.xs);
   const filled = kind !== "target";
 
@@ -160,9 +167,22 @@ export function handleStyle(
     backgroundColor: filled ? theme.colors.primary : theme.colors.card,
     borderColor: theme.colors.primary,
     borderWidth: theme.borderWidths.thick,
-    ...(kind === "target" ? { left: offset } : { right: offset }),
+    // React Flow's own rule already translates a top/bottom handle back by half
+    // its width, so a percentage here centres the dot on its lane.
+    ...(kind === "target"
+      ? { top: offset }
+      : { bottom: offset, left: `${laneCentre(lane)}%` }),
   };
 }
+
+/** The centre of one option's lane along the card's bottom edge, as a percentage. */
+function laneCentre(lane: { index: number; count: number } | undefined): number {
+  if (lane === undefined || lane.count <= 1) return HALF_PERCENT;
+  return ((lane.index + 0.5) / lane.count) * FULL_PERCENT;
+}
+
+const FULL_PERCENT = 100;
+const HALF_PERCENT = 50;
 
 /**
  * The canvas itself. React Flow reads its edges, handles and selection box from

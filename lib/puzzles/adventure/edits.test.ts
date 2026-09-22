@@ -8,7 +8,6 @@ import {
   copyOfAdventure,
   removeNode,
   removeOption,
-  setNodePositions,
   setOptionTarget,
   setStartNode,
   starterAdventure,
@@ -115,10 +114,10 @@ describe("options", () => {
 });
 
 describe("nodes", () => {
-  it("adds a node at the given spot", () => {
-    const after = addNode(graph(), { x: 9, y: 9 });
+  it("adds a node", () => {
+    const after = addNode(graph());
     expect(after.nodes).toHaveLength(4);
-    expect(after.nodes[3]?.position).toEqual({ x: 9, y: 9 });
+    expect(after.nodes[3]?.options).toEqual([]);
   });
 
   it("edits a node's own fields only", () => {
@@ -129,18 +128,5 @@ describe("nodes", () => {
 
   it("moves the start", () => {
     expect(setStartNode(graph(), "right").startNodeId).toBe("right");
-  });
-});
-
-describe("setNodePositions", () => {
-  it("returns the same object when nothing moved", () => {
-    const before = graph();
-    const same = setNodePositions(before, new Map([["start", { x: 0, y: 0 }]]));
-    expect(same).toBe(before);
-  });
-
-  it("rounds the coordinates it does write", () => {
-    const after = setNodePositions(graph(), new Map([["start", { x: 10.4, y: -3.6 }]]));
-    expect(after.nodes[0]?.position).toEqual({ x: 10, y: -4 });
   });
 });

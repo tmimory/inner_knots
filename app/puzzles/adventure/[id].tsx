@@ -15,23 +15,11 @@ import {
 } from "@/lib/domain/adventure";
 import { pluralize, truncate } from "@/lib/format";
 import { addNode } from "@/lib/puzzles/adventure/edits";
-import { ADVENTURE_LAYOUT, layoutAdventure } from "@/lib/puzzles/adventure/layout";
 import { cn } from "@/lib/utils";
 import { durations } from "@/theme";
 
 /** How long the builder waits after the last edit before writing the draft back. */
 const AUTOSAVE_DELAY_MS = durations.slow * 4;
-
-/** Where a new node lands: to the right of everything already on the canvas, as the graph flows. */
-function nextNodePosition(nodes: readonly AdventureNode[]): {
-  x: number;
-  y: number;
-} {
-  if (nodes.length === 0) return { x: 0, y: 0 };
-  const right = Math.max(...nodes.map((node) => node.position.x + ADVENTURE_LAYOUT.nodeWidth));
-  const top = Math.min(...nodes.map((node) => node.position.y));
-  return { x: right + ADVENTURE_LAYOUT.rankGap, y: top };
-}
 
 /** How much of a card's question the inspector heading carries before it clamps. */
 const PANEL_HEADING_CHARS = 64;
@@ -82,10 +70,16 @@ export default function AdventureBuilderScreen() {
     return () => clearTimeout(timer);
   }, [dirty, saving, save]);
 
-  const addBeside = useCallback(() => {
+  /**
+   * A new card, selected so the inspector is already pointed at it.
+   *
+   * Nothing is said about where it goes: the canvas lays the tree out from its
+   * own shape, so an orphan card sits in a rank of its own until an option is
+   * pointed at it, and re-frames itself the moment one is.
+   */
+  const addCard = useCallback(() => {
     if (!draft) return;
-    const position = nextNodePosition(draft.nodes);
-    const next = addNode(draft, position);
+    const next = addNode(draft);
     setDraft(next);
     setSelectedNodeId(next.nodes[next.nodes.length - 1]?.id ?? null);
   }, [draft, setDraft]);
@@ -122,22 +116,14 @@ export default function AdventureBuilderScreen() {
       />
 
       <View className="flex-row flex-wrap items-center gap-sm">
-        {/* Three verbs in one voice. An outlined "+ Add node" beside two bare ones
-            made the toolbar read as a control and two afterthoughts; the tools of
-            a workshop are the same size and the same weight, and the one filled
-            button on the row is Run. */}
-        <Button variant="ghost" size="sm" onPress={addBeside}>
+        {/* Two verbs in one voice. An outlined "+ Add node" beside a bare one made
+            the toolbar read as a control and an afterthought; the tools of a
+            workshop are the same size and the same weight, and the one filled
+            button on the row is Run. "Auto-layout" is gone with the dragging it
+            used to undo: the tree is always laid out, and the canvas's own fit
+            control is what brings it all back into view. */}
+        <Button variant="ghost" size="sm" onPress={addCard}>
           <Text>+ Add node</Text>
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onPress={() => {
-            setDraft(layoutAdventure(draft));
-            setFitSignal((signal) => signal + 1);
-          }}
-        >
-          <Text>Auto-layout</Text>
         </Button>
         <Button variant="ghost" size="sm" onPress={() => setShowIssues((open) => !open)}>
           <Text>{showIssues ? "Hide problems" : "Validate"}</Text>
@@ -147,8 +133,8 @@ export default function AdventureBuilderScreen() {
 
         {/* What the draft's state is: a marginal note at the far end of the row,
             beside the button it is about, with a check so it reads as a state
-            rather than as a fourth thing to press. Set among the three verbs at
-            the left, it read as a fourth verb. */}
+            rather than as a third thing to press. Set among the verbs at the left,
+            it read as one more verb. */}
         <Text variant="meta">
           {saveGlyph}
           {saveState}

@@ -9,7 +9,7 @@ import type { AdventurePathSummary, AdventureSummary } from "@/lib/domain/summar
 /** React Flow's node type name for a decision card. */
 export const DECISION_NODE = "decision";
 
-/** The id of the single target handle every node has, on its left edge. */
+/** The id of the single target handle every node has, centred on its top edge. */
 export const NODE_TARGET_HANDLE = "in";
 
 /** What one decision card needs to draw itself, in either mode. */
@@ -41,7 +41,7 @@ export type AdventureEdgeData = {
 
 export type AdventureBuilderProps = {
   adventure: Adventure;
-  /** Called for every gesture that changes the graph: drag, connect, disconnect. */
+  /** Called for every gesture that changes the graph: connect, disconnect, delete. */
   onChange: (next: Adventure) => void;
   selectedNodeId: string | null;
   onSelectNode: (nodeId: string | null) => void;

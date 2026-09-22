@@ -2,9 +2,10 @@
  * Adventures as screen state: the shelf at `/puzzles/adventure`, and one
  * editable draft for the builder.
  *
- * The builder edits a whole `Adventure` in memory — dragging a node is a change
- * to `node.position`, connecting an edge is a change to `option.nextNodeId` —
- * and saves it back with a single PUT. So `useAdventure` holds a draft beside
+ * The builder edits a whole `Adventure` in memory — connecting an edge is a
+ * change to `option.nextNodeId`, writing a card is a change to its text; the
+ * canvas positions are derived, never stored — and saves it back with a single
+ * PUT. So `useAdventure` holds a draft beside
  * the copy the store last confirmed and reports whether the two have drifted
  * apart, rather than writing through on every keystroke. A save folds into that
  * baseline rather than into the loaded resource, so edits made while the request

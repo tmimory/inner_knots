@@ -2,10 +2,15 @@
  * One decision card on the canvas: a parchment node with a context, the question
  * it asks, and one row per option.
  *
- * Every option row carries its own source handle, whose id *is* the option id —
- * that is what lets a connection say which option leads where. A row with no
- * outgoing edge is an ending, and says so. In the outcome view the same card
- * shows how many walks came through it and how they split.
+ * The tree runs downwards: an edge arrives at the handle centred on the card's
+ * top edge, and every option has its own source handle along the bottom edge,
+ * whose id *is* the option id — that is what lets a connection say which option
+ * leads where. The handles come out left to right in the order of the rows above
+ * them, and once a card has more than one option the rows are numbered so a
+ * reader can say which edge belongs to which line without counting. An option
+ * with no outgoing edge is an ending, said by the shape of its handle. In the
+ * outcome view the same card shows how many walks came through it and how they
+ * split.
  *
  * The whole tree is fitted into the canvas, which means a card is read at
  * something near two-thirds of the size it is drawn at. So the card is set a step
@@ -43,6 +48,7 @@ export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
   const theme = useTheme();
   const { node, isStart, isTarget, hits, share, optionHits, onPath, unvisited } = data;
   const counted = hits !== undefined;
+  const forks = node.options.length > 1;
 
   return (
     // No `overflow-hidden`: the option handles sit outside the card border.
@@ -60,7 +66,7 @@ export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
         <Handle
           type="target"
           id={NODE_TARGET_HANDLE}
-          position={Position.Left}
+          position={Position.Top}
           style={handleStyle(theme, "target")}
         />
       )}
@@ -111,14 +117,24 @@ export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
           </View>
         ) : null}
 
-        {node.options.map((option) => (
+        {node.options.map((option, index) => (
           <View
             key={option.id}
-            // The row an option's edge leaves from is also the row you aim at to
-            // drag one, so it answers the cursor.
-            className="flex-row items-center gap-xs px-md transition-colors duration-fast web:hover:bg-muted/subtle"
+            // The rows are the key to the handles beneath the card, so the one
+            // under the cursor lights up with the edge the reader is following.
+            className="flex-row items-center gap-sm px-md transition-colors duration-fast web:hover:bg-muted/subtle"
             style={{ height: ADVENTURE_LAYOUT.nodeOptionHeight }}
           >
+            {/*
+              Which handle along the bottom edge is this row's. Only worth saying
+              on a card that forks: one option has one handle, centred, and a "1"
+              beside it would be a number for its own sake.
+            */}
+            {forks ? (
+              <Text variant="muted" className="w-lg font-mono text-base tabular">
+                {index + 1}
+              </Text>
+            ) : null}
             <Text className="flex-1 text-lg" numberOfLines={1}>
               {option.label}
             </Text>
@@ -127,25 +143,43 @@ export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
                 {optionHits?.[option.id] ?? 0}
               </Text>
             ) : null}
-            {/*
-              An option that ends the adventure used to say "end" in a seven-pixel
-              word beside its handle — a third type size on the card, unreadable at
-              any zoom a whole graph is read at. The ending is now the handle
-              itself: a filled square where every other option has a round dot, so
-              the terminals of a tree are countable at a glance and the card keeps
-              its two sizes.
-            */}
-            <Handle
-              type="source"
-              id={option.id}
-              position={Position.Right}
-              className={option.nextNodeId === null ? TERMINAL_HANDLE_CLASS : undefined}
-              style={handleStyle(theme, option.nextNodeId === null ? "terminal" : "source")}
-              aria-label={option.nextNodeId === null ? "ends the adventure" : undefined}
-            />
           </View>
         ))}
       </View>
+
+      {/*
+        The source handles, along the card's bottom edge rather than inside the
+        rows: a handle positions itself against the nearest box that has a
+        position, and a row is one — hung on a row it would sit on the row's own
+        bottom edge, halfway up the card.
+
+        An option that ends the adventure used to say "end" in a seven-pixel word
+        beside its handle — a third type size on the card, unreadable at any zoom
+        a whole graph is read at. The ending is now the handle itself: a filled
+        square where every other option has a round dot, so the terminals of a
+        tree are countable at a glance and the card keeps its two sizes.
+      */}
+      {node.options.map((option, index) => {
+        const ending = option.nextNodeId === null;
+        return (
+          <Handle
+            key={option.id}
+            type="source"
+            id={option.id}
+            position={Position.Bottom}
+            className={ending ? TERMINAL_HANDLE_CLASS : undefined}
+            style={handleStyle(theme, ending ? "terminal" : "source", {
+              index,
+              count: node.options.length,
+            })}
+            aria-label={
+              ending
+                ? `${option.label} — ends the adventure`
+                : `${option.label} — leads on`
+            }
+          />
+        );
+      })}
     </View>
   );
 }

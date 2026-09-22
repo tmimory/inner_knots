@@ -45,11 +45,14 @@ const ZOOM = { min: 0.15, max: 2 } as const;
  * How the whole graph is framed when the canvas opens, and every time the reader
  * asks for a fit.
  *
- * `padding` is the margin left round the tree, as a share of its own size: a tenth
- * is enough for the drawing to sit in the canvas rather than against its edges,
- * and no more, because every pixel of margin is a pixel off the zoom the cards are
- * read at. `maxZoom` of 1 is the other half: a card blown up past its own type
- * sizes reads as a mistake.
+ * `maxZoom` of 1: a card blown up past its own type sizes reads as a mistake.
+ *
+ * The margin round the tree is a fixed number of pixels rather than a share of the
+ * drawing's own size. A share cost the most on exactly the graph that could least
+ * afford it — a tenth of a tree that runs four ranks down the canvas is a hundred
+ * and forty pixels of nothing, taken off the zoom the cards are read at — and the
+ * layout already leaves its own margin inside the bounds. So the frame asks only
+ * for enough room that the drawing is not against the canvas edge.
  *
  * There is no floor. The canvas used to refuse to zoom out past the point where a
  * card's smallest line hit the app's type floor, and then re-frame on the opening
@@ -58,7 +61,7 @@ const ZOOM = { min: 0.15, max: 2 } as const;
  * cannot see all of is not a graph, so the whole tree is fitted, and legibility is
  * bought where it is actually paid for: in the size the cards are drawn at.
  */
-const FIT = { padding: 0.1, maxZoom: 1 } as const;
+const FIT = { maxZoom: 1 } as const;
 
 /**
  * How many cards a graph needs before the mini-map earns its corner. Below this
@@ -101,19 +104,25 @@ function Canvas(props: AdventureCanvasProps) {
    * last branch outside the frame.
    */
   const frame = useCallback(async () => {
-    await fitView({ ...FIT, minZoom: ZOOM.min, duration: theme.durations.normal });
+    await fitView({
+      ...FIT,
+      padding: `${theme.spacing.md}px`,
+      minZoom: ZOOM.min,
+      duration: theme.durations.normal,
+    });
   }, [fitView, theme]);
 
-  // The opening frame, once React Flow has measured the cards: before that a fit
-  // is computed against zero-sized nodes and lands wherever.
+  // The opening frame, once React Flow has measured the cards — before that a fit
+  // is computed against zero-sized nodes and lands wherever — and again whenever
+  // the tree's shape changes, because the layout has just moved every card and a
+  // new branch would otherwise be laid out somewhere off screen. Prose edits do
+  // not change the shape, so writing a card never fights the reader's own pan.
   useEffect(() => {
     if (!nodesReady) return;
     void frame();
-    // Only on the first measurement: re-framing on every edit would fight the
-    // reader's own pan. `frame` changes with the draft, which is exactly what
-    // must not retrigger this.
+    // `frame` changes with the theme, which is not a reason to re-frame.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodesReady]);
+  }, [nodesReady, graph.layoutKey]);
 
   // The screen asks for a fit by bumping a number, which survives this canvas
   // being mounted later than the toolbar that commands it.
@@ -131,7 +140,6 @@ function Canvas(props: AdventureCanvasProps) {
       nodeTypes={adventureNodeTypes}
       onNodesChange={graph.onNodesChange}
       onEdgesChange={graph.onEdgesChange}
-      onNodeDragStop={graph.onNodeDragStop}
       onConnect={graph.onConnect}
       onEdgesDelete={graph.onEdgesDelete}
       onNodesDelete={graph.onNodesDelete}
@@ -139,7 +147,10 @@ function Canvas(props: AdventureCanvasProps) {
       onNodeClick={(_event, node) => onSelectNode?.(node.id)}
       onPaneClick={() => onSelectNode?.(null)}
       onEdgeDoubleClick={(_event, edge) => graph.onEdgesDelete([edge])}
-      nodesDraggable={builder}
+      // Cards are placed by the layout, never by hand: an adventure's picture is
+      // its shape, so the same tree draws the same way for the author and for the
+      // reader of a run. Dragging one would only desynchronise the two.
+      nodesDraggable={false}
       nodesConnectable={builder}
       elementsSelectable={builder}
       edgesReconnectable={false}

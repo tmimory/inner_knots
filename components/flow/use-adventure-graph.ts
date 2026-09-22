@@ -8,12 +8,13 @@
  *   options[].nextNodeId  ->  edges          (one edge per option that leads on)
  *   edge connected        ->  nextNodeId     (the target node's id)
  *   edge deleted          ->  nextNodeId     (back to null: an ending)
- *   node dragged          ->  node.position  (committed when the drag stops)
  *
- * — so nothing about the canvas is stored except the coordinates the author put
- * the cards at. React Flow's own node list is kept in local state rather than
- * derived on every render, because that is where it caches each card's measured
- * size; the adventure is only written to when a gesture finishes.
+ * — so nothing about the canvas is stored at all. Where a card sits is not the
+ * author's to decide: `adventureLayout` derives the whole tree from its shape on
+ * every structural change, which is why the cards do not drag. React Flow's own
+ * node list is still kept in local state rather than derived on every render,
+ * because that is where it caches each card's measured size; the adventure is
+ * only written to when a gesture finishes.
  */
 import { applyEdgeChanges, applyNodeChanges } from "@xyflow/react";
 import type {
@@ -28,7 +29,12 @@ import { useCallback, useMemo, useState } from "react";
 
 import type { Adventure } from "@/lib/domain/adventure";
 import type { AdventurePathSummary, AdventureSummary } from "@/lib/domain/summary";
-import { removeNode, setNodePositions, setOptionTarget } from "@/lib/puzzles/adventure/edits";
+import { removeNode, setOptionTarget } from "@/lib/puzzles/adventure/edits";
+import {
+  adventureLayout,
+  adventureShape,
+  type AdventurePoint,
+} from "@/lib/puzzles/adventure/layout";
 import type { Theme } from "@/theme";
 
 import { edgePathOptions, edgeLabelBackgroundStyle, edgeLabelStyle, edgeStyle } from "./flow-style";
@@ -120,14 +126,22 @@ function incomingTargets(adventure: Adventure): Set<string> {
   return targets;
 }
 
+/** Where a card goes when the layout has nothing to say about it. */
+const ORIGIN = { x: 0, y: 0 } as const;
+
 /** A count as a share of the walks recorded; zero when there are none yet. */
 function share(count: number, walks: number): number {
   return walks > 0 ? count / walks : 0;
 }
 
-/** The decision cards, in the order the adventure stores them. */
+/**
+ * The decision cards, in the order the adventure stores them, at the coordinates
+ * the layout derived for them. A card the layout could not place (it is not in
+ * `positions` at all) falls back to the origin rather than disappearing.
+ */
 export function toFlowNodes(
   adventure: Adventure,
+  positions: ReadonlyMap<string, AdventurePoint>,
   options: { selectedNodeId?: string | null; decoration?: GraphDecoration } = {},
 ): AdventureFlowNode[] {
   const { selectedNodeId, decoration } = options;
@@ -138,7 +152,7 @@ export function toFlowNodes(
     return {
       id: node.id,
       type: DECISION_NODE,
-      position: node.position,
+      position: positions.get(node.id) ?? ORIGIN,
       selected: selectedNodeId === node.id,
       data: {
         node,
@@ -243,10 +257,14 @@ export type UseAdventureGraphInput = {
 export type UseAdventureGraph = {
   nodes: AdventureFlowNode[];
   edges: AdventureFlowEdge[];
+  /**
+   * The shape the current positions were laid out from. It changes only when a
+   * card, an option or a target does, so the canvas can re-frame the tree on a
+   * structural edit without fighting the reader's pan on every keystroke.
+   */
+  layoutKey: string;
   onNodesChange: (changes: NodeChange<AdventureFlowNode>[]) => void;
   onEdgesChange: (changes: EdgeChange<AdventureFlowEdge>[]) => void;
-  /** Commits the dragged coordinates; the drag itself is local state. */
-  onNodeDragStop: () => void;
   onConnect: (connection: Connection) => void;
   /** Deleting an edge is the option it stood for going back to being an ending. */
   onEdgesDelete: (removed: AdventureFlowEdge[]) => void;
@@ -260,9 +278,20 @@ export type UseAdventureGraph = {
 export function useAdventureGraph(input: UseAdventureGraphInput): UseAdventureGraph {
   const { adventure, theme, selectedNodeId = null, decoration, onChange } = input;
 
+  // Dagre is re-run only when the tree's shape changes, not when its prose does:
+  // writing a question must not shuffle the cards under the author's cursor.
+  const layoutKey = adventureShape(adventure);
+  const positions = useMemo(
+    () => adventureLayout(adventure),
+    // The shape is what the layout reads; the adventure object changes on every
+    // keystroke and would otherwise re-place the whole tree.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [layoutKey],
+  );
+
   const seedNodes = useMemo(
-    () => toFlowNodes(adventure, { selectedNodeId, decoration }),
-    [adventure, selectedNodeId, decoration],
+    () => toFlowNodes(adventure, positions, { selectedNodeId, decoration }),
+    [adventure, positions, selectedNodeId, decoration],
   );
   const seedEdges = useMemo(
     () => toFlowEdges(adventure, theme, { decoration }),
@@ -290,15 +319,6 @@ export function useAdventureGraph(input: UseAdventureGraphInput): UseAdventureGr
   const onEdgesChange = useCallback((changes: EdgeChange<AdventureFlowEdge>[]) => {
     setEdges((current) => applyEdgeChanges(changes, current));
   }, []);
-
-  const onNodeDragStop = useCallback(() => {
-    if (!onChange) return;
-    const moved = setNodePositions(
-      adventure,
-      new Map(nodes.map((node) => [node.id, node.position])),
-    );
-    if (moved !== adventure) onChange(moved);
-  }, [adventure, nodes, onChange]);
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -346,9 +366,9 @@ export function useAdventureGraph(input: UseAdventureGraphInput): UseAdventureGr
   return {
     nodes,
     edges,
+    layoutKey,
     onNodesChange,
     onEdgesChange,
-    onNodeDragStop,
     onConnect,
     onEdgesDelete,
     onNodesDelete,

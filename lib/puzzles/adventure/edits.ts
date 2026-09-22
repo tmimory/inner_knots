@@ -2,8 +2,8 @@
  * Every change the builder can make to an adventure, as pure functions.
  *
  * The screens hold one `Adventure` in state and replace it wholesale, so each
- * gesture — drag a card, connect an option, rename a branch, delete a node — is
- * one of these. Keeping them here rather than inside the components is what lets
+ * gesture — connect an option, rename a branch, delete a node — is one of these.
+ * Keeping them here rather than inside the components is what lets
  * the canvas, the inspector and the list all agree on what "delete a node" means,
  * and what makes the awkward part testable: removing a node has to clean up the
  * options that pointed at it, and the start node if that is what it was.
@@ -31,9 +31,15 @@ export function newAdventureOption(index: number): AdventureOption {
   return { id: newId("opt"), label: `Option ${index + 1}`, nextNodeId: null };
 }
 
-/** A new, empty decision node. Its prose is the author's to write, not ours. */
-export function newAdventureNode(position: { x: number; y: number }): AdventureNode {
-  return { id: newId("node"), position, context: "", decision: "", options: [] };
+/**
+ * A new, empty decision node. Its prose is the author's to write, not ours.
+ *
+ * `position` is the origin, and stays there: the canvas lays the tree out from
+ * its own shape every time it draws, so a stored coordinate is a field the schema
+ * still carries rather than a place a card is.
+ */
+export function newAdventureNode(): AdventureNode {
+  return { id: newId("node"), position: { x: 0, y: 0 }, context: "", decision: "", options: [] };
 }
 
 /**
@@ -43,7 +49,7 @@ export function newAdventureNode(position: { x: number; y: number }): AdventureN
  * the builder should show — the graph is storable, it is just not runnable.
  */
 export function starterAdventure(): AdventureInput {
-  const start = newAdventureNode({ x: 0, y: 0 });
+  const start = newAdventureNode();
   return {
     id: newId("adv"),
     name: UNTITLED_ADVENTURE,
@@ -81,16 +87,16 @@ function mapNode(
   };
 }
 
-/** Adds an empty node at a spot on the canvas. */
-export function addNode(adventure: Adventure, position: { x: number; y: number }): Adventure {
-  return { ...adventure, nodes: [...adventure.nodes, newAdventureNode(position)] };
+/** Adds an empty node. Where it lands is the layout's business, not the caller's. */
+export function addNode(adventure: Adventure): Adventure {
+  return { ...adventure, nodes: [...adventure.nodes, newAdventureNode()] };
 }
 
 /** Edits a node's own fields. Options are changed through the option helpers. */
 export function updateNode(
   adventure: Adventure,
   nodeId: string,
-  patch: Partial<Pick<AdventureNode, "context" | "decision" | "position">>,
+  patch: Partial<Pick<AdventureNode, "context" | "decision">>,
 ): Adventure {
   return mapNode(adventure, nodeId, (node) => ({ ...node, ...patch }));
 }
@@ -161,19 +167,4 @@ export function removeOption(adventure: Adventure, nodeId: string, optionId: str
     ...node,
     options: node.options.filter((option) => option.id !== optionId),
   }));
-}
-
-/** Copies canvas coordinates onto the graph, unchanged where nothing moved. */
-export function setNodePositions(
-  adventure: Adventure,
-  positions: ReadonlyMap<string, { x: number; y: number }>,
-): Adventure {
-  let moved = false;
-  const nodes = adventure.nodes.map((node) => {
-    const next = positions.get(node.id);
-    if (!next || (next.x === node.position.x && next.y === node.position.y)) return node;
-    moved = true;
-    return { ...node, position: { x: Math.round(next.x), y: Math.round(next.y) } };
-  });
-  return moved ? { ...adventure, nodes } : adventure;
 }
