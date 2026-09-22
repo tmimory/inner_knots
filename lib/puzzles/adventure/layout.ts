@@ -110,6 +110,29 @@ export function optionLaneCentre(index: number, count: number): number {
   return (index + 0.5) / count;
 }
 
+/** How much canvas the laid-out tree covers: the far edge of its lowest and rightmost cards, plus the layout's own margin. */
+export type AdventureExtent = { width: number; height: number };
+
+/**
+ * The size of the drawing `adventureLayout` produces.
+ *
+ * A canvas drawn under a column has no row to fill, so it is given the height the
+ * tree needs to be read at full size, and this is that height: nothing about it
+ * is stored, and it changes only when the tree's shape does.
+ */
+export function adventureExtent(adventure: Adventure): AdventureExtent {
+  const placed = adventureLayout(adventure);
+  let width = 0;
+  let height = 0;
+  for (const node of adventure.nodes) {
+    const point = placed.get(node.id);
+    if (!point) continue;
+    width = Math.max(width, point.x + ADVENTURE_LAYOUT.nodeWidth);
+    height = Math.max(height, point.y + adventureNodeHeight(node));
+  }
+  return { width: width + ADVENTURE_LAYOUT.margin, height: height + ADVENTURE_LAYOUT.margin };
+}
+
 /**
  * Everything the layout depends on, as one string.
  *

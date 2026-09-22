@@ -152,20 +152,24 @@ export function NodeEditor({ adventure, node, onChange, onRemoved }: NodeEditorP
             </Button>
           </View>
 
-          <Textarea
-            rows={ROWS.outcome}
-            maxLength={ADVENTURE_LIMITS.outcome}
-            placeholder="Outcome, injected into the next step"
-            accessibilityLabel={`Outcome for option ${index + 1}`}
-            value={option.outcome ?? ""}
-            onChangeText={(outcome) =>
-              onChange(
-                updateOption(adventure, node.id, option.id, {
-                  outcome: outcome === "" ? undefined : outcome,
-                }),
-              )
-            }
-          />
+          {/* Named like the card's own fields: a second box under the label with
+              no word over it read as a footnote, not as the outcome. */}
+          <Field label="Outcome">
+            <Textarea
+              rows={ROWS.outcome}
+              maxLength={ADVENTURE_LIMITS.outcome}
+              placeholder="What happens, injected into the next step"
+              accessibilityLabel={`Outcome for option ${index + 1}`}
+              value={option.outcome ?? ""}
+              onChangeText={(outcome) =>
+                onChange(
+                  updateOption(adventure, node.id, option.id, {
+                    outcome: outcome === "" ? undefined : outcome,
+                  }),
+                )
+              }
+            />
+          </Field>
           <Text variant="muted">{targetLabel(adventure, option.nextNodeId)}</Text>
         </View>
       ))}

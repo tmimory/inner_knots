@@ -4,6 +4,7 @@ import type { Adventure, AdventureNode, AdventureOption } from "@/lib/domain/adv
 
 import {
   ADVENTURE_LAYOUT,
+  adventureExtent,
   adventureLayout,
   adventureNodeHeight,
   adventureShape,
@@ -252,6 +253,31 @@ function crossedThreeDeep(): Adventure {
     updatedAt: "2026-01-01T00:00:00.000Z",
   };
 }
+
+describe("adventureExtent", () => {
+  it("reaches the far edge of the lowest and rightmost cards, plus the margin", () => {
+    const adventure = tree();
+    const placed = adventureLayout(adventure);
+    const extent = adventureExtent(adventure);
+    const right = Math.max(
+      ...adventure.nodes.map((node) => positionOf(placed, node.id).x + ADVENTURE_LAYOUT.nodeWidth),
+    );
+    const bottom = Math.max(
+      ...adventure.nodes.map((node) => positionOf(placed, node.id).y + adventureNodeHeight(node)),
+    );
+    expect(extent).toEqual({
+      width: right + ADVENTURE_LAYOUT.margin,
+      height: bottom + ADVENTURE_LAYOUT.margin,
+    });
+  });
+
+  it("is empty for an adventure with no cards", () => {
+    expect(adventureExtent({ ...tree(), nodes: [], startNodeId: "start" })).toEqual({
+      width: ADVENTURE_LAYOUT.margin,
+      height: ADVENTURE_LAYOUT.margin,
+    });
+  });
+});
 
 describe("optionLaneCentre", () => {
   it("centres the only handle a card has", () => {

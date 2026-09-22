@@ -23,8 +23,9 @@ import {
   useReactFlow,
 } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, type CSSProperties } from "react";
-import { View } from "react-native";
+import { View, useWindowDimensions } from "react-native";
 
+import { adventureExtent, adventureShape } from "@/lib/puzzles/adventure/layout";
 import { useTheme } from "@/theme";
 
 import { useFlowChromeStyle } from "./chrome-style.web";
@@ -209,25 +210,44 @@ function Canvas(props: AdventureCanvasProps) {
 /** The canvas, with the React Flow store it needs around it. */
 export default function AdventureCanvas(props: AdventureCanvasProps) {
   const theme = useTheme();
+  const { height: windowHeight } = useWindowDimensions();
+
+  // The tree's own height at full size, re-measured only when its shape changes:
+  // the prose on a card does not move the cards.
+  const shape = adventureShape(props.adventure);
+  const treeHeight = useMemo(
+    () => adventureExtent(props.adventure).height,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [shape],
+  );
+
+  /*
+    How tall the canvas is: as tall as the tree needs to be read at full size,
+    plus the frame's own padding at each end, so the opening fit lands at 1:1.
+    Never shorter than the theme's canvas — a two-card tree still wants a field
+    to be dragged onto — and never taller than the window, since a canvas that
+    outgrows the window can only be scrolled past, not looked at; past that the
+    fit does its work.
+
+    A fixed height rather than `h-full`: the canvas now sits in a column with the
+    inspector under it, and a full-height box in a column that is only as tall as
+    its contents resolved to the height of the page itself — twelve hundred pixels
+    of dots with the tree floating in the top third of them.
+  */
+  const height = Math.min(
+    Math.max(treeHeight + theme.spacing.md * 2, theme.layout.canvas),
+    windowHeight,
+  );
 
   return (
     /*
       The canvas has no frame of its own.
 
       It used to wear the same hairline an Input wears, which made a 1000px box of
-      dots read as a giant text field, and put a second edge a few pixels from the
-      rule that already divides it from the inspector. What tells the graph's
-      whitespace from the page's now is the dotted ground and the cards on it.
-
-      `h-full` with a floor: the canvas takes the whole height its row is given —
-      the screen hands that row the viewport's remainder — so the page ends where
-      the window does rather than trailing off into three hundred pixels of
-      parchment.
+      dots read as a giant text field. What tells the graph's whitespace from the
+      page's is the dotted ground and the cards on it.
     */
-    <View
-      style={{ minHeight: theme.layout.canvas }}
-      className="h-full w-full overflow-hidden"
-    >
+    <View style={{ height }} className="w-full overflow-hidden">
       {/*
         The focus wraps the React Flow store rather than sitting inside it,
         because both halves of the coupling need it: the cards, which React Flow

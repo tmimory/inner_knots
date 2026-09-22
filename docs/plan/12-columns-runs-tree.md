@@ -85,3 +85,40 @@ resets it to one. One game of a single round is one data point.
 **Owner A** (with 1).
 
 ## Done
+
+All four landed 2026-09-22; the whole tree passed typecheck, lint and 367 tests
+before the per-item commits, and the four critics ran on the stable tree.
+
+- [x] **1.** `SplitPane` is gone from both screens (it stays for the logs and the
+      character form). The dilemma reads Setup, Rules, the run as the footer of
+      Rules, then "What they chose"; "View prompt" sits on the Framing subsection
+      heading. The builder stacks the inspector under the canvas at the reading
+      measure. Follow-up from the stacking: the canvas took `h-full` of a column
+      that was only as tall as itself and grew to the page's height, so it is now
+      sized from the tree (`adventureExtent()` in `layout.ts`): the tree's own
+      height at 1:1 plus the fit padding, floored at `layout.canvas` and capped at
+      the window.
+- [x] **2.** `adventureLayout()` sweeps each rank top-down after dagre, ordering
+      cards by the mean x of the source handles pointing at them and reusing the
+      rank's own x slots. `optionLaneCentre()` is the one lane formula, read by
+      `handleStyle`. `layout.test.ts` counts crossings on two- and three-rank
+      fixtures; the seeded adv-ferryman and adv-ledger go from two crossings to none.
+- [x] **3.** The Games stepper stands for both lengths; the length switch no
+      longer resets it. Results draw the grid for `games > 1 || rounds > 1`
+      ("Game by game" at one round), hide the round header at one column, and the
+      footer counts games and rounds.
+- [x] **4.** `components/flow/flow-focus.tsx` holds the focused option (hover is
+      transient, click pins, pane click releases). Rows set it on pointer
+      enter/leave, edges through `onEdgeMouseEnter/Leave/Click`; the focused edge
+      is primary at the raised width and on top, the row is `bg-muted` + primary.
+      Every source handle on a forked card carries its numeral *beside* it
+      (under it, the edge ran through the digit).
+
+**Critics.** Secrets and design tokens: nothing. Duplication: the run footer row
+(trolley + dilemma) and the results footer (both results components) became
+`components/puzzles/run-footer.tsx` and `results-footer.tsx`. Visual critic, both
+screens 6.5/10. Taken: the canvas height (above) and a label on the option outcome
+field. Left for a later phase, since they are outside this one's four items: the
+payoff matrix as a plain table without cell cards, counters and empty avatars;
+capping the dilemma's form column; sidebar and subsection type tiers; option rows
+that truncate mid-word on the cards.
