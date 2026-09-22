@@ -103,6 +103,26 @@ but no `maxLength` (character name, id) get one.
 `components/puzzles/trolley/object-creator.tsx`, `components/puzzles/adventure/**`,
 `components/puzzles/{count-stepper,roster-bar,section,subsection,variant-select,prompt-view,run-progress}.tsx`.
 
+## 7. Prompt View shows each character's own ending
+
+**Symptom.** The Prompt View always shows the structured ending, even with a
+TypeSafe character seated, because the screens post no style and the preview routes
+default to structured. Runs are unaffected: the runner derives the style per character.
+
+**Design.**
+- The preview is composed *as* a character. `usePromptPreview` takes the roster's
+  characters as viewpoints; the Prompt View shows a selector ("Viewing as") when
+  there is more than one and recomposes on change. With an empty roster the preview
+  falls back to structured and says so.
+- Trolley and adventure: one panel, selector over the roster.
+- Prisoner's dilemma: two panels already, one per seat, each composed with its own
+  seated character's style (the route takes a style per side); no selector.
+
+**Owner F (foundation).** `components/puzzles/prompt-view.tsx`,
+`lib/client/use-prompt-preview.ts`, `lib/client/prompts.ts`, `lib/api/schemas.ts`,
+`app/api/prompts/prisoners-dilemma+api.ts`, `app/puzzles/prisoners-dilemma.tsx`.
+**Owners G and H (after F).** `app/puzzles/trolley.tsx`; `app/puzzles/adventure/[id]/run.tsx`.
+
 ## Done
 
 All six landed 2026-09-22; the whole tree passed typecheck, lint and 342 tests before
@@ -141,3 +161,11 @@ the per-item commits.
       classes working). The focus/four-fifths reveal rule is gone. Character id and
       trolley tags gained their limits. `vitest.config.mts` now collects
       `components/**/*.test.ts`.
+- [x] **7.** `viewpointsOf()` / `seatedCharacters()` in `lib/client/viewpoints.ts`;
+      `usePromptPreview` holds the selected viewpoint and recomposes on change;
+      `PromptView` shows a "Viewing as" chip row (static line for one character,
+      fallback line for none) and a meta line naming the provider and style. The
+      trolley and adventure run screens pass the roster's characters; the dilemma
+      route derives each seat's style from its character server-side and returns
+      `decisionStyles`, shown as a meta line per panel. Verified in the browser for
+      structured, tool and judgment endings on all three screens.

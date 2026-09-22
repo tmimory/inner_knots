@@ -26,7 +26,7 @@ import { previewTrolleyPrompt } from "@/lib/client/prompts";
 import { useCatalogue } from "@/lib/client/use-catalogue";
 import { useCharacters } from "@/lib/client/use-characters";
 import { usePersistedState } from "@/lib/client/use-persisted-state";
-import { usePromptPreview } from "@/lib/client/use-prompt-preview";
+import { seatedCharacters, usePromptPreview } from "@/lib/client/use-prompt-preview";
 import { useRun, useRunStarter } from "@/lib/client/use-run";
 import { pluralize } from "@/lib/format";
 import { RUN_LIMITS, TROLLEY_VARIANTS, type RosterEntry, type TrolleyVariant } from "@/lib/domain/run";
@@ -111,21 +111,37 @@ export default function TrolleyScreen() {
   const [dragging, setDragging] = useState(false);
   const [armed, setArmed] = useState(false);
 
-  const prompt = usePromptPreview(async () => {
-    const { prompt: composed } = await previewTrolleyPrompt({
-      variant: board.variant,
-      track1: board.track1,
-      track2: board.track2,
-    });
-    return [{ system: composed.system, user: composed.user, options: composed.options }];
-  });
+  const characterIndex = useMemo(() => indexById(characters), [characters]);
+
+  /** The roster's characters, in seat order: the faces the preview may be read as. */
+  const seated = useMemo(
+    () => seatedCharacters(board.roster, characterIndex),
+    [board.roster, characterIndex],
+  );
+
+  /**
+   * The prompt as one of the seated characters will read it. The closing
+   * paragraph belongs to whoever answers — a TypeSafe character is never shown a
+   * response format — so the style travels with the selected viewpoint, and an
+   * empty roster falls back to the route's default.
+   */
+  const prompt = usePromptPreview(
+    async (viewpoint) => {
+      const { prompt: composed } = await previewTrolleyPrompt({
+        variant: board.variant,
+        track1: board.track1,
+        track2: board.track2,
+        decisionStyle: viewpoint?.decisionStyle,
+      });
+      return [{ system: composed.system, user: composed.user, options: composed.options }];
+    },
+    { characters: seated },
+  );
 
   const starter = useRunStarter();
   const { run, summary } = useRun(starter.runId);
   const trolleySummary: TrolleySummary | undefined =
     summary?.kind === "trolley" ? summary : undefined;
-
-  const characterIndex = useMemo(() => indexById(characters), [characters]);
 
   /** Track contents resolved to objects; an id the catalogue lost simply drops out. */
   const resolve = useCallback(
@@ -370,10 +386,13 @@ export default function TrolleyScreen() {
         open={prompt.open}
         onOpenChange={prompt.setOpen}
         title="Trolley prompt"
-        description="The puzzle's own words. A character's steering prompt is prepended by the engine and is not shown here."
+        description="The puzzle's own words, closing as the selected character's answer style asks — the steering prompt the engine prepends is not shown here."
         panels={prompt.panels}
         loading={prompt.loading}
         error={prompt.error}
+        viewpoints={prompt.viewpoints}
+        viewpointId={prompt.viewpoint?.id}
+        onViewpointChange={prompt.setViewpoint}
       />
     </Screen>
   );

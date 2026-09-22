@@ -13,12 +13,13 @@ import { Button, Label, Switch, Text } from "@/components/ui";
 import { previewAdventurePrompt } from "@/lib/client/prompts";
 import { useAdventure } from "@/lib/client/use-adventures";
 import { useCharacters } from "@/lib/client/use-characters";
-import { usePromptPreview } from "@/lib/client/use-prompt-preview";
+import { seatedCharacters, usePromptPreview } from "@/lib/client/use-prompt-preview";
 import { useRun, useRunStarter } from "@/lib/client/use-run";
 import { validateAdventure } from "@/lib/domain/adventure";
 import { RUN_LIMITS, type RosterEntry } from "@/lib/domain/run";
 import type { AdventureSummary } from "@/lib/domain/summary";
 import { pluralize } from "@/lib/format";
+import { indexById } from "@/lib/utils";
 
 export default function AdventureRunScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -32,11 +33,23 @@ export default function AdventureRunScreen() {
   const [selectedPath, setSelectedPath] = useState<{ runId: string; key: string } | null>(null);
   const [fitSignal, setFitSignal] = useState(0);
 
-  const prompt = usePromptPreview(async () => {
-    if (!adventure) return [];
-    const { prompt: composed } = await previewAdventurePrompt(adventure.id, amnesia);
-    return [{ system: composed.system, user: composed.user, options: composed.options }];
-  });
+  // The roster as characters, so the preview can be read as whichever of them is
+  // selected: the start node's closing instructions belong to the walker.
+  const byId = useMemo(() => indexById(characters), [characters]);
+  const seated = useMemo(() => seatedCharacters(roster, byId), [byId, roster]);
+
+  const prompt = usePromptPreview(
+    async (viewpoint) => {
+      if (!adventure) return [];
+      const { prompt: composed } = await previewAdventurePrompt(
+        adventure.id,
+        amnesia,
+        viewpoint?.decisionStyle,
+      );
+      return [{ system: composed.system, user: composed.user, options: composed.options }];
+    },
+    { characters: seated },
+  );
 
   const starter = useRunStarter();
   const { run, summary } = useRun(starter.runId);
@@ -215,10 +228,13 @@ export default function AdventureRunScreen() {
         open={prompt.open}
         onOpenChange={prompt.setOpen}
         title="The first node, as sent"
-        description="The briefing and the start node. A character's own steering prompt is prepended by the engine."
+        description="The briefing and the start node, closing the way whoever walks the tree will be asked to answer; a character's own steering prompt is prepended by the engine and is not shown here."
         panels={prompt.panels}
         loading={prompt.loading}
         error={prompt.error}
+        viewpoints={prompt.viewpoints}
+        viewpointId={prompt.viewpoint?.id}
+        onViewpointChange={prompt.setViewpoint}
       />
     </Screen>
   );

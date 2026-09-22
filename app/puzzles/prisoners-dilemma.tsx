@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 import { Pressable, View } from "react-native";
 
 import { Avatar } from "@/components/avatars";
+import { decisionStyleMeta } from "@/components/characters/labels";
 import { CountStepper } from "@/components/puzzles/count-stepper";
 import {
   LabeledToggle,
@@ -124,7 +125,10 @@ export default function PrisonersDilemmaScreen() {
 
   /**
    * Round one, as each player will read it. Both panels are composed from the
-   * same config a run would send, so the preview cannot drift from the run.
+   * same config a run would send, so the preview cannot drift from the run —
+   * including the last paragraph, which the route derives from the character in
+   * each seat. Two seats mean two endings on one sheet, so this screen wants no
+   * "Viewing as" selector: both viewpoints are already on it.
    */
   const prompt = usePromptPreview(async () => {
     const preview = await previewPrisonersDilemmaPrompt({
@@ -142,6 +146,7 @@ export default function PrisonersDilemmaScreen() {
             size="sm"
           />
         ) : undefined,
+        meta: decisionStyleMeta(preview.decisionStyles[side], character?.provider),
         system: preview[side].system,
         user: preview[side].user,
         options: preview[side].options,

@@ -9,7 +9,9 @@ import { pluralize } from "@/lib/format";
 import {
   characterDisplayName,
   type Character,
+  type DecisionStyle,
   type OutputMode,
+  type ProviderId,
   type SteeringMode,
 } from "@/lib/domain";
 
@@ -17,6 +19,39 @@ export const OUTPUT_MODE_LABELS: Record<OutputMode, string> = {
   structured: "Structured output",
   tool: "Tool call",
 };
+
+/** Short lowercase forms, for the one metadata line under a character's name. */
+export const OUTPUT_MODE_META: Record<OutputMode, string> = {
+  structured: "structured",
+  tool: "tool call",
+};
+
+/**
+ * How a prompt ends, in the metadata voice.
+ *
+ * A decision style is an output mode plus `judgment`: what a TypeSafe character
+ * gets — state and one choice question, with nothing said about a response
+ * format — and it has no `OutputMode` to be named by. The two shared entries are
+ * spread from `OUTPUT_MODE_META` so a mode is never called two things.
+ */
+export const DECISION_STYLE_META: Record<DecisionStyle, string> = {
+  ...OUTPUT_MODE_META,
+  judgment: "judgment",
+};
+
+/**
+ * The ending a prompt was composed with, in the card metadata voice:
+ * "typesafe · judgment", "anthropic · structured".
+ *
+ * The provider is named because the style follows from it — Jev takes no format
+ * instructions at all — so the line says both where the answer goes and what the
+ * prompt therefore asks for. An unseated seat has no provider and says only the
+ * style, which is the preview's own default rather than anybody's.
+ */
+export function decisionStyleMeta(style: DecisionStyle, provider?: ProviderId): string {
+  const words = DECISION_STYLE_META[style];
+  return provider === undefined ? words : `${provider} · ${words}`;
+}
 
 /**
  * The three modes as a control names them. One word each, so the filter, the
@@ -28,12 +63,6 @@ export const STEERING_MODE_LABELS: Record<SteeringMode, string> = {
   raw: "Raw",
   bio: "Bio",
   full: "Full",
-};
-
-/** Short lowercase forms, for the one metadata line under a character's name. */
-export const OUTPUT_MODE_META: Record<OutputMode, string> = {
-  structured: "structured",
-  tool: "tool call",
 };
 
 /**

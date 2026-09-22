@@ -40,7 +40,14 @@ export function previewTrolleyPrompt(config: TrolleyPromptRequest): Promise<Trol
   return post<TrolleyPromptResponse>("/api/prompts/trolley", { config });
 }
 
-/** Round-one prompts for both sides of a prisoner's dilemma. */
+/**
+ * Round-one prompts for both sides of a prisoner's dilemma.
+ *
+ * Each side's closing instructions are derived on the server from the character
+ * in that seat (`playerA` / `playerB`), and the styles it used come back in
+ * `decisionStyles`. `decisionStyle` is only the fallback for a seat that is
+ * still empty.
+ */
 export function previewPrisonersDilemmaPrompt(
   config: Partial<PrisonersDilemmaConfig> & { decisionStyle?: DecisionStyle },
 ): Promise<PrisonersDilemmaPromptResponse> {
