@@ -4,19 +4,13 @@ import { View } from "react-native";
 import { Label, Text } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
-/**
- * The two moves, in the order every two-by-two on this screen reads them.
- *
- * The payoff matrix and the outcome counts are the same table twice — one asking
- * what each square is worth, one saying how often it happened — so they share
- * their axes rather than each naming them.
- */
-export const MOVES = ["Testify", "Stay silent"] as const;
+/** The two moves, in the order every two-by-two on this screen reads them. */
+const MOVES = [true, false] as const;
 
 export type OutcomeGridProps = {
-  /** Whose move the rows are, named above the row labels. */
+  /** Whose move the rows are: their name labels the column of row headers. */
   rowPlayer: string;
-  /** Whose move the columns are, named above the column labels. */
+  /** Whose move the columns are: their name labels each column header. */
   columnPlayer: string;
   /**
    * The four squares in reading order: both testify, only the row player
@@ -29,11 +23,32 @@ export type OutcomeGridProps = {
 };
 
 /**
- * A two-by-two on the bargain's own axes: the row player's move down the side,
- * the column player's move across the top, one set of headers and no cell chrome.
+ * One axis header: whose move it is, then which move.
  *
- * The squares are already a grid; a border and a caption around each one only
- * repeat what the position says.
+ * The name sits on the header of the row or column it actually names rather than
+ * floating over the table — two names on a line above a two-by-two line up with
+ * nothing, and the reader is left to guess which axis is whose.
+ */
+function AxisHeader({ name, testifies }: { name: string; testifies: boolean }) {
+  return (
+    <View className="gap-xxs">
+      <Label numberOfLines={1}>{name}</Label>
+      <Text variant="meta" numberOfLines={1}>
+        {testifies ? "testifies" : "stays silent"}
+      </Text>
+    </View>
+  );
+}
+
+/**
+ * A two-by-two on the bargain's own axes: the row player's move down the side,
+ * the column player's move across the top.
+ *
+ * The payoff matrix and the outcome counts are the same table twice — one asking
+ * what each square is worth, one saying how often it happened — so they share
+ * their axes rather than each naming them. Whatever chrome a square needs is the
+ * square's own business: a count wants none, and a payoff cell holding two names
+ * and two fields wants an outline.
  */
 export function OutcomeGrid({
   rowPlayer,
@@ -43,43 +58,21 @@ export function OutcomeGrid({
   className,
 }: OutcomeGridProps) {
   return (
-    <View className={cn("gap-sm", className)}>
-      {/*
-        Both axes named on one line, each on the left edge of the column it names:
-        the row player over the column of row labels, the column player over the
-        first of the two move columns. Centring the column player across the pair
-        put it at a third x of its own, so the table had two names, two move
-        labels and four fields starting at four different places.
-      */}
-      <View className="flex-row items-end gap-xl">
-        {/* Over the column of row labels, because that column is this player. */}
-        <View className="w-avatar-xl">
-          <Text variant="meta" numberOfLines={1}>
-            {rowPlayer}
-          </Text>
-        </View>
-        <View className="flex-1">
-          <Text variant="meta" numberOfLines={1}>
-            {columnPlayer}
-          </Text>
-        </View>
-        {/* The second move column, so the name above sits on the first one's edge. */}
-        <View className="flex-1" />
-      </View>
-
-      <View className="flex-row items-end gap-xl">
+    <View className={cn("gap-md", className)}>
+      <View className="flex-row items-end gap-lg border-b-hairline border-border pb-sm">
+        {/* The corner: the column of row headers has its player named on it. */}
         <View className="w-avatar-xl" />
-        {MOVES.map((move) => (
-          <View key={move} className="flex-1">
-            <Label numberOfLines={1}>{move}</Label>
+        {MOVES.map((testifies) => (
+          <View key={String(testifies)} className="flex-1">
+            <AxisHeader name={columnPlayer} testifies={testifies} />
           </View>
         ))}
       </View>
 
-      {MOVES.map((move, row) => (
-        <View key={move} className="flex-row items-start gap-xl">
-          <View className="min-h-control-md w-avatar-xl justify-center">
-            <Label numberOfLines={1}>{move}</Label>
+      {MOVES.map((testifies, row) => (
+        <View key={String(testifies)} className="flex-row items-start gap-lg">
+          <View className="w-avatar-xl pt-xs">
+            <AxisHeader name={rowPlayer} testifies={testifies} />
           </View>
           <View className="flex-1">{cells[row * 2]}</View>
           <View className="flex-1">{cells[row * 2 + 1]}</View>

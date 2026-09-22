@@ -52,6 +52,57 @@ export type AsymmetricPayoffField = (typeof ASYMMETRIC_PAYOFF_FIELDS)[number];
 export type SymmetricPayoffValues = Record<SymmetricPayoffField, string>;
 export type AsymmetricPayoffValues = Record<AsymmetricPayoffField, PayoffPair>;
 
+/** One square of the two-by-two: who testifies in it, and what it stores. */
+export type PayoffCell = {
+  /** The asymmetric field this square stores, which is also its key. */
+  field: AsymmetricPayoffField;
+  /** Whether Player A testifies in this square. */
+  a: boolean;
+  /** Whether Player B testifies in this square. */
+  b: boolean;
+};
+
+/**
+ * The four squares in reading order: A's move down the side, B's across the top.
+ *
+ * The matrix, its headers and its accessibility labels all read off this one
+ * list, so a square cannot mean one thing to the layout and another to the
+ * sentence that describes it.
+ */
+export const PAYOFF_CELLS: readonly PayoffCell[] = [
+  { field: "bothTestify", a: true, b: true },
+  { field: "onlyATestifies", a: true, b: false },
+  { field: "onlyBTestifies", a: false, b: true },
+  { field: "bothSilent", a: false, b: false },
+];
+
+/** One player's move as a sentence: "Socrates testifies", "Hobbes stays silent". */
+export function moveLabel(name: string, testifies: boolean): string {
+  return testifies ? `${name} testifies` : `${name} stays silent`;
+}
+
+/**
+ * What a square is about, in the words the cell's caption uses: "Both testify",
+ * "Only Socrates testifies", "Both stay silent".
+ */
+export function scenarioLabel(cell: PayoffCell, names: { a: string; b: string }): string {
+  if (cell.a && cell.b) return "Both testify";
+  if (!cell.a && !cell.b) return "Both stay silent";
+  return `Only ${cell.a ? names.a : names.b} testifies`;
+}
+
+/**
+ * Which symmetric field a player collects, given their own move and the other's.
+ *
+ * A symmetric matrix stores one outcome per *pair* of moves rather than per
+ * player, so the same four values are read eight times — once for each player of
+ * each square — and this is the mapping that does it.
+ */
+export function symmetricFieldFor(mine: boolean, theirs: boolean): SymmetricPayoffField {
+  if (mine) return theirs ? "bothTestify" : "onlyTestifier";
+  return theirs ? "onlySilent" : "bothSilent";
+}
+
 /**
  * What the matrix starts as.
  *

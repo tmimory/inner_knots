@@ -1,10 +1,11 @@
 import { View } from "react-native";
 
-import { Avatar } from "@/components/avatars";
 import { Text } from "@/components/ui";
 import type { Character } from "@/lib/domain/character";
 import { PLAYER_LABELS, playerNames } from "@/lib/puzzles/prisoners-dilemma/ui-helpers";
 import { cn } from "@/lib/utils";
+
+import { PlayerFace } from "./player-face";
 
 export type PendingAnswersProps = {
   /** The two seats, either of which may still be empty. */
@@ -44,11 +45,7 @@ export function PendingAnswers({ players, className }: PendingAnswersProps) {
             accessibilityLabel={`${label}: no answer yet`}
             className="flex-row items-center gap-sm border-b-hairline border-border py-sm"
           >
-            {character ? (
-              <Avatar shape={character.avatar.shape} color={character.avatar.color} size="sm" />
-            ) : (
-              <View className="h-avatar-sm w-avatar-sm rounded-full border-hairline border-dashed border-border" />
-            )}
+            <PlayerFace character={character} size="sm" />
             <Text variant="meta" numberOfLines={1}>
               {label}
             </Text>

@@ -134,7 +134,7 @@ export default function PrisonersDilemmaScreen() {
     return (["a", "b"] as const).map((side, index): PromptPanel => {
       const character = players[side];
       return {
-        label: `${PLAYER_LABELS[index]} · ${names[side]}`,
+        label: character ? `${PLAYER_LABELS[index]} · ${names[side]}` : PLAYER_LABELS[index],
         accessory: character ? (
           <Avatar
             shape={character.avatar.shape}
@@ -230,8 +230,8 @@ export default function PrisonersDilemmaScreen() {
                         // One sentence does not want seven hundred pixels: the pair
                         // is capped at the measure a line of prose is read at, and
                         // the label sits the screen's own step above its field.
-                        <View key={side} className="max-w-canvas gap-md">
-                          <Label>{`${PLAYER_LABELS[index]} is told…`}</Label>
+                        <View key={side} className="max-w-measure gap-md">
+                          <Label>{`${names[side]} is told…`}</Label>
                           <Textarea
                             rows={2}
                             maxLength={RUN_LIMITS.relationship}
@@ -252,7 +252,7 @@ export default function PrisonersDilemmaScreen() {
                                 ? "You are your opponent's father."
                                 : "You are your opponent's son."
                             }
-                            accessibilityLabel={`What ${PLAYER_LABELS[index]} is told about the other player`}
+                            accessibilityLabel={`What ${names[side]} is told about the other player`}
                           />
                         </View>
                       ))}
@@ -331,7 +331,12 @@ export default function PrisonersDilemmaScreen() {
 
                 <Subsection title="Payoffs">
                   {/* `patch` widens cleanly: every key of the matrix is a key of the setup. */}
-                  <PayoffMatrix value={setup} onChange={patch} names={names} />
+                  <PayoffMatrix
+                    value={setup}
+                    onChange={patch}
+                    names={names}
+                    players={players}
+                  />
                 </Subsection>
 
                 <Subsection title="Game length">

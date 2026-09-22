@@ -5,6 +5,11 @@ import { DEFAULT_CRIME, RUN_LIMITS } from "@/lib/domain/run";
 import {
   DEFAULT_SETUP,
   MIN_ITERATED_ROUNDS,
+  PAYOFF_CELLS,
+  SYMMETRIC_PAYOFF_FIELDS,
+  moveLabel,
+  scenarioLabel,
+  symmetricFieldFor,
   blockedReason,
   decisionTotal,
   iterationsOf,
@@ -182,5 +187,46 @@ describe("playerNames", () => {
       a: "iris",
       b: "kallias",
     });
+  });
+});
+
+const names = { a: "Socrates", b: "Hobbes" };
+
+describe("moveLabel", () => {
+  it("says what one player did, in the words the headers use", () => {
+    expect(moveLabel("Socrates", true)).toBe("Socrates testifies");
+    expect(moveLabel("Hobbes", false)).toBe("Hobbes stays silent");
+  });
+});
+
+describe("scenarioLabel", () => {
+  it("names each square by what happened in it", () => {
+    expect(PAYOFF_CELLS.map((cell) => scenarioLabel(cell, names))).toEqual([
+      "Both testify",
+      "Only Socrates testifies",
+      "Only Hobbes testifies",
+      "Both stay silent",
+    ]);
+  });
+});
+
+describe("symmetricFieldFor", () => {
+  it("reads a player's outcome off their own move and the other's", () => {
+    expect(symmetricFieldFor(true, true)).toBe("bothTestify");
+    expect(symmetricFieldFor(true, false)).toBe("onlyTestifier");
+    expect(symmetricFieldFor(false, true)).toBe("onlySilent");
+    expect(symmetricFieldFor(false, false)).toBe("bothSilent");
+  });
+
+  it("gives the two players of one square the mirrored pair of fields", () => {
+    const [, onlyA] = PAYOFF_CELLS;
+    expect(onlyA).toBeDefined();
+    expect(symmetricFieldFor(onlyA!.a, onlyA!.b)).toBe("onlyTestifier");
+    expect(symmetricFieldFor(onlyA!.b, onlyA!.a)).toBe("onlySilent");
+  });
+
+  it("puts each stored field in exactly one of Player A's four lines", () => {
+    const edited = PAYOFF_CELLS.map((cell) => symmetricFieldFor(cell.a, cell.b));
+    expect([...edited].sort()).toEqual([...SYMMETRIC_PAYOFF_FIELDS].sort());
   });
 });
