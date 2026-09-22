@@ -5,6 +5,7 @@ export { ConvictionList, type ConvictionListProps } from "./conviction-list";
 export { Field, FormSection, type FieldProps } from "./field";
 export { FilterSegments, type FacetOption, type FilterSegmentsProps } from "./filter-segments";
 export { FinalPrompt, type FinalPromptProps } from "./final-prompt";
+export { LockGlyph, SearchGlyph, WarningGlyph, type GlyphProps } from "./glyphs";
 export {
   characterBlurb,
   characterMeta,
@@ -17,4 +18,3 @@ export {
   STEERING_MODE_META,
 } from "./labels";
 export { CHARACTER_SEARCH_PLACEHOLDER, matchesCharacterQuery } from "./search";
-export { Segmented, type SegmentedOption, type SegmentedProps } from "./segmented";

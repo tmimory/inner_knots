@@ -9,6 +9,7 @@
 const SECOND_MS = 1000;
 const MINUTE_MS = 60 * SECOND_MS;
 const HOUR_MS = 60 * MINUTE_MS;
+const DAY_MS = 24 * HOUR_MS;
 
 /** What every formatter shows for a value it cannot read. */
 export const UNKNOWN = "—";
@@ -82,6 +83,44 @@ export function formatStamp(iso: string): string {
   const day = date.toLocaleDateString(undefined, { day: "numeric", month: "short" });
   const time = date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
   return `${day}, ${time}`;
+}
+
+/**
+ * How long ago, as a list reads it: `just now`, `5m ago`, `2h ago`, `yesterday`,
+ * `3d ago`, and beyond a week the exact {@link formatStamp}.
+ *
+ * A row in a list is answering "is this the run I just made?", and `2h ago` answers
+ * it without the reader doing arithmetic against a wall clock. The exact instant is
+ * still worth having, so it belongs in the row's tooltip or on the detail page —
+ * relative time is the headline, not a replacement.
+ *
+ * `now` is a parameter so the caller can pin it (a list that formats fifty rows
+ * should ask the clock once) and so the tests do not depend on when they run.
+ */
+export function formatRelative(iso: string, now: number = Date.now()): string {
+  const date = parseDate(iso);
+  if (!date) return UNKNOWN;
+
+  const elapsed = now - date.getTime();
+  // A clock a little ahead of the server is the common case for "in the future";
+  // anything genuinely scheduled ahead is not something this app shows.
+  if (elapsed < MINUTE_MS) return "just now";
+  if (elapsed < HOUR_MS) return `${Math.floor(elapsed / MINUTE_MS)}m ago`;
+  if (elapsed < DAY_MS) return `${Math.floor(elapsed / HOUR_MS)}h ago`;
+
+  // Past a day, count calendar days rather than 24-hour blocks: 31 hours is
+  // "yesterday" to a reader who has slept once since, not "1d ago".
+  const days = calendarDaysBetween(date, new Date(now));
+  if (days <= 1) return "yesterday";
+  if (days < 7) return `${days}d ago`;
+  return formatStamp(iso);
+}
+
+/** Whole calendar days from `from` to `to`, ignoring the time of day. */
+function calendarDaysBetween(from: Date, to: Date): number {
+  const start = new Date(from.getFullYear(), from.getMonth(), from.getDate()).getTime();
+  const end = new Date(to.getFullYear(), to.getMonth(), to.getDate()).getTime();
+  return Math.round((end - start) / DAY_MS);
 }
 
 /** Date and time together, for a detail header. */

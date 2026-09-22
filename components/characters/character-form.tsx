@@ -1,11 +1,13 @@
 import { useCallback, useMemo, useState } from "react";
-import { ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 
 import { ColorPicker, DEFAULT_AVATAR_SHAPE, ShapePicker } from "@/components/avatars";
 import {
   Button,
   ConfirmDialog,
   Input,
+  Label,
+  Segmented,
   Select,
   SelectContent,
   SelectItem,
@@ -13,8 +15,13 @@ import {
   SelectValue,
   Text,
   Textarea,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useToast,
+  type SegmentedOption,
 } from "@/components/ui";
+import { cn } from "@/lib/utils";
 import { testProvider } from "@/lib/client/providers";
 import { describeApiError, isConflict } from "@/lib/client/errors";
 import { useModels, useProviders } from "@/lib/client/use-providers";
@@ -38,13 +45,13 @@ import { useTheme } from "@/theme";
 import { ConvictionList } from "./conviction-list";
 import { Field, FormSection } from "./field";
 import { FinalPrompt } from "./final-prompt";
+import { LockGlyph, WarningGlyph } from "./glyphs";
 import {
   OUTPUT_MODE_LABELS,
   PROVIDER_DEFAULT_EFFORT,
   STEERING_MODE_HINTS,
   STEERING_MODE_LABELS,
 } from "./labels";
-import { Segmented, type SegmentedOption } from "./segmented";
 
 /** How many rows of the model list are visible before it scrolls. */
 const VISIBLE_MODEL_ROWS = 8;
@@ -56,6 +63,45 @@ const NO_EFFORT = "default";
 function sentenceCase(text: string | null): string | null {
   if (text === null || text === "") return text;
   return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/**
+ * How full a capped field is, for the end of its label row.
+ *
+ * On the label row rather than under the control: a counter hung below a field is
+ * the smallest type on the page, alone on a line of its own, and it pushes the
+ * next label down by a row it did not need. Beside the label it is a fact about
+ * the thing the label names, and the mono figures keep one width as they count.
+ */
+function Counter({ value, max }: { value: number; max: number }) {
+  return <Text variant="subtle" className="font-mono text-xs">{`${value} / ${max}`}</Text>;
+}
+
+/**
+ * The identifier of a character that already exists: one read-only row.
+ *
+ * The identifier is the key in the store, in every run config and in every span
+ * record, so it cannot change — and a label, a value and a line of explanation
+ * stacked at three sizes made the most fixed thing on the form look like its
+ * first field. The reason waits on the lock.
+ */
+function FixedIdentifier({ id }: { id: string }) {
+  return (
+    <View className="min-h-control-md flex-row items-center gap-md">
+      <Label>Identifier</Label>
+      <Text className="font-mono text-sm">{id}</Text>
+      <Tooltip delayDuration={0}>
+        <TooltipTrigger asChild>
+          <Pressable accessibilityLabel="Why the identifier cannot be changed" className="p-xxs">
+            <LockGlyph />
+          </Pressable>
+        </TooltipTrigger>
+        <TooltipContent>
+          <Text>Fixed after creation. Make another character to use a different name.</Text>
+        </TooltipContent>
+      </Tooltip>
+    </View>
+  );
 }
 
 type Draft = {
@@ -313,36 +359,29 @@ export function CharacterForm({
 
   return (
     <View className="gap-2xl wide:flex-row wide:items-start wide:gap-2xl">
-      <View className="max-w-reading flex-1 gap-3xl">
+      <View className="max-w-reading flex-1 gap-2xl">
         {/*
-          No "Identity" heading: the page title is the identity of the thing being
-          edited, and a heading repeating it turns the first field into a section
-          of its own.
+          The first group is a section like the two under it: an untitled block of
+          fields above a titled one reads as a preamble that lost its heading, and
+          the rule under "Model" then looked like the page starting over.
         */}
-        <View className="gap-lg">
-          <Field
-            label="Identifier"
-            error={editing ? null : idError}
-            hint={
-              editing
-                ? "Fixed after creation. Make another character to use a different name."
-                : undefined
-            }
-          >
-            {editing ? (
-              // Fixed for good: a disabled field with live chrome invites the click
-              // it will refuse, so the value is simply set as text.
-              <View className="min-h-control-md justify-center">
-                <Text className="font-mono text-sm">{draft.id}</Text>
-              </View>
-            ) : (
+        <FormSection title="Mask" divider={false}>
+          {editing ? (
+            <FixedIdentifier id={draft.id} />
+          ) : (
+            <Field
+              label="Identifier"
+              error={idError}
+              // The reason the primary is off, beside the field that turns it on.
+              hint={idError === null && draft.id.trim() === "" ? "Name it first." : undefined}
+            >
               <View className="flex-row items-center gap-sm">
                 <Input
                   className="flex-1"
                   value={draft.id}
                   autoCapitalize="none"
                   autoCorrect={false}
-                  placeholder="diogenes"
+                  placeholder="e.g. diogenes"
                   onChangeText={(text) => {
                     setIdTouched(true);
                     setIdConflict(null);
@@ -357,11 +396,11 @@ export function CharacterForm({
                     patch({ id: newId() });
                   }}
                 >
-                  <Text>Generate</Text>
+                  <Text>Random name</Text>
                 </Button>
               </View>
-            )}
-          </Field>
+            </Field>
+          )}
 
           <Field label="Face">
             <ShapePicker
@@ -377,10 +416,10 @@ export function CharacterForm({
               onChange={(color) => patch({ avatar: { ...draft.avatar, color } })}
             />
           </Field>
-        </View>
+        </FormSection>
 
-        <FormSection title="Model" className="pt-lg">
-          <Field label="Provider" error={providerMessage}>
+        <FormSection title="Model">
+          <Field label="Provider">
             <View className="flex-row items-center gap-sm">
               <View className="flex-1">
                 <Select
@@ -402,7 +441,9 @@ export function CharacterForm({
                     });
                   }}
                 >
-                  <SelectTrigger>
+                  {/* A field that is refusing says so on its own edge, not only
+                      in the line under it. */}
+                  <SelectTrigger className={cn(providerMessage !== null && "border-destructive")}>
                     <SelectValue
                       placeholder={providers.loading ? "Reading providers…" : "Choose a provider"}
                     />
@@ -432,24 +473,17 @@ export function CharacterForm({
                 <Text>{testing ? "Asking…" : "Test connection"}</Text>
               </Button>
             </View>
+            {providerMessage !== null ? (
+              <View className="flex-row items-center gap-xs">
+                <WarningGlyph />
+                <Text variant="small" className="flex-1 text-destructive">
+                  {providerMessage}
+                </Text>
+              </View>
+            ) : null}
           </Field>
 
-          <Field
-            label="Model"
-            error={modelError}
-            action={
-              models.error === null ? (
-                <Button
-                  variant="link"
-                  size="sm"
-                  disabled={models.loading || provider === undefined}
-                  onPress={() => void models.refresh()}
-                >
-                  <Text>{models.loading ? "Reading…" : "Refresh models"}</Text>
-                </Button>
-              ) : null
-            }
-          >
+          <Field label="Model" error={modelError}>
             <View className="gap-xs">
               {manual ? (
                 <Input
@@ -487,20 +521,26 @@ export function CharacterForm({
                 </Select>
               )}
               {/*
-                Typing the id is the escape hatch, not the default, so it reads as
-                the text button under the control rather than as a toggle competing
-                with the label. A provider whose catalogue will not load has no
-                choice, so neither button is offered.
+                Everything you can do to the catalogue, on one quiet line under the
+                control it acts on: re-read it, or stop using it and type the id.
+                One above the field in the rubric red and one below it underlined
+                made two utility links look like two more decisions. A provider
+                whose catalogue will not load has neither.
               */}
               {models.error === null ? (
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="self-start"
-                  onPress={() => setManualModel(!manual)}
-                >
-                  <Text>{manual ? "Choose from the catalogue" : "Enter model id manually"}</Text>
-                </Button>
+                <View className="flex-row flex-wrap items-center gap-lg">
+                  <Button
+                    variant="quiet-link"
+                    size="sm"
+                    disabled={models.loading || provider === undefined}
+                    onPress={() => void models.refresh()}
+                  >
+                    <Text>{models.loading ? "Reading…" : "Refresh models"}</Text>
+                  </Button>
+                  <Button variant="quiet-link" size="sm" onPress={() => setManualModel(!manual)}>
+                    <Text>{manual ? "Choose from the catalogue" : "Enter model id manually"}</Text>
+                  </Button>
+                </View>
               ) : null}
             </View>
           </Field>
@@ -542,7 +582,7 @@ export function CharacterForm({
           ) : null}
         </FormSection>
 
-        <FormSection title="Steering" className="pt-lg">
+        <FormSection title="Steering">
           <Field label="Mode" hint={STEERING_MODE_HINTS[steering.mode]}>
             <Segmented
               label="Steering mode"
@@ -553,11 +593,15 @@ export function CharacterForm({
           </Field>
 
           {steering.mode === "raw" ? null : (
-            <Field label="You are…">
+            <Field
+              label="You are…"
+              action={<Counter value={(steering.bio ?? "").length} max={CHARACTER_LIMITS.bio} />}
+            >
               <Textarea
                 value={steering.bio ?? ""}
                 onChangeText={(bio) => patchSteering({ bio })}
                 maxLength={CHARACTER_LIMITS.bio}
+                showCount={false}
                 rows={3}
                 placeholder="a Cynic philosopher who lives in a barrel and distrusts every institution."
               />
@@ -566,7 +610,15 @@ export function CharacterForm({
 
           {steering.mode === "full" ? (
             <>
-              <Field label="Principles">
+              <Field
+                label="Principles"
+                action={
+                  <Counter
+                    value={steering.principles.length}
+                    max={CHARACTER_LIMITS.maxPrinciples}
+                  />
+                }
+              >
                 <ConvictionList
                   value={steering.principles}
                   onChange={(principles) => patchSteering({ principles })}
@@ -577,7 +629,12 @@ export function CharacterForm({
                   placeholder="Follow the argument."
                 />
               </Field>
-              <Field label="Values">
+              <Field
+                label="Values"
+                action={
+                  <Counter value={steering.values.length} max={CHARACTER_LIMITS.maxValues} />
+                }
+              >
                 <ConvictionList
                   value={steering.values}
                   onChange={(values) => patchSteering({ values })}
@@ -598,18 +655,24 @@ export function CharacterForm({
           </Text>
         ) : null}
 
+        {/*
+          Three things only: the one irreversible act, kept at the far left behind
+          its own rule, and the two ways out of the form. Why the primary is off is
+          said beside the field that turns it on, not down here beside the button.
+        */}
         <View className="web:sticky web:bottom-none flex-row flex-wrap items-center justify-end gap-lg border-t-hairline border-border bg-background py-lg">
           {onDelete ? (
-            <Button
-              variant="destructive"
-              className="mr-auto px-none"
-              disabled={deleting}
-              onPress={() => setConfirmingDelete(true)}
-            >
-              <Text>Delete</Text>
-            </Button>
+            <View className="mr-auto flex-row items-center gap-lg">
+              <Button
+                variant="destructive"
+                disabled={deleting}
+                onPress={() => setConfirmingDelete(true)}
+              >
+                <Text>Delete</Text>
+              </Button>
+              <View className="h-control-sm w-hairline bg-border" />
+            </View>
           ) : null}
-          {blockedReason !== null && !saving ? <Text variant="meta">{blockedReason}</Text> : null}
           <Button variant="outline" onPress={onCancel}>
             <Text>Cancel</Text>
           </Button>

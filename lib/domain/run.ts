@@ -20,6 +20,8 @@ export const RUN_LIMITS = {
   maxRoster: 5,
   minIterations: 1,
   maxIterations: 10,
+  /** How many objects one trolley track holds, and how many a random draw puts there. */
+  maxTrack: 5,
   crime: 1000,
   relationship: 250,
   payoff: 60,

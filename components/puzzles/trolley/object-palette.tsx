@@ -1,20 +1,14 @@
-import { useCallback, useMemo, useState } from "react";
-import { FlatList, LayoutChangeEvent, Pressable, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { LayoutChangeEvent, Pressable, View } from "react-native";
 
-import { Badge, Button, Input, Separator, Text } from "@/components/ui";
+import { Badge, Button, Input, Text } from "@/components/ui";
 import { familyOf, type TrolleyObject } from "@/lib/puzzles/trolley/catalogue";
-import {
-  CUSTOM_TAG,
-  TAG_GROUPS,
-  TAG_GROUP_ORDER,
-  chunk,
-  filterCatalogue,
-} from "@/lib/puzzles/trolley/search";
+import { CUSTOM_TAG, TAG_GROUPS, TAG_GROUP_ORDER, filterCatalogue } from "@/lib/puzzles/trolley/search";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/theme";
 
 import { DraggableObject, type DragPoint } from "./draggable-object";
-import { PALETTE, paletteHeight, type TrackId } from "./geometry";
+import { PALETTE, paletteBudget, type TrackId } from "./geometry";
 
 export type ObjectPaletteProps = {
   /** The merged catalogue: custom objects first, then the built-ins. */
@@ -27,6 +21,12 @@ export type ObjectPaletteProps = {
   onDropItem: (item: TrolleyObject, point: DragPoint) => void;
   onDragStart?: () => void;
   onDragMove?: (point: DragPoint) => void;
+  /**
+   * A tile is aimed at the board — a drag is under way, or one has been tapped
+   * and is waiting for a track. The board draws its empty places while this is
+   * true and keeps them out of the drawing the rest of the time.
+   */
+  onArmedChange?: (armed: boolean) => void;
   onRandomize: () => void;
   onClear: () => void;
   /** Opens the object creator. */
@@ -37,11 +37,39 @@ export type ObjectPaletteProps = {
 };
 
 /**
+ * The six tags the catalogue is most often narrowed by, after the four families.
+ *
+ * Nineteen chips at equal weight are not a filter, they are a second catalogue:
+ * the families say what kind of thing, these six say which kind of one, and the
+ * remaining eight wait behind "More" for the search that actually wants them.
+ */
+const FEATURED_TAGS: readonly string[] = [
+  "stranger",
+  "relation",
+  "child",
+  "elderly",
+  "pet",
+  "money",
+];
+
+/** Every tag the catalogue carries, in the order the families are declared. */
+const ALL_TAGS: readonly string[] = TAG_GROUP_ORDER.flatMap((family) => TAG_GROUPS[family] ?? []);
+
+/** The chips that are always on offer: the families, then the common six. */
+const PRIMARY_TAGS: readonly string[] = [
+  ...TAG_GROUP_ORDER.filter((family) => ALL_TAGS.includes(family)),
+  ...FEATURED_TAGS,
+];
+
+/** Everything else, revealed by "More". */
+const REST_TAGS: readonly string[] = ALL_TAGS.filter((tag) => !PRIMARY_TAGS.includes(tag));
+
+/**
  * One filter, as a chip.
  *
- * A filter that is on has to be legible across the row at a glance, and a word
- * that changes colour is not: the on state is a filled chip and the off state an
- * outlined one, which is the same pair of states chips wear everywhere else.
+ * At rest a chip is a word: no border, no fill, nothing for the eye to count.
+ * Switched on it takes the selection language the whole app uses — a tan fill, a
+ * hairline, the rubric red — so "which of these is on" is one glance, not twenty.
  * Selected filters are ANDed, so they narrow rather than widen.
  */
 function TagToggle({
@@ -59,9 +87,9 @@ function TagToggle({
       accessibilityState={{ checked: selected, selected }}
       accessibilityLabel={`Filter by ${tag}`}
       onPress={onPress}
-      className="transition-opacity duration-fast web:hover:opacity-hover"
+      className="rounded-sm transition-colors duration-fast web:hover:bg-muted/subtle"
     >
-      <Badge variant={selected ? "selected" : "outline"}>
+      <Badge variant={selected ? "selected" : "outline"} className={cn(!selected && "border-transparent")}>
         <Text>{tag}</Text>
       </Badge>
     </Pressable>
@@ -72,8 +100,8 @@ function TagToggle({
  * The catalogue dealt round-robin across its four families.
  *
  * Built in grammar order the list opens with a hundred variations on one noun, so
- * the first four rows of the grid are a hundred identical figures and the glyphs
- * look like decoration. Dealing person, animal, thing, group in turn puts four
+ * the first rows of the flow are a hundred identical figures and the glyphs look
+ * like decoration. Dealing person, animal, thing, group in turn puts four
  * different drawings in every row while keeping each family's own order intact.
  */
 function interleaveFamilies(items: readonly TrolleyObject[]): TrolleyObject[] {
@@ -101,11 +129,13 @@ function interleaveFamilies(items: readonly TrolleyObject[]): TrolleyObject[] {
 /**
  * Everything that can go on a track, searchable.
  *
- * The built-in catalogue runs to several hundred entries, so the grid is a
- * virtualized list of rows rather than a wrapping flexbox: the search box and the
- * filters are what make it usable, and the list only draws what is on screen.
- * The grid is clipped to whole rows and says how many of the matches it is
- * showing, so the rest are known to be a scroll away rather than missing.
+ * The built-in catalogue runs to several hundred entries, so the search box and
+ * the filters are what make it usable; the flow itself opens at two rows and
+ * grows two at a time. Two rows is deliberate — the board above is the thing the
+ * screen is about, and a wall of four hundred tiles was answering a question
+ * nobody had asked yet. The tiles wrap like words and size to their labels rather
+ * than filling equal columns, so "Stranger" costs a word and "Suitcase with
+ * $10,000 in It" costs a phrase.
  */
 export function ObjectPalette({
   items,
@@ -114,6 +144,7 @@ export function ObjectPalette({
   onDropItem,
   onDragStart,
   onDragMove,
+  onArmedChange,
   onRandomize,
   onClear,
   onCreate,
@@ -125,12 +156,9 @@ export function ObjectPalette({
   const [tags, setTags] = useState<string[]>([]);
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [width, setWidth] = useState(0);
-  /** How many whole rows the grid is clipped to; "Show more" lets out four more. */
+  const [moreTags, setMoreTags] = useState(false);
+  /** How many rows of tiles the flow is clipped to; "Show more" lets out two more. */
   const [rows, setRows] = useState<number>(PALETTE.visibleRows);
-
-  const tileWidth = theme.avatarSizes["avatar-xl"];
-  const gap = theme.spacing.xs;
-  const perRow = Math.max(1, Math.floor((width + gap) / (tileWidth + gap)));
 
   const hasCustom = useMemo(() => items.some((item) => item.tags.includes(CUSTOM_TAG)), [items]);
 
@@ -144,11 +172,18 @@ export function ObjectPalette({
     return [...custom, ...interleaveFamilies(rest)];
   }, [filtered]);
 
-  const grid = useMemo(() => chunk(ordered, perRow), [ordered, perRow]);
-
   const filtering = tags.length > 0 || query.trim() !== "";
-  const shown = Math.min(filtered.length, perRow * rows);
-  const more = filtered.length - shown;
+  const budget = paletteBudget(width || PALETTE.averageTileWidth, rows);
+  const visible = useMemo(() => ordered.slice(0, budget), [budget, ordered]);
+  const more = filtered.length - visible.length;
+
+  // A tag hidden behind "More" cannot be the one that is on: the moment one is
+  // chosen the rest of the row comes out and stays out.
+  const showRest = moreTags || REST_TAGS.some((tag) => tags.includes(tag));
+
+  useEffect(() => {
+    onArmedChange?.(menuFor !== null);
+  }, [menuFor, onArmedChange]);
 
   const toggleTag = useCallback((tag: string) => {
     setRows(PALETTE.visibleRows);
@@ -184,24 +219,21 @@ export function ObjectPalette({
           autoCorrect={false}
           accessibilityLabel="Search objects"
         />
-        {/* Only "New object" adds anything; the other two rearrange what is there. */}
+        {/* Three ways to rearrange the board, none of them the screen's action. */}
         <Button variant="ghost" onPress={onRandomize}>
           <Text>Randomize</Text>
         </Button>
-        <Button variant="ghost" onPress={onClear}>
-          <Text>Clear tracks</Text>
-        </Button>
-        <Button variant="outline" onPress={onCreate}>
+        <Button variant="ghost" onPress={onCreate}>
           <Text>New object</Text>
+        </Button>
+        <Button variant="destructive" onPress={onClear}>
+          <Text>Clear tracks</Text>
         </Button>
       </View>
 
-      {/*
-        One wrapping row: each family's own tag leads its run of chips, so the
-        family name is the filter rather than a caption sitting beside one.
-      */}
+      {/* Four families, six common tags, and the rest a word away. */}
       <View className="flex-row flex-wrap items-center gap-xs">
-        {TAG_GROUP_ORDER.flatMap((family) => TAG_GROUPS[family] ?? []).map((tag) => (
+        {PRIMARY_TAGS.map((tag) => (
           <TagToggle
             key={tag}
             tag={tag}
@@ -209,6 +241,16 @@ export function ObjectPalette({
             onPress={() => toggleTag(tag)}
           />
         ))}
+        {showRest
+          ? REST_TAGS.map((tag) => (
+              <TagToggle
+                key={tag}
+                tag={tag}
+                selected={tags.includes(tag)}
+                onPress={() => toggleTag(tag)}
+              />
+            ))
+          : null}
         {hasCustom ? (
           <TagToggle
             tag={CUSTOM_TAG}
@@ -216,77 +258,65 @@ export function ObjectPalette({
             onPress={() => toggleTag(CUSTOM_TAG)}
           />
         ) : null}
-      </View>
-
-      <View onLayout={measure} style={{ height: paletteHeight(rows) }}>
-        {filtered.length === 0 ? (
-          <Text variant="muted">Nothing matches. Try fewer words, or fewer filters.</Text>
-        ) : (
-          <FlatList
-            data={grid}
-            keyExtractor={(row, index) => row[0]?.id ?? String(index)}
-            nestedScrollEnabled
-            initialNumToRender={rows + 1}
-            windowSize={3}
-            removeClippedSubviews={false}
-            contentContainerClassName="gap-xs"
-            renderItem={({ item: row }) => (
-              <View className="flex-row gap-xs">
-                {row.map((entry) => (
-                  <DraggableObject
-                    key={entry.id}
-                    item={entry}
-                    onDragStart={onDragStart}
-                    onDragMove={onDragMove}
-                    onDrop={(point) => onDropItem(entry, point)}
-                    onTap={() => setMenuFor((current) => (current === entry.id ? null : entry.id))}
-                    menu={
-                      menuFor === entry.id ? (
-                        <View
-                          style={{
-                            position: "absolute",
-                            top: "100%",
-                            left: 0,
-                            zIndex: theme.zIndex.menu,
-                          }}
-                          className="mt-xxs w-avatar-xl gap-xxs rounded-sm border-hairline border-border bg-popover p-xxs shadow-ink-lifted"
-                        >
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            disabled={!canPlace(1)}
-                            onPress={() => place(entry, 1)}
-                          >
-                            <Text>Track 1</Text>
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            disabled={!canPlace(2)}
-                            onPress={() => place(entry, 2)}
-                          >
-                            <Text>Track 2</Text>
-                          </Button>
-                        </View>
-                      ) : undefined
-                    }
-                  />
-                ))}
-                {row.length < perRow ? <View className="flex-1" /> : null}
-              </View>
-            )}
-          />
+        {showRest ? null : (
+          <Button variant="link" size="sm" onPress={() => setMoreTags(true)}>
+            <Text>More</Text>
+          </Button>
         )}
       </View>
 
-      {/* The rule is the grid's bottom edge: what is under it is a scroll away. */}
-      <Separator />
+      <View onLayout={measure} className="flex-row flex-wrap items-start gap-xs">
+        {visible.length === 0 ? (
+          <Text variant="muted">Nothing matches. Try fewer words, or fewer filters.</Text>
+        ) : (
+          visible.map((entry) => (
+            <DraggableObject
+              key={entry.id}
+              item={entry}
+              onDragStart={onDragStart}
+              onDragMove={onDragMove}
+              onDrop={(point) => onDropItem(entry, point)}
+              onTap={() => setMenuFor((current) => (current === entry.id ? null : entry.id))}
+              menu={
+                menuFor === entry.id ? (
+                  <View
+                    style={{
+                      position: "absolute",
+                      top: "100%",
+                      left: 0,
+                      zIndex: theme.zIndex.menu,
+                    }}
+                    className="mt-xxs w-avatar-xl gap-xxs rounded-sm border-hairline border-border bg-popover p-xxs shadow-ink-lifted"
+                  >
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={!canPlace(1)}
+                      onPress={() => place(entry, 1)}
+                    >
+                      <Text>Track 1</Text>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={!canPlace(2)}
+                      onPress={() => place(entry, 2)}
+                    >
+                      <Text>Track 2</Text>
+                    </Button>
+                  </View>
+                ) : undefined
+              }
+            />
+          ))
+        )}
+      </View>
 
       <View className="flex-row flex-wrap items-center gap-md">
         <Text variant="muted">
           {loading
             ? "Reading your objects…"
-            : `Showing ${shown} of ${filtered.length}${filtering ? ` matching objects, from ${items.length}` : " objects"}`}
+            : `Showing ${visible.length} of ${filtered.length}${filtering ? ` matching objects, from ${items.length}` : " objects"}`}
         </Text>
         {more > 0 ? (
           <Button variant="link" size="sm" onPress={() => setRows(rows + PALETTE.visibleRows)}>

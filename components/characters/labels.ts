@@ -30,10 +30,18 @@ export const OUTPUT_MODE_META: Record<OutputMode, string> = {
   tool: "tool call",
 };
 
+/**
+ * The steering modes as a roster row says them — the same three words the filter
+ * and the editor use, lowered to the metadata line's voice.
+ *
+ * They used to be a second vocabulary ("no steering", "full steering") beside the
+ * control's ("Raw", "Full"), so the row above the list and the row inside it named
+ * the same setting two different ways.
+ */
 export const STEERING_MODE_META: Record<SteeringMode, string> = {
-  raw: "no steering",
+  raw: "raw",
   bio: "bio only",
-  full: "full steering",
+  full: "full",
 };
 
 /** What each steering mode actually sends, one line each, for the editor. */
@@ -89,8 +97,15 @@ const WORD_START = /(^|[\s\-_.])([a-z])/g;
  * The display name, capitalised for a title or a card: `zeno` reads as `Zeno`,
  * `marcus-aurelius` as `Marcus-Aurelius`. Presentation only — the stored
  * identifier, and every record keyed by it, is untouched.
+ *
+ * A character given a name of its own is shown exactly that name: "Zeno of
+ * Citium" is how its author capitalised it, and title-casing every word start
+ * turned the preposition into "Of". Only an identifier standing in for a missing
+ * name gets the treatment.
  */
 export function characterTitle(character: Pick<Character, "id" | "name">): string {
+  const name = character.name?.trim();
+  if (name !== undefined && name !== "") return name;
   return characterDisplayName(character).replace(
     WORD_START,
     (_match, lead: string, letter: string) => lead + letter.toUpperCase(),

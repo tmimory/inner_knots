@@ -21,10 +21,12 @@ import {
   ReactFlowProvider,
   useReactFlow,
 } from "@xyflow/react";
-import { useEffect, useMemo, type CSSProperties } from "react";
-import { View } from "react-native";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { View, type LayoutChangeEvent } from "react-native";
 
-import { useTheme } from "@/theme";
+import type { Adventure } from "@/lib/domain/adventure";
+import { ADVENTURE_LAYOUT, adventureNodeHeight } from "@/lib/puzzles/adventure/layout";
+import { useTheme, type Theme } from "@/theme";
 
 import { useFlowChromeStyle } from "./chrome-style.web";
 import { adventureNodeTypes } from "./decision-node.web";
@@ -41,13 +43,28 @@ import {
 const ZOOM = { min: 0.15, max: 2 } as const;
 
 /**
+ * How the whole graph is framed when the canvas opens, and every time the reader
+ * asks for a fit.
+ *
+ * `padding` is the share of the viewport left empty on each side, so the graph
+ * lands on about three quarters of the canvas in each direction — enough air to
+ * read as a framed drawing, not so much that the cards become thumbnails.
+ * `maxZoom` of 1 is the more important half: a fitted graph is the graph as it is
+ * actually read, and a card blown up past its own type sizes reads as a mistake.
+ */
+const FIT = { padding: 0.12, maxZoom: 1 } as const;
+
+/** The smallest share of the full canvas height a short graph is given. */
+const MIN_CANVAS_SHARE = 0.5;
+
+/**
  * How many cards a graph needs before the mini-map earns its corner. Below this
  * the whole tree fits on screen, and the map is a sketch of what is already there
  * — drawn over the cards it duplicates.
  */
 const MINIMAP_FROM_NODES = 6;
 
-function Canvas(props: AdventureCanvasProps) {
+function Canvas(props: AdventureCanvasProps & { height: number }) {
   const theme = useTheme();
   const { fitView } = useReactFlow();
 
@@ -76,7 +93,7 @@ function Canvas(props: AdventureCanvasProps) {
   const { fitSignal } = props;
   useEffect(() => {
     if (fitSignal === 0) return;
-    void fitView({ duration: theme.durations.normal });
+    void fitView({ ...FIT, duration: theme.durations.normal });
   }, [fitSignal, fitView, theme.durations.normal]);
 
   return (
@@ -101,6 +118,7 @@ function Canvas(props: AdventureCanvasProps) {
       minZoom={ZOOM.min}
       maxZoom={ZOOM.max}
       fitView
+      fitViewOptions={FIT}
       style={canvasStyle(theme) as CSSProperties}
     >
       <Background
@@ -130,19 +148,73 @@ function Canvas(props: AdventureCanvasProps) {
   );
 }
 
+/** The rectangle the cards occupy, in graph coordinates. */
+function graphBounds(adventure: Adventure): { width: number; height: number } | undefined {
+  if (adventure.nodes.length === 0) return undefined;
+
+  const left = Math.min(...adventure.nodes.map((node) => node.position.x));
+  const right = Math.max(
+    ...adventure.nodes.map((node) => node.position.x + ADVENTURE_LAYOUT.nodeWidth),
+  );
+  const top = Math.min(...adventure.nodes.map((node) => node.position.y));
+  const bottom = Math.max(
+    ...adventure.nodes.map((node) => node.position.y + adventureNodeHeight(node)),
+  );
+
+  return { width: Math.max(1, right - left), height: Math.max(1, bottom - top) };
+}
+
+/**
+ * How tall to draw the canvas for the graph it holds.
+ *
+ * A fit keeps the graph's proportions, so a wide, shallow tree fitted into a
+ * fixed 640px box leaves two thirds of the box as empty dots — the graph reads as
+ * a stamp in the corner of a sheet. Giving the canvas the height the fit actually
+ * needs (down to half the full height, up to all of it) is what makes a two-card
+ * adventure fill its frame instead of floating in it.
+ */
+function canvasHeight(theme: Theme, adventure: Adventure, paneWidth: number): number {
+  const full = theme.layout.canvas;
+  const bounds = graphBounds(adventure);
+  if (bounds === undefined || paneWidth <= 0) return full;
+
+  const inner = 1 - 2 * FIT.padding;
+  const zoom = Math.min(FIT.maxZoom, (paneWidth * inner) / bounds.width);
+  const wanted = (bounds.height * zoom) / inner;
+  return Math.round(Math.min(full, Math.max(full * MIN_CANVAS_SHARE, wanted)));
+}
+
 /** The canvas, with the React Flow store it needs around it. */
 export default function AdventureCanvas(props: AdventureCanvasProps) {
   const theme = useTheme();
+  const [paneWidth, setPaneWidth] = useState(0);
+  const height = canvasHeight(theme, props.adventure, paneWidth);
+
+  function measure(event: LayoutChangeEvent) {
+    setPaneWidth(event.nativeEvent.layout.width);
+  }
+
   return (
     // The canvas is an object on the page, not the page: a hairline and the
     // surface radius are what tell the graph's whitespace from the screen's.
     <View
-      style={{ height: theme.layout.canvas }}
-      className="w-full overflow-hidden rounded-md border-hairline border-border"
+      onLayout={measure}
+      // `minHeight` rather than `height`, with `h-full` over it: the canvas asks
+      // for the height its graph needs and then grows to whatever the inspector
+      // beside it turns out to be, so the two columns end on one line.
+      style={{ minHeight: height }}
+      className="h-full w-full overflow-hidden rounded-md border-hairline border-border"
     >
-      <ReactFlowProvider>
-        <Canvas {...props} />
-      </ReactFlowProvider>
+      {/*
+        React Flow fits the graph once, as it mounts, so it is only mounted once
+        the width is known and the height that follows from it is settled. A fit
+        computed against a box that is about to change is a fit that lands wrong.
+      */}
+      {paneWidth > 0 ? (
+        <ReactFlowProvider>
+          <Canvas {...props} height={height} />
+        </ReactFlowProvider>
+      ) : null}
     </View>
   );
 }

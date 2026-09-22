@@ -272,10 +272,17 @@ export const layout = {
   /**
    * One column of reading: a form, a list of rows, a header and the content under
    * it. Screens in `width="reading"` mode put the header and the body in the same
-   * `max-w-reading` column, so the header's action lands on the content's right
-   * edge instead of at the far side of the window.
+   * `max-w-reading` column, centred in the content pane, so the header's action
+   * lands on the content's right edge and the margins either side are equal — a
+   * column pinned left in a 1440px pane leaves a third of the page visibly unused.
    */
-  reading: 720,
+  reading: 800,
+  /**
+   * The measure of a composed block of prose: an empty state's headline, sentence
+   * and next step. Narrow enough that the sentence breaks once, wide enough that
+   * the block reads as the page's content rather than a caption under it.
+   */
+  measure: 520,
   /** A fixed-width item card, so a short list clusters left instead of stretching. */
   card: 320,
   /** Height of an embedded graph canvas — the adventure builder and the outcome view. */

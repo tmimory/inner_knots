@@ -39,6 +39,12 @@ export const BOARD = {
   terminusHalfHeight: 12,
   /** One slot on a track: the box a single object stands in. */
   slotHeight: 32,
+  /**
+   * How wide a placed chip may grow. It sizes to its own label — a five-column
+   * grid made "Your Dog" two thirds empty box — but a chip wide enough to read
+   * "Suitcase with $10,000 in It" whole would crowd the four beside it.
+   */
+  chipMaxWidth: 200,
   /** The approach rail the trolley rolls in along, left of the junction. */
   approachRun: 92,
   /**
@@ -80,31 +86,46 @@ export const TROLLEY = {
 } as const;
 
 /**
- * The palette grid, in px. A virtualized list needs to know how tall a row is
- * before it has drawn one, which is the only reason these are numbers here.
+ * The palette flow, in px.
+ *
+ * The tiles wrap like words rather than filling a rigid grid — eleven equal
+ * columns made "Stranger" and "Suitcase with $10,000 in It" the same object — so
+ * only the bounds of one tile are fixed here, plus the rough cost of a tile used
+ * to clip the flow to about two rows.
  */
 export const PALETTE = {
   /**
-   * One tile, fixed: glyph, two lines of label, and the padding around them.
-   * Fixed so a one-word tile and a three-word tile leave the grid on the same
+   * One tile's height, fixed: glyph, two lines of label, and the air around them.
+   * Fixed so a one-word tile and a three-word tile leave the row on the same
    * baseline rather than making every row a different height.
    */
-  tileHeight: 76,
+  tileHeight: 72,
   /**
    * The label's own box: two lines of the `xs` step, reserved whether the label
    * needs one line or two, so the glyph above it sits at the same height in every
    * tile of a row instead of drifting with the label's depth.
    */
-  labelHeight: 36,
-  /** Tile height plus the `xs` gap between rows; the pitch of the grid. */
-  rowHeight: 80,
+  labelHeight: 32,
+  /** A tile is never narrower than this, so a one-word label still reads as a tile. */
+  minTileWidth: 80,
+  /** Nor wider: past this the label wraps to its second line instead of stretching. */
+  maxTileWidth: 152,
+  /** What one tile costs a row on average, for clipping the flow to whole rows. */
+  averageTileWidth: 118,
   /** How many rows of tiles the palette shows before "Show more" is pressed. */
-  visibleRows: 4,
+  visibleRows: 2,
 } as const;
 
-/** The height a palette grid of `rows` whole rows is clipped to, with no half row. */
-export function paletteHeight(rows: number = PALETTE.visibleRows): number {
-  return PALETTE.rowHeight * rows - (PALETTE.rowHeight - PALETTE.tileHeight);
+/**
+ * Roughly how many tiles fill `rows` rows of a flow `width` across.
+ *
+ * A wrapped flow of variable-width tiles has no row count until it has been laid
+ * out, so the clip is an estimate from the average tile: two rows of chips, give
+ * or take one, which is what "two rows" means to the eye.
+ */
+export function paletteBudget(width: number, rows: number): number {
+  const perRow = Math.max(1, Math.round(width / PALETTE.averageTileWidth));
+  return perRow * Math.max(1, rows);
 }
 
 export type TrackId = 1 | 2;

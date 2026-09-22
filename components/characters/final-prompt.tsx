@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 
-import { Text } from "@/components/ui";
+import { SectionHeading, Text } from "@/components/ui";
 import type { Steering } from "@/lib/domain";
 import { previewSteering } from "@/lib/client/prompts";
 import { describeApiError } from "@/lib/client/errors";
@@ -63,6 +63,11 @@ export type FinalPromptProps = {
  *
  * A character that sends no system prompt draws nothing at all: the steering
  * mode's own line already says what that means, and there is no box to frame.
+ *
+ * It reads as marginalia: a hairline rule down its left edge and the composed
+ * prompt set in the mono voice beside it. The tinted, bordered panel it used to
+ * wear was a second frame inside a column that is already set apart by sitting in
+ * the margin, and the rule ties its heading to the sections it comments on.
  */
 export function FinalPrompt({ steering, className }: FinalPromptProps) {
   const state = useSteeringPreview(steering);
@@ -81,13 +86,11 @@ export function FinalPrompt({ steering, className }: FinalPromptProps) {
   if (state.status === "loading" || state.prompt === null) return null;
 
   return (
-    <View className={cn("gap-md", className)}>
-      <Text variant="h3">Final prompt</Text>
-      <View className="rounded-md border-hairline border-border bg-muted p-lg">
-        <Text selectable className="font-mono text-sm">
-          {state.prompt}
-        </Text>
-      </View>
+    <View className={cn("gap-md border-l-hairline border-border pl-xl", className)}>
+      <SectionHeading title="Final prompt" />
+      <Text selectable variant="code">
+        {state.prompt}
+      </Text>
     </View>
   );
 }

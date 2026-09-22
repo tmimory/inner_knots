@@ -79,7 +79,8 @@
     /* layout */
     --layout-menu: 264px;
     --layout-content: 1120px;
-    --layout-reading: 720px;
+    --layout-reading: 800px;
+    --layout-measure: 520px;
     --layout-card: 320px;
     --layout-canvas: 640px;
     --layout-inspector: 360px;

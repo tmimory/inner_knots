@@ -15,7 +15,7 @@
  * derived on every render, because that is where it caches each card's measured
  * size; the adventure is only written to when a gesture finishes.
  */
-import { applyEdgeChanges, applyNodeChanges, MarkerType } from "@xyflow/react";
+import { applyEdgeChanges, applyNodeChanges } from "@xyflow/react";
 import type { Connection, Edge, EdgeChange, Node, NodeChange } from "@xyflow/react";
 import { useCallback, useMemo, useState } from "react";
 
@@ -75,6 +75,17 @@ export function decorationFromSummary(
   };
 }
 
+/** Every node some option leads to: the cards that need a place for an edge to land. */
+function incomingTargets(adventure: Adventure): Set<string> {
+  const targets = new Set<string>();
+  for (const node of adventure.nodes) {
+    for (const option of node.options) {
+      if (option.nextNodeId !== null) targets.add(option.nextNodeId);
+    }
+  }
+  return targets;
+}
+
 /** A count as a share of the walks recorded; zero when there are none yet. */
 function share(count: number, walks: number): number {
   return walks > 0 ? count / walks : 0;
@@ -86,6 +97,7 @@ export function toFlowNodes(
   options: { selectedNodeId?: string | null; decoration?: GraphDecoration } = {},
 ): AdventureFlowNode[] {
   const { selectedNodeId, decoration } = options;
+  const targets = incomingTargets(adventure);
 
   return adventure.nodes.map((node) => {
     const hits = decoration?.nodeHits[node.id] ?? 0;
@@ -97,6 +109,7 @@ export function toFlowNodes(
       data: {
         node,
         isStart: node.id === adventure.startNodeId,
+        isTarget: targets.has(node.id),
         hits: decoration ? hits : undefined,
         share: decoration ? share(hits, decoration.walks) : undefined,
         optionHits: decoration?.optionHits[node.id],
@@ -136,19 +149,22 @@ export function toFlowEdges(
         target: option.nextNodeId,
         targetHandle: NODE_TARGET_HANDLE,
         type: "smoothstep",
-        label: decoration ? `${option.label} · ${hits}` : option.label,
+        // An edge leaves from the row of the option it stands for, so repeating
+        // that option's name on the edge says nothing the picture has not said —
+        // and on a forked graph the plaques land on top of the cards. What the
+        // edge cannot say for itself is how many walks took it, so that, and only
+        // that, is written on it.
+        label: decoration ? `×${hits}` : undefined,
         labelShowBg: true,
         labelStyle: edgeLabelStyle(theme),
         labelBgStyle: edgeLabelBackgroundStyle(theme),
         labelBgPadding: [theme.spacing.xs, theme.spacing.xxs],
         labelBgBorderRadius: theme.radii.sm,
         style: edgeStyle(theme, tone),
-        markerEnd: {
-          type: MarkerType.ArrowClosed,
-          color: edgeStyle(theme, tone).stroke,
-          width: theme.spacing.md,
-          height: theme.spacing.md,
-        },
+        // No arrowhead: the edge already terminates in the target card's handle,
+        // and a barb drawn on top of that ring is two endings in one place. What
+        // the edge leaves from (a filled dot) and what it arrives at (a hollow
+        // ring) is the whole of the direction key.
         animated: onPath,
         data: { nodeId: node.id, optionId: option.id, hits: decoration ? hits : undefined, onPath },
       });

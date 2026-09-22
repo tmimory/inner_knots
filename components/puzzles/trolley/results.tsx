@@ -11,9 +11,9 @@ import type { TrolleySummary } from "@/lib/domain/summary";
 import { countNote, pluralize } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-/** The two answers, pinned to the theme's comparison pair. */
+/** The two answers, in the two hues the board draws its rails in. */
 const SERIES: HistogramSeriesSpec[] = [
-  { id: "track1", label: "Track 1", color: "track1" },
+  { id: "track1", label: "Track 1", color: "primary" },
   { id: "track2", label: "Track 2", color: "track2" },
 ];
 
@@ -74,15 +74,10 @@ export function TrolleyResults({
 
   const answered = summary?.decisions.length ?? 0;
 
-  // Nothing is worth drawing before a decision exists: an empty chart with an
-  // empty legend and a row of zeroes says less than one sentence does.
-  if (answered === 0) {
-    return (
-      <Text variant="muted" className={className}>
-        Nothing decided yet. Pull the lever and the answers appear here.
-      </Text>
-    );
-  }
+  // Nothing is worth drawing before a decision exists — and the screen does not
+  // head a section that has nothing under it, so there is not even a sentence to
+  // write here: the whole block stays away until the first answer lands.
+  if (answered === 0) return null;
 
   return (
     <View className={cn("gap-lg", className)}>

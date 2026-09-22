@@ -16,6 +16,8 @@ export const NODE_TARGET_HANDLE = "in";
 export type DecisionNodeData = {
   node: AdventureNode;
   isStart: boolean;
+  /** True when some option in the graph leads here, so the card needs a target handle. */
+  isTarget: boolean;
   /** How many walks visited this node. Only the outcome view fills these in. */
   hits?: number;
   /** That count as a share of every recorded walk, 0..1. */

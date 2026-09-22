@@ -16,7 +16,7 @@ import { RoundGrid } from "./round-grid";
 
 /** The two moves, pinned to the theme's comparison pair, everywhere on the screen. */
 const SERIES: HistogramSeriesSpec[] = [
-  { id: "testify", label: "Testify", color: "track1" },
+  { id: "testify", label: "Testify", color: "primary" },
   { id: "silent", label: "Stay silent", color: "track2" },
 ];
 

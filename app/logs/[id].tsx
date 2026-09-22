@@ -1,4 +1,4 @@
-import { Link, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import { View } from "react-native";
 
@@ -7,14 +7,26 @@ import {
   ExportButton,
   FieldCode,
   LogList,
+  PUZZLE_LABELS,
   SpanDetail,
   SpanTree,
   StatusMark,
   SummaryView,
   spanDepths,
 } from "@/components/logs";
-import { Screen, Scroll } from "@/components/shell";
-import { Button, Progress, Separator, Tabs, TabsContent, TabsList, TabsTrigger, Text, useToast } from "@/components/ui";
+import { Screen } from "@/components/shell";
+import {
+  Button,
+  EmptyState,
+  Progress,
+  SectionHeading,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Text,
+  useToast,
+} from "@/components/ui";
 import { cancelRun } from "@/lib/client/runs";
 import {
   LOGS_POLL_MS,
@@ -60,25 +72,20 @@ export default function RunDetailScreen() {
 
   if (!run) {
     return (
-      <Screen title="Run" subtitle="ὑπόμνημα · one run, in full">
-        <View className="gap-sm">
-          <Text variant="lead">
-            {loading ? "Reading the run…" : (error ?? `No run is recorded under "${runId}".`)}
-          </Text>
-          <Link href="/logs">
-            <Text variant="small" className="text-primary underline">
-              back to the ledger
-            </Text>
-          </Link>
-        </View>
+      <Screen title="Run" subtitle="ὑπόμνημα — one run, in full">
+        <EmptyState
+          title={loading ? "Reading the run…" : "No such run"}
+          body={loading ? undefined : (error ?? `No run is recorded under "${runId}".`)}
+          links={[{ label: "Back to the ledger", href: "/logs" }]}
+        />
       </Screen>
     );
   }
 
   return (
     <Screen
-      title={run.puzzle}
-      subtitle={run.id}
+      title={PUZZLE_LABELS[run.puzzle]}
+      subtitle="ὑπόμνημα — one run, in full"
       right={
         <>
           <StatusMark status={run.status} />
@@ -93,6 +100,9 @@ export default function RunDetailScreen() {
     >
       <View className="gap-lg">
         <View className="flex-row flex-wrap items-center gap-xl">
+          {/* The id is what this page is, so it leads the stat row rather than
+              standing in for the Greek subtitle every other screen carries. */}
+          <FieldCode label="Run" value={run.id} />
           <FieldCode label="Started" value={formatDateTime(run.startedAt)} />
           <FieldCode label="Duration" value={formatElapsed(run.startedAt, run.finishedAt)} />
           <FieldCode label="Progress" value={`${run.progress.done} / ${run.progress.total}`} />
@@ -130,54 +140,49 @@ export default function RunDetailScreen() {
         </TabsList>
 
         <TabsContent value="overview">
-          <View className="gap-lg">
-            <Text variant="h3" className="text-lg">
-              Configuration
-            </Text>
-            <ConfigView
-              config={run.config}
-              characters={characters}
-              objects={objects}
-              adventureName={adventureName}
-            />
-            <Separator />
-            <Text variant="h3" className="text-lg">
-              Summary
-            </Text>
-            <SummaryView run={run} characters={characters} />
+          <View className="gap-xl">
+            <View className="gap-lg">
+              <SectionHeading title="Configuration" />
+              <ConfigView
+                config={run.config}
+                characters={characters}
+                objects={objects}
+                adventureName={adventureName}
+              />
+            </View>
+            <View className="gap-lg border-t-hairline border-border pt-md">
+              <SectionHeading title="Summary" />
+              <SummaryView run={run} characters={characters} />
+            </View>
           </View>
         </TabsContent>
 
         <TabsContent value="spans">
-          <View className="gap-lg wide:flex-row wide:items-start">
+          {/* The tree and what it opens are two columns of one spread, divided by
+              a rule. Two bordered panels side by side read as two documents. */}
+          <View className="gap-lg wide:flex-row wide:items-stretch wide:gap-xl">
             <View className="flex-1">
-              <Scroll>
-                <SpanTree
-                  spans={spans}
-                  puzzle={run.puzzle}
-                  characters={characters}
-                  selectedId={selectedSpanId}
-                  onSelect={setSelectedSpanId}
-                />
-              </Scroll>
+              <SpanTree
+                spans={spans}
+                puzzle={run.puzzle}
+                characters={characters}
+                selectedId={selectedSpanId}
+                onSelect={setSelectedSpanId}
+              />
             </View>
-            <View className="flex-1">
-              <Scroll>
-                <SpanDetail
-                  span={selected}
-                  puzzle={run.puzzle}
-                  depth={selected ? (depths.get(selected.spanId) ?? 0) : 0}
-                  characters={characters}
-                />
-              </Scroll>
+            <View className="flex-1 wide:border-l-hairline wide:border-border wide:pl-xl">
+              <SpanDetail
+                span={selected}
+                puzzle={run.puzzle}
+                depth={selected ? (depths.get(selected.spanId) ?? 0) : 0}
+                characters={characters}
+              />
             </View>
           </View>
         </TabsContent>
 
         <TabsContent value="logs">
-          <Scroll>
-            <LogList logs={logs} />
-          </Scroll>
+          <LogList logs={logs} />
         </TabsContent>
       </Tabs>
     </Screen>

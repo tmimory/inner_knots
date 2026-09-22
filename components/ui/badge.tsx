@@ -10,8 +10,13 @@ import { cn } from "@/lib/utils";
  *
  * Badges are outlined and square-shouldered: a full-round filled pill carries as
  * much weight as a button, which is how a screen ends up with six things shouting
- * at once. The one exception is `selected`, which is a chip the user turned on —
- * there the fill is the whole point.
+ * at once. The one exception is `selected`, which is a chip the user turned on.
+ *
+ * `selected` is the app's one selection language, shared with the segmented
+ * control and the variant rows: a tan `muted` fill, a hairline in the rubric red
+ * and the label in the same red. A dark fill would make a turned-on chip heavier
+ * than the screen's primary button, and a second near-black into a four-tone
+ * palette; tan and red say "on" using colours the page already has.
  */
 const badgeVariants = cva("flex-row items-center gap-xs rounded-sm border-hairline px-sm py-xxs", {
   variants: {
@@ -22,8 +27,8 @@ const badgeVariants = cva("flex-row items-center gap-xs rounded-sm border-hairli
       outline: "border-border bg-transparent",
       destructive: "border-destructive bg-transparent",
       muted: "border-transparent bg-muted",
-      /** A chip the user has turned on: filled, so "on" is unmistakable. */
-      selected: "border-primary bg-primary",
+      /** A chip the user has turned on: tan fill, red hairline, red label. */
+      selected: "border-primary bg-muted",
     },
   },
   defaultVariants: { variant: "default" },
@@ -38,7 +43,7 @@ const badgeTextVariants = cva("font-body text-xs", {
       outline: "text-foreground",
       destructive: "text-destructive",
       muted: "text-muted-foreground",
-      selected: "text-primary-foreground",
+      selected: "text-primary",
     },
   },
   defaultVariants: { variant: "default" },

@@ -54,6 +54,11 @@ export type SectionHeadingProps = {
  * The heading of a block of form: a display-font title, an optional line of
  * explanation, and an optional slot for the controls that act on the block.
  *
+ * Set one step under the old size: a section heading is a label on a block, not a
+ * second page title, and at 24px it was close enough to the 31px h1 that a screen
+ * read as a stack of pages. At 20px small caps it marks the block and lets the
+ * title keep the page.
+ *
  * It is its own component because two containers use it — {@link FormSection} on
  * a plain surface and the puzzle screens' `Section` on a Scroll panel — and a
  * heading that reads differently on two screens is a heading that has drifted.
@@ -65,7 +70,7 @@ export function SectionHeading({ title, description, right, className }: Section
   return (
     <View className={cn("gap-xs", className)}>
       <View className="flex-row items-center justify-between gap-lg">
-        <Text variant="h3" className="flex-1">
+        <Text variant="h4" className="flex-1">
           {title}
         </Text>
         {right ? <View className="flex-row flex-wrap items-center gap-sm">{right}</View> : null}
@@ -92,9 +97,10 @@ export type FormSectionProps = SectionHeadingProps & {
  * cards turn a form into a list of unrelated objects, while a rule plus space
  * says "same page, next matter" without drawing four more edges.
  *
- * The air above the heading is half the air below it. A rule with equal space on
- * both sides reads as a page break that happens to have a title under it; pulled
- * close, it reads as the underscore of the heading it introduces.
+ * One gap pair everywhere: a wide band above the rule (the `gap-2xl` the screen
+ * wrapper sets between sections) and two thirds of it below. A rule with equal
+ * space on both sides reads as a page break that happens to have a title under
+ * it; pulled toward its heading, it reads as that heading's underscore.
  */
 export function FormSection({
   title,
@@ -106,7 +112,7 @@ export function FormSection({
 }: FormSectionProps) {
   return (
     <View
-      className={cn("gap-lg", divider && "border-t-hairline border-border pt-md", className)}
+      className={cn("gap-lg", divider && "border-t-hairline border-border pt-xl", className)}
     >
       <SectionHeading title={title} description={description} right={right} />
       {children}

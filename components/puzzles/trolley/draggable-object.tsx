@@ -124,11 +124,18 @@ export function DraggableObject({
           accessibilityHint={item.prompt}
         >
           <View
-            style={{ height: PALETTE.tileHeight }}
+            style={{
+              height: PALETTE.tileHeight,
+              minWidth: PALETTE.minTileWidth,
+              maxWidth: PALETTE.maxTileWidth,
+            }}
             className={cn(
-              "w-avatar-xl items-center justify-center gap-xxs rounded-sm border-hairline border-border bg-card p-xs",
-              "transition-colors duration-fast web:hover:bg-muted",
-              dragging && "border-thick border-ring shadow-ink-lifted",
+              // Borderless at rest: a border is what a tile earns by standing on a
+              // track. The hover ring is drawn on a transparent border already in
+              // the box, so picking a tile out does not nudge the row beside it.
+              "items-center justify-center gap-xxs rounded-sm border-hairline border-transparent bg-transparent px-sm py-xs",
+              "transition-colors duration-fast web:hover:border-border web:hover:bg-muted",
+              dragging && "border-thick border-ring bg-card shadow-ink-lifted",
               disabled && "opacity-disabled",
             )}
           >

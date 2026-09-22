@@ -66,8 +66,10 @@ describe("layoutAdventure", () => {
     const start = positionOf(laid, "start");
     const left = positionOf(laid, "left");
     // The edge crosses the gap between the right edge of one card and the left
-    // edge of the next; under ~180px it is all bend and no label fits on it.
-    expect(left.x - (start.x + ADVENTURE_LAYOUT.nodeWidth)).toBeGreaterThanOrEqual(180);
+    // edge of the next, and a forking node's edges carry the option's name on it.
+    expect(left.x - (start.x + ADVENTURE_LAYOUT.nodeWidth)).toBeGreaterThanOrEqual(
+      ADVENTURE_LAYOUT.rankGap,
+    );
   });
 
   it("separates siblings vertically by at least the node gap", () => {

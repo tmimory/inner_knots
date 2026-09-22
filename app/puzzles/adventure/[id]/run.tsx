@@ -64,13 +64,13 @@ export default function AdventureRunScreen() {
 
   if (loading || !adventure) {
     return (
-      <Screen title="Opening the tree" subtitle="ὁδός · branching paths, recorded">
+      <Screen title="Opening the tree" subtitle="ὁδός — branching paths, recorded">
         {error ? (
           <View className="gap-md">
             <Text variant="lead">{error}</Text>
             <View className="flex-row">
               <Button variant="outline" onPress={() => router.push("/puzzles/adventure")}>
-                <Text>Back to the shelf</Text>
+                <Text>Back to adventures</Text>
               </Button>
             </View>
           </View>
@@ -82,7 +82,7 @@ export default function AdventureRunScreen() {
   return (
     <Screen
       title={adventure.name}
-      subtitle="ὁδός · branching paths, recorded"
+      subtitle="ὁδός — branching paths, recorded"
       right={
         <>
           <Button

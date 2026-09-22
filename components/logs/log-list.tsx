@@ -60,12 +60,17 @@ function LevelFilter({
             role="button"
             aria-selected={active}
             onPress={() => onChange(option)}
+            // One selection language across the app: a chosen filter is a tan
+            // fill, a hairline and the rubric red — never a near-black slab, and
+            // never small caps, which this app keeps for titles and headings.
             className={cn(
-              "h-control-sm justify-center rounded-full border-hairline px-md transition-colors duration-fast",
-              active ? "border-ring bg-muted" : "border-border bg-transparent web:hover:bg-muted/subtle",
+              "h-control-sm justify-center rounded-sm border-hairline px-md transition-colors duration-fast",
+              active
+                ? "border-border bg-muted"
+                : "border-border bg-transparent web:hover:bg-muted/subtle",
             )}
           >
-            <Text variant="small" className="font-display text-xs">
+            <Text variant="small" className={active ? "text-primary" : "text-foreground"}>
               {option ?? "all"}
             </Text>
           </Pressable>

@@ -1,6 +1,7 @@
 import { Pressable, View } from "react-native";
 
-import { Text, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui";
+import { Text } from "@/components/ui/text";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 export type SegmentedOption<T extends string> = {
@@ -16,13 +17,22 @@ export type SegmentedProps<T extends string> = {
   options: readonly SegmentedOption<T>[];
   /** Accessible name for the group, e.g. "Output mode". */
   label: string;
+  /** `default` sits on a form line with the inputs; `sm` rides a toolbar. */
+  size?: "default" | "sm";
   className?: string;
 };
 
 /**
  * A two- or three-way choice drawn as one connected control: fewer decisions on
  * screen than a select, and every alternative visible at once, which is what the
- * output-mode and steering-mode choices want.
+ * output-mode, steering-mode and filter choices want.
+ *
+ * The chosen segment wears the app's one selection language — a tan `muted` fill,
+ * a hairline in the rubric red, the label in the same red — the same treatment a
+ * selected {@link Badge} and a chosen variant row take. It used to be a near-black
+ * block, which made a filter heavier than the page's primary button and put a
+ * fifth tone into a four-tone palette. Unselected segments keep a transparent
+ * hairline so nothing shifts a pixel when the choice moves.
  *
  * A disabled segment stays hoverable on purpose — the tooltip explaining why it
  * cannot be chosen is the whole point of still drawing it.
@@ -32,6 +42,7 @@ export function Segmented<T extends string>({
   onChange,
   options,
   label,
+  size = "default",
   className,
 }: SegmentedProps<T>) {
   return (
@@ -42,7 +53,11 @@ export function Segmented<T extends string>({
       // edge the control needs. The `p-xs` inset around a `control-sm` segment
       // makes the whole control exactly `control-md`, so it sits on the same line
       // as the inputs and selects it shares a form — or a toolbar — with.
-      className={cn("flex-row items-center gap-xxs self-start rounded-sm bg-input p-xs", className)}
+      className={cn(
+        "flex-row items-center gap-xxs self-start rounded-sm bg-input",
+        size === "sm" ? "p-xxs" : "p-xs",
+        className,
+      )}
     >
       {options.map((option) => {
         const selected = option.value === value;
@@ -56,12 +71,21 @@ export function Segmented<T extends string>({
               if (!blocked) onChange(option.value);
             }}
             className={cn(
-              "h-control-sm items-center justify-center rounded-sm px-lg transition-colors duration-fast",
-              selected ? "bg-foreground" : "bg-transparent web:hover:bg-card",
+              "items-center justify-center rounded-sm border-hairline transition-colors duration-fast",
+              size === "sm" ? "h-control-sm px-md" : "h-control-sm px-lg",
+              selected
+                ? "border-primary bg-muted"
+                : "border-transparent bg-transparent web:hover:bg-card",
               blocked && "opacity-disabled",
             )}
           >
-            <Text className={cn("font-body text-base", selected ? "text-card" : "text-foreground")}>
+            <Text
+              className={cn(
+                "font-body",
+                size === "sm" ? "text-sm" : "text-base",
+                selected ? "text-primary" : "text-foreground",
+              )}
+            >
               {option.label}
             </Text>
           </Pressable>

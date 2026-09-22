@@ -18,6 +18,8 @@ export type NodeTone = {
   selected?: boolean;
   onPath?: boolean;
   unvisited?: boolean;
+  /** The node a walk begins at, which wears a rubric bar instead of a kicker. */
+  isStart?: boolean;
 };
 
 function clampShare(share: number | undefined): number {
@@ -58,7 +60,14 @@ export function edgeLabelBackgroundStyle(theme: Theme): Record<string, string | 
   return { fill: theme.colors.card, fillOpacity: theme.opacities.hover };
 }
 
-/** The outline and fill of a decision card. */
+/**
+ * The outline and fill of a decision card.
+ *
+ * The start of the adventure is said with the card's own left edge — a rubric bar
+ * in the theme's oxblood — rather than with a kicker above the context. A label
+ * costs the card a third type size in its top 60px; an edge costs it nothing and
+ * is legible at the zoom a fitted graph is actually read at.
+ */
 export function nodeCardStyle(theme: Theme, tone: NodeTone): Record<string, string | number> {
   const borderColor = tone.selected
     ? theme.colors.ring
@@ -76,6 +85,13 @@ export function nodeCardStyle(theme: Theme, tone: NodeTone): Record<string, stri
     // Surfaces take the 8px step; only controls (buttons, chips) go tighter.
     borderRadius: theme.radii.md,
     opacity: tone.unvisited ? theme.opacities.disabled : 1,
+    // Written after the uniform border so it wins: one edge in another colour.
+    ...(tone.isStart
+      ? {
+          borderLeftWidth: theme.spacing.xxs,
+          borderLeftColor: theme.colors.primary,
+        }
+      : {}),
   };
 }
 

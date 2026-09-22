@@ -38,8 +38,15 @@ export function zoneOf(track: TrackId): TrackZoneId {
   return track === 1 ? "track1" : "track2";
 }
 
+/**
+ * The two rails' hues.
+ *
+ * Track 1 is the rubric red the whole page is set in and track 2 the brown ink
+ * beside it: a cool blue rail was the only cold thing on a parchment screen, and
+ * it read as a link rather than as "the track the trolley is already on".
+ */
 function trackColor(theme: Theme, track: TrackId): string {
-  return track === 1 ? theme.colors.track1 : theme.colors.track2;
+  return track === 1 ? theme.colors.primary : theme.colors.track2;
 }
 
 /** One rail pair plus its sleepers, drawn along a straight run. */
@@ -180,8 +187,8 @@ function ObjectChip({
 }) {
   return (
     <View
-      style={{ height: BOARD.slotHeight }}
-      className="flex-row items-center gap-xs rounded-sm border-hairline border-border bg-card px-xs shadow-ink-soft"
+      style={{ height: BOARD.slotHeight, maxWidth: BOARD.chipMaxWidth }}
+      className="flex-row items-center gap-xs rounded-sm border-hairline border-border bg-card px-sm shadow-ink-soft"
     >
       <ObjectGlyph icon={item.icon} />
       <Text variant="small" numberOfLines={1} className="shrink">
@@ -212,6 +219,7 @@ function Lane({
   width,
   hovered,
   max,
+  showSlots,
   zone: { attach, onLayout },
   onRemove,
 }: {
@@ -220,6 +228,8 @@ function Lane({
   width: number;
   hovered: boolean;
   max: number;
+  /** Draw the empty places. Only while a tile is looking for somewhere to go. */
+  showSlots: boolean;
   zone: DropZoneBinding;
   onRemove: (id: string, index: number) => void;
 }) {
@@ -244,22 +254,27 @@ function Lane({
         hovered ? "border-thick border-ring bg-muted" : "border-transparent",
       )}
     >
-      {Array.from({ length: max }, (_, index) => {
-        const item = items[index];
-        return (
-          <View key={index} className="flex-1">
-            {item ? (
-              <ObjectChip item={item} onRemove={() => onRemove(item.id, index)} />
-            ) : (
-              // The empty place: an outline standing where an object would stand.
-              <View
-                style={{ height: BOARD.slotHeight }}
-                className="rounded-sm border-hairline border-dashed border-border"
-              />
-            )}
-          </View>
-        );
-      })}
+      {/*
+        What is standing here sizes to its own name — a five-wide grid made "Your
+        Dog" two thirds empty box — and what is not yet standing here shares out
+        whatever is left. A chip therefore never moves when the empty places
+        appear under a dragged tile.
+      */}
+      {items.map((item, index) => (
+        <ObjectChip key={index} item={item} onRemove={() => onRemove(item.id, index)} />
+      ))}
+      {showSlots
+        ? Array.from({ length: Math.max(0, max - items.length) }, (_, index) => (
+            // The empty place: an outline standing where an object would stand.
+            // It only appears while a tile is in the air, so at rest the board is
+            // a drawing of two tracks rather than ten dashed boxes over one.
+            <View
+              key={`slot-${index}`}
+              style={{ height: BOARD.slotHeight }}
+              className="flex-1 rounded-sm border-hairline border-dashed border-border"
+            />
+          ))
+        : null}
     </View>
   );
 }
@@ -273,6 +288,11 @@ export type TrackBoardProps = {
   zones: UseDropZones<TrackZoneId>;
   /** The track currently under a dragged tile, if any. */
   hovered?: TrackId | null;
+  /**
+   * A tile is looking for a track: a drag is under way, or one was tapped and is
+   * waiting to be told where to go. The empty places are drawn while it is true.
+   */
+  arming?: boolean;
   /** How many objects a track holds before it stops accepting more. */
   max: number;
   /** The trolley, drawn over the rails once the board's width is known. */
@@ -294,12 +314,16 @@ export function TrackBoard({
   onRemove,
   zones,
   hovered = null,
+  arming = false,
   max,
   overlay,
   className,
 }: TrackBoardProps) {
   const theme = useTheme();
   const [width, setWidth] = useState<number>(BOARD.minWidth);
+  /** The pointer is over the board, which is the other way to ask where things go. */
+  const [pointerOver, setPointerOver] = useState(false);
+  const showSlots = arming || pointerOver || hovered !== null;
 
   const measure = useCallback((event: LayoutChangeEvent) => {
     // The gutter is part of the panel but not of the drawing, so the rails are
@@ -320,6 +344,8 @@ export function TrackBoard({
         className,
       )}
       onLayout={measure}
+      onPointerEnter={() => setPointerOver(true)}
+      onPointerLeave={() => setPointerOver(false)}
     >
       {/* The track names live here, left of the drawing, so nothing lands on a rail. */}
       <View style={{ width: BOARD.gutter, height: BOARD.height }}>
@@ -335,7 +361,7 @@ export function TrackBoard({
             className="px-md"
           >
             {/* The label wears its own rail's hue, which is all the two hues mean. */}
-            <Text variant="meta" className={track === 1 ? "text-track1" : "text-track2"}>
+            <Text variant="meta" className={track === 1 ? "text-primary" : "text-track2"}>
               {`Track ${track}`}
             </Text>
           </View>
@@ -354,6 +380,7 @@ export function TrackBoard({
               width={width}
               hovered={hovered === track}
               max={max}
+              showSlots={showSlots}
               zone={zones.bind(zoneOf(track))}
               onRemove={(_id, index) => onRemove(track, index)}
             />

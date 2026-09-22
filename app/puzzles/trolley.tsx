@@ -58,9 +58,6 @@ const VARIANTS: readonly VariantOption<TrolleyVariant>[] = [
   },
 ];
 
-/** How many objects a track holds, and how many a randomized draw puts on each. */
-const TRACK_CAPACITY = 5;
-
 type Board = {
   variant: TrolleyVariant;
   track1: string[];
@@ -108,6 +105,9 @@ export default function TrolleyScreen() {
   const [board, setBoard] = usePersistedState<Board>("puzzles.trolley", EMPTY_BOARD, parseBoard);
   const [hovered, setHovered] = useState<TrackId | null>(null);
   const [creatorOpen, setCreatorOpen] = useState(false);
+  /** A tile is in the air, or one has been tapped: the board shows its places. */
+  const [dragging, setDragging] = useState(false);
+  const [armed, setArmed] = useState(false);
 
   const prompt = usePromptPreview(async () => {
     const { prompt: composed } = await previewTrolleyPrompt({
@@ -147,7 +147,7 @@ export default function TrolleyScreen() {
   );
 
   const capacityLeft = useCallback(
-    (track: TrackId) => (track === 1 ? board.track1 : board.track2).length < TRACK_CAPACITY,
+    (track: TrackId) => (track === 1 ? board.track1 : board.track2).length < RUN_LIMITS.maxTrack,
     [board.track1, board.track2],
   );
 
@@ -155,7 +155,7 @@ export default function TrolleyScreen() {
     (item: TrolleyObject, track: TrackId) => {
       const key = track === 1 ? "track1" : "track2";
       const current = board[key];
-      if (current.length >= TRACK_CAPACITY) return;
+      if (current.length >= RUN_LIMITS.maxTrack) return;
       patch({ [key]: [...current, item.id] } as Partial<Board>);
     },
     [board, patch],
@@ -169,6 +169,11 @@ export default function TrolleyScreen() {
     [board, patch],
   );
 
+  const dragStart = useCallback(() => {
+    setDragging(true);
+    zones.remeasure();
+  }, [zones]);
+
   const dragMove = useCallback(
     (point: DragPoint) => {
       const zone = zones.hitTest(point.x, point.y);
@@ -179,6 +184,7 @@ export default function TrolleyScreen() {
 
   const dropItem = useCallback(
     (item: TrolleyObject, point: DragPoint) => {
+      setDragging(false);
       setHovered(null);
       const zone = zones.hitTest(point.x, point.y);
       if (zone !== null) place(item, trackOf(zone));
@@ -187,7 +193,7 @@ export default function TrolleyScreen() {
   );
 
   const randomize = useCallback(() => {
-    const drawn = randomTracks(catalogue.items, TRACK_CAPACITY, (pool, n) =>
+    const drawn = randomTracks(catalogue.items, RUN_LIMITS.maxTrack, (pool, n) =>
       randomSelection(pool, n),
     );
     patch({
@@ -218,9 +224,12 @@ export default function TrolleyScreen() {
 
   const total = board.roster.reduce((sum, entry) => sum + entry.runs, 0);
 
+  /** True once an answer has actually come back; before that there is no result. */
+  const decided = (trolleySummary?.decisions.length ?? 0) > 0;
+
   return (
     <Screen title="Trolley Problems" subtitle="ἁμαξοστοιχία · the lever and the lesser evil">
-      <Section title="The roster">
+      <Section title="Roster">
         <RosterBar
           value={board.roster}
           onChange={(roster) => patch({ roster })}
@@ -232,7 +241,7 @@ export default function TrolleyScreen() {
       </Section>
 
       <Section
-        title="The framing"
+        title="Framing"
         right={
           <Button variant="link" size="sm" onPress={() => void prompt.show()}>
             <Text>Prompt view</Text>
@@ -246,14 +255,15 @@ export default function TrolleyScreen() {
         />
       </Section>
 
-      <Section title="The tracks">
+      <Section title="Tracks">
         <TrackBoard
           track1={track1}
           track2={track2}
           onRemove={removeAt}
           zones={zones}
           hovered={hovered}
-          max={TRACK_CAPACITY}
+          arming={dragging || armed}
+          max={RUN_LIMITS.maxTrack}
           overlay={(width) => (
             <TrolleyAnimation
               // A new run remounts the animation, rewinding its decision queue.
@@ -264,16 +274,23 @@ export default function TrolleyScreen() {
             />
           )}
         />
-        {/* The screen's one instruction, on the seam between the board and the palette. */}
-        <Text variant="meta">Drag a tile onto a track, or tap one and choose.</Text>
+        {/*
+          The screen's one instruction, on the seam between the board and the
+          palette — and only while the board is bare. Once something is standing
+          on a track the sentence is describing what the user has already done.
+        */}
+        {track1.length === 0 && track2.length === 0 ? (
+          <Text variant="meta">Drag a tile onto a track, or tap one and choose.</Text>
+        ) : null}
         <ObjectPalette
           items={catalogue.items}
           loading={catalogue.loading}
           canPlace={capacityLeft}
           onPlace={place}
           onDropItem={dropItem}
-          onDragStart={zones.remeasure}
+          onDragStart={dragStart}
           onDragMove={dragMove}
+          onArmedChange={setArmed}
           onRandomize={randomize}
           onClear={clearTracks}
           onCreate={() => setCreatorOpen(true)}
@@ -283,9 +300,10 @@ export default function TrolleyScreen() {
         {/*
           The run belongs to the board: a heading and a rule over one button made a
           section out of the thing the section above is for. It stays the screen's
-          only filled control, and says beside itself why it is off.
+          only filled control, and what stops it is written directly underneath —
+          a reason set beside a disabled button reads as the button's caption.
         */}
-        <View className="flex-row flex-wrap items-center gap-md">
+        <View className="items-start gap-sm">
           <Button
             disabled={blocked !== null || starter.starting}
             onPress={() => void startRun()}
@@ -307,14 +325,21 @@ export default function TrolleyScreen() {
         ) : null}
       </Section>
 
-      <Section title="What they chose">
-        <TrolleyResults
-          summary={trolleySummary}
-          roster={board.roster}
-          characters={characterIndex}
-          runId={starter.runId}
-        />
-      </Section>
+      {/*
+        No heading over an absence: until the first answer lands there is nothing
+        to call "Results", and a rule with one apologetic sentence under it was
+        the emptiness written out twice.
+      */}
+      {decided ? (
+        <Section title="Results">
+          <TrolleyResults
+            summary={trolleySummary}
+            roster={board.roster}
+            characters={characterIndex}
+            runId={starter.runId}
+          />
+        </Section>
+      ) : null}
 
       <ObjectCreator
         open={creatorOpen}

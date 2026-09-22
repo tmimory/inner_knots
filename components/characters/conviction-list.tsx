@@ -25,6 +25,9 @@ export type ConvictionListProps = {
  * sits inside the field's right padding, so every row shares both edges; the add
  * button closes once the list is full, so the limit is visible rather than
  * enforced by a refusal at save time.
+ *
+ * How full the list is belongs to the caller, which puts it on the field's label
+ * row beside the word it counts.
  */
 export function ConvictionList({
   value,
@@ -72,23 +75,21 @@ export function ConvictionList({
       ))}
 
       {/*
-        A text button, not an outlined one: adding a line is the quietest thing on
-        the form, and the counter it shares its row with is the same "n / max" the
-        capped textarea above already sets, right-aligned under the group.
+        A small ghost button, not a line of text: "+ Add principle" set as bare
+        prose under a column of fields reads as a caption explaining them. The
+        counter is no longer its neighbour — it belongs on the group's label row,
+        where every other counter on the form now sits.
       */}
-      <View className="flex-row items-center justify-between gap-md">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="px-none"
-          disabled={full}
-          onPress={() => onChange([...value, ""])}
-        >
-          <Text className="font-mono">+</Text>
-          <Text>{addLabel}</Text>
-        </Button>
-        <Text variant="meta">{`${value.length} / ${maxItems}`}</Text>
-      </View>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="self-start"
+        disabled={full}
+        onPress={() => onChange([...value, ""])}
+      >
+        <Text className="font-mono">+</Text>
+        <Text>{addLabel}</Text>
+      </Button>
     </View>
   );
 }

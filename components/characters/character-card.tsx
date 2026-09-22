@@ -2,7 +2,8 @@ import { Link } from "expo-router";
 import { Pressable, View } from "react-native";
 
 import { Avatar } from "@/components/avatars";
-import { Card, Chevron, Text } from "@/components/ui";
+import { Chevron, Text } from "@/components/ui";
+import { cn } from "@/lib/utils";
 import { characterDisplayName, type Character } from "@/lib/domain";
 
 import { characterBlurb, characterMeta, characterTitle } from "./labels";
@@ -16,12 +17,15 @@ export type CharacterCardProps = {
  * One character in the roster: face, name, the sentence it was given about
  * itself, and the facts that decide how it will answer.
  *
- * A full-width row rather than a tile in a grid. Three tiles across a reading
- * column leave one orphaned on a second row and give each card a height of its
- * own as the blurb wraps; a row fills the column it is in, keeps one height, and
- * gives the name, the blurb and the metadata a column each. The name is set in
- * the body serif: small caps belong to the page's own furniture, not to its
- * contents.
+ * A row on a ruled page, not a card. A list of framed, filled panels turns a
+ * roster into a stack of unrelated objects, each with four edges asking to be
+ * read; a hairline between rows says "next entry" with one line, and the hover
+ * tint is the only frame a clickable row needs.
+ *
+ * The three lines are one column, left-aligned on one axis: name, the sentence,
+ * then the facts. Hung at the row's right edge instead, the facts began at a
+ * different x on every row — three ragged starts that the eye reads as three
+ * columns that failed to line up.
  */
 export function CharacterCard({ character, className }: CharacterCardProps) {
   return (
@@ -29,24 +33,25 @@ export function CharacterCard({ character, className }: CharacterCardProps) {
       <Pressable
         role="link"
         accessibilityLabel={`Edit ${characterDisplayName(character)}`}
-        className={className}
+        className={cn(
+          "flex-row items-center gap-md border-b-hairline border-border px-sm py-md",
+          "transition-colors duration-fast active:bg-muted web:hover:bg-muted/subtle",
+          className,
+        )}
       >
-        <Card pressable className="flex-row items-center gap-md rounded-md p-lg">
-          <Avatar shape={character.avatar.shape} color={character.avatar.color} size="md" />
-          <View className="flex-1 gap-xxs">
-            <Text className="font-body text-lg text-foreground" numberOfLines={1}>
-              {characterTitle(character)}
-            </Text>
-            <Text variant="meta" numberOfLines={1}>
-              {characterBlurb(character)}
-            </Text>
-          </View>
-          {/* The facts hide before the name and the blurb do when the row narrows. */}
-          <Text variant="meta" numberOfLines={1} className="hidden wide:flex">
+        <Avatar shape={character.avatar.shape} color={character.avatar.color} size="md" />
+        <View className="flex-1 gap-xxs">
+          <Text className="font-body text-lg text-foreground" numberOfLines={1}>
+            {characterTitle(character)}
+          </Text>
+          <Text variant="meta" numberOfLines={1}>
+            {characterBlurb(character)}
+          </Text>
+          <Text variant="subtle" numberOfLines={1}>
             {characterMeta(character)}
           </Text>
-          <Chevron direction="right" />
-        </Card>
+        </View>
+        <Chevron direction="right" />
       </Pressable>
     </Link>
   );

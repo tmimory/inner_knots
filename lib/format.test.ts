@@ -9,6 +9,7 @@ import {
   formatDuration,
   formatElapsed,
   formatPercent,
+  formatRelative,
   formatStamp,
   formatTime,
   pluralize,
@@ -65,6 +66,52 @@ describe("formatStamp", () => {
 
   it("reports an unreadable timestamp rather than throwing", () => {
     expect(formatStamp("nonsense")).toBe(UNKNOWN);
+  });
+});
+
+describe("formatRelative", () => {
+  /** A fixed reading of the clock, so the expectations do not drift with the day. */
+  const now = new Date(2026, 8, 21, 17, 0, 0).getTime();
+
+  function ago(ms: number): string {
+    return formatRelative(new Date(now - ms).toISOString(), now);
+  }
+
+  it("says just now for the last minute, including a clock running ahead", () => {
+    expect(ago(0)).toBe("just now");
+    expect(ago(59_000)).toBe("just now");
+    expect(ago(-5_000)).toBe("just now");
+  });
+
+  it("counts minutes, then hours", () => {
+    expect(ago(60_000)).toBe("1m ago");
+    expect(ago(5 * 60_000)).toBe("5m ago");
+    expect(ago(59 * 60_000)).toBe("59m ago");
+    expect(ago(60 * 60_000)).toBe("1h ago");
+    expect(ago(2 * 60 * 60_000)).toBe("2h ago");
+  });
+
+  it("counts hours right up to a day, then names yesterday", () => {
+    expect(ago(23 * 60 * 60_000)).toBe("23h ago");
+    expect(formatRelative(new Date(2026, 8, 20, 12, 0, 0).toISOString(), now)).toBe("yesterday");
+  });
+
+  it("names yesterday by the calendar, so 31 hours is not two days", () => {
+    expect(formatRelative(new Date(2026, 8, 20, 10, 0, 0).toISOString(), now)).toBe("yesterday");
+  });
+
+  it("counts days up to a week", () => {
+    expect(formatRelative(new Date(2026, 8, 18, 12, 0, 0).toISOString(), now)).toBe("3d ago");
+    expect(formatRelative(new Date(2026, 8, 16, 12, 0, 0).toISOString(), now)).toBe("5d ago");
+  });
+
+  it("falls back to the exact stamp beyond a week", () => {
+    const old = new Date(2026, 7, 14, 9, 30, 0).toISOString();
+    expect(formatRelative(old, now)).toBe(formatStamp(old));
+  });
+
+  it("reports an unreadable timestamp rather than throwing", () => {
+    expect(formatRelative("nonsense", now)).toBe(UNKNOWN);
   });
 });
 

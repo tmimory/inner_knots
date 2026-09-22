@@ -6,11 +6,14 @@
  * that is what lets a connection say which option leads where. A row with no
  * outgoing edge is an ending, and says so. In the outcome view the same card
  * shows how many walks came through it and how they split.
+ *
+ * The card holds itself to two type sizes: the context and the option rows in
+ * the metadata size, the question in body. Where a walk begins is said by the
+ * card's rubric left edge (see `nodeCardStyle`) rather than by a third one.
  */
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { View } from "react-native";
 
-import { StartLabel } from "@/components/puzzles/adventure/start-label";
 import { Badge, Text } from "@/components/ui";
 import { formatPercent } from "@/lib/format";
 import { ADVENTURE_LAYOUT } from "@/lib/puzzles/adventure/layout";
@@ -27,28 +30,35 @@ const DECISION_LINES = 2;
 
 export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
   const theme = useTheme();
-  const { node, isStart, hits, share, optionHits, onPath, unvisited } = data;
+  const { node, isStart, isTarget, hits, share, optionHits, onPath, unvisited } = data;
   const counted = hits !== undefined;
 
   return (
     // No `overflow-hidden`: the option handles sit outside the card border.
-    <View style={nodeCardStyle(theme, { selected, onPath, unvisited })}>
-      <Handle
-        type="target"
-        id={NODE_TARGET_HANDLE}
-        position={Position.Left}
-        style={handleStyle(theme, "target")}
-      />
+    <View style={nodeCardStyle(theme, { selected, onPath, unvisited, isStart })}>
+      {/*
+        Nothing arrives at the start of an adventure, so it is drawn with no place
+        for anything to arrive. A node that is both the start and the target of
+        some option keeps its handle — otherwise that edge would have nowhere to
+        land — which is the one case where the two readings disagree.
+      */}
+      {isStart && isTarget !== true ? null : (
+        <Handle
+          type="target"
+          id={NODE_TARGET_HANDLE}
+          position={Position.Left}
+          style={handleStyle(theme, "target")}
+        />
+      )}
 
       <View className="gap-xs px-md pb-sm pt-md">
-        <View className="flex-row items-center gap-sm">
-          {isStart ? <StartLabel /> : null}
-          {counted ? (
+        {counted ? (
+          <View className="flex-row items-center gap-sm">
             <Badge variant={unvisited ? "muted" : "secondary"}>
               <Text>{`${hits} · ${formatPercent(share ?? 0)}`}</Text>
             </Badge>
-          ) : null}
-        </View>
+          </View>
+        ) : null}
 
         <Text variant="muted" numberOfLines={CONTEXT_LINES}>
           {node.context.trim() === "" ? "No context yet" : node.context}

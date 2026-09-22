@@ -6,6 +6,7 @@ import { CountStepper } from "@/components/puzzles/count-stepper";
 import {
   LabeledToggle,
   PayoffMatrix,
+  PendingAnswers,
   PrisonersDilemmaResults,
   Subsection,
 } from "@/components/puzzles/prisoners-dilemma";
@@ -159,9 +160,9 @@ export default function PrisonersDilemmaScreen() {
         for, and on a wide screen there is no reason to put a scroll between them.
       */}
       <View className="gap-xl pb-xl wide:flex-row wide:items-start">
-        <View className="flex-1 gap-xl">
+        <View className="flex-1 gap-3xl">
           {/* What the puzzle is: who plays it, and how it is put to them. */}
-          <Section title="Setup" className="gap-xl">
+          <Section title="Setup" className="gap-2xl">
             <Subsection title="The players">
               <RosterBar
                 value={setup.roster}
@@ -219,7 +220,7 @@ export default function PrisonersDilemmaScreen() {
           </Section>
 
           {/* What the puzzle's rules are: the charge, the bargain, the length. */}
-          <Section title="Rules" className="gap-xl">
+          <Section title="Rules" className="gap-2xl">
             <Subsection
               title="The charge"
               right={
@@ -232,24 +233,40 @@ export default function PrisonersDilemmaScreen() {
                 </Button>
               }
             >
-              <Textarea
-                rows={3}
-                maxLength={RUN_LIMITS.crime}
-                editable={setup.crimeUnlocked}
-                // A character counter on a field nobody is typing in is a number
-                // with nothing to say; it arrives with the cursor.
-                showCount={setup.crimeUnlocked}
-                value={setup.crime}
-                onChangeText={(crime) => patch({ crime })}
-                accessibilityLabel="The charge"
-              />
-              {setup.crimeUnlocked && setup.crime !== DEFAULT_CRIME ? (
-                <View className="flex-row justify-end">
-                  <Button variant="ghost" size="sm" onPress={() => patch({ crime: DEFAULT_CRIME })}>
-                    <Text>Reset to default</Text>
-                  </Button>
-                </View>
-              ) : null}
+              {/*
+                Locked, the charge is prose on the page rather than a field that
+                has been switched off: grey text in a sunken box reads as broken
+                twice over — an input nobody may type in, holding what looks like
+                a placeholder. It becomes a field only when "Edit" says so.
+              */}
+              {setup.crimeUnlocked ? (
+                <>
+                  <Textarea
+                    rows={3}
+                    maxLength={RUN_LIMITS.crime}
+                    // A character counter on a field nobody is typing in is a
+                    // number with nothing to say; it arrives with the cursor.
+                    showCount
+                    autoFocus
+                    value={setup.crime}
+                    onChangeText={(crime) => patch({ crime })}
+                    accessibilityLabel="The charge"
+                  />
+                  {setup.crime !== DEFAULT_CRIME ? (
+                    <View className="flex-row justify-end">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onPress={() => patch({ crime: DEFAULT_CRIME })}
+                      >
+                        <Text>Reset to default</Text>
+                      </Button>
+                    </View>
+                  ) : null}
+                </>
+              ) : (
+                <Text>{setup.crime}</Text>
+              )}
             </Subsection>
 
             <Subsection title="The payoffs">
@@ -260,39 +277,54 @@ export default function PrisonersDilemmaScreen() {
             <Subsection title="Game length">
               <VariantSelect
                 value={setup.iterated ? "iterated" : "single"}
-                onChange={(length) => patch({ iterated: length === "iterated" })}
+                onChange={(length) =>
+                  patch(
+                    length === "iterated"
+                      ? { iterated: true }
+                      : // A single game is one game: leaving a hidden count at
+                        // seven would run seven of them without saying so.
+                        { iterated: false, runs: RUN_LIMITS.minRuns },
+                  )
+                }
                 options={LENGTHS}
                 label="Game length"
               />
 
+              {/*
+                How long and how many are both questions the iterated game asks
+                and the single one answers for itself, so they arrive together
+                with it rather than sitting under "Single" doing nothing.
+              */}
               {setup.iterated ? (
-                <View className="gap-xs">
-                  <View className="flex-row items-center gap-md">
-                    <Label>Rounds per game</Label>
-                    <View className="flex-1" />
-                    <Text className="font-mono">{setup.rounds}</Text>
+                <View className="gap-lg">
+                  <View className="gap-xs">
+                    <View className="flex-row items-center gap-md">
+                      <Label>Rounds per game</Label>
+                      <View className="flex-1" />
+                      <Text className="font-mono">{setup.rounds}</Text>
+                    </View>
+                    <Slider
+                      value={setup.rounds}
+                      min={MIN_ITERATED_ROUNDS}
+                      max={RUN_LIMITS.maxIterations}
+                      step={1}
+                      onValueChange={(rounds) => patch({ rounds })}
+                      accessibilityLabel="Rounds per game"
+                    />
                   </View>
-                  <Slider
-                    value={setup.rounds}
-                    min={MIN_ITERATED_ROUNDS}
-                    max={RUN_LIMITS.maxIterations}
-                    step={1}
-                    onValueChange={(rounds) => patch({ rounds })}
-                    accessibilityLabel="Rounds per game"
-                  />
+
+                  <View className="flex-row flex-wrap items-center gap-md">
+                    <Label>Games</Label>
+                    <CountStepper
+                      value={setup.runs}
+                      onChange={(runs) => patch({ runs })}
+                      min={RUN_LIMITS.minRuns}
+                      max={RUN_LIMITS.maxRuns}
+                      label="Games"
+                    />
+                  </View>
                 </View>
               ) : null}
-
-              <View className="flex-row flex-wrap items-center gap-md">
-                <Label>Games</Label>
-                <CountStepper
-                  value={setup.runs}
-                  onChange={(runs) => patch({ runs })}
-                  min={RUN_LIMITS.minRuns}
-                  max={RUN_LIMITS.maxRuns}
-                  label="Games"
-                />
-              </View>
             </Subsection>
           </Section>
         </View>
@@ -300,21 +332,20 @@ export default function PrisonersDilemmaScreen() {
         {/*
           The rail stretches to the height of the setup column so its contents can
           stick: on the web the run controls stay in view however far down the
-          payoff matrix you are.
+          payoff matrix you are. A hairline down its inside edge is what makes it
+          a rail rather than a column of text that happens to sit on the right,
+          and its heading takes the same rule-and-air as "Setup" so the two
+          columns start on one line.
         */}
-        <View className="w-full wide:w-inspector wide:self-stretch">
+        <View className="w-full wide:w-inspector wide:self-stretch wide:border-l-hairline wide:border-border wide:pl-xl">
           <View className="gap-xl web:sticky web:top-xl">
-            <Section
-              title="The run"
-              divider={false}
-              right={
-                <Button variant="link" size="sm" onPress={() => void prompt.show()}>
-                  <Text>Prompt view</Text>
-                </Button>
-              }
-            >
-              {/* The screen's one filled button, kept beside the results it fills. */}
-              <View className="flex-row flex-wrap items-center gap-md">
+            <Section title="Run">
+              {/*
+                The screen's one filled button, what stops it directly underneath,
+                and the way to read what it will send — a strip, not a panel, for
+                as long as there is nothing to report.
+              */}
+              <View className="items-start gap-sm">
                 <Button
                   disabled={blocked !== null || starter.starting}
                   onPress={() => void startRun()}
@@ -328,18 +359,24 @@ export default function PrisonersDilemmaScreen() {
                       "round",
                     )} × 2 players.`}
                 </Text>
+                <Button variant="link" size="sm" onPress={() => void prompt.show()}>
+                  <Text>Prompt view</Text>
+                </Button>
               </View>
 
               <RunProgress run={run ?? null} />
               {starter.error ? (
                 <Text className="text-destructive">{starter.error.message}</Text>
               ) : null}
+
+              {/*
+                Until a round exists there is nothing to head: a second heading
+                with a rule and a paragraph under it is the emptiness twice over.
+                The two rows that are waiting say it instead.
+              */}
+              {decided ? null : <PendingAnswers players={players} />}
             </Section>
 
-            {/*
-              Until a round exists there is nothing to head: an empty section with
-              a rule and a paragraph saying so is the emptiness twice over.
-            */}
             {decided ? (
               <Section title="What they chose">
                 <PrisonersDilemmaResults
@@ -349,9 +386,7 @@ export default function PrisonersDilemmaScreen() {
                   runId={starter.runId}
                 />
               </Section>
-            ) : (
-              <Text variant="muted">Their answers appear here.</Text>
-            )}
+            ) : null}
           </View>
         </View>
       </View>

@@ -37,13 +37,18 @@ export function flowChromeCss(theme: Theme): string {
   const motion = `${theme.durations.fast}ms cubic-bezier(${theme.easings.standard.join(", ")})`;
 
   return `
+/*
+  The zoom cluster is a margin note on the canvas, not an object floating over
+  it: the same hairline the canvas frame is drawn with, no fill of its own and no
+  shadow. A filled, shadowed cluster outweighed the frame it sat inside.
+*/
 .react-flow__controls {
   flex-direction: row;
   margin: ${theme.spacing.md}px;
   border: ${theme.borderWidths.hairline}px solid ${theme.colors.border};
   border-radius: ${theme.radii.sm}px;
-  background: ${theme.colors.card};
-  box-shadow: ${theme.shadows.inkSoft};
+  background: transparent;
+  box-shadow: none;
   overflow: hidden;
 }
 .react-flow__controls .react-flow__controls-button {
@@ -74,14 +79,15 @@ export function flowChromeCss(theme: Theme): string {
   fill: currentColor;
 }
 .react-flow__attribution {
-  margin: ${theme.spacing.sm}px;
+  margin: ${theme.spacing.md}px;
   padding: 0;
   background: transparent;
 }
 .react-flow__attribution a {
-  color: ${theme.colors.subtleForeground};
-  opacity: ${theme.opacities.scrim};
+  color: ${theme.colors.mutedForeground};
   font-family: ${theme.fonts.body}, serif;
+  font-size: ${theme.fontSizes.xs}px;
+  line-height: ${theme.lineHeights.xs}px;
   text-decoration: none;
 }
 .react-flow__node .${TERMINAL_HANDLE_CLASS} {

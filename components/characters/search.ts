@@ -7,8 +7,13 @@
  */
 import { characterDisplayName, type Character } from "@/lib/domain";
 
-/** Placeholder for every character search box in the app. */
-export const CHARACTER_SEARCH_PLACEHOLDER = "Search by identifier, provider or model";
+/**
+ * Placeholder for every character search box in the app.
+ *
+ * Two words, because a placeholder is a label for an empty field, not a manual:
+ * the list of what is matched belonged to a field nobody had typed in yet.
+ */
+export const CHARACTER_SEARCH_PLACEHOLDER = "Search characters";
 
 /** Everything about a character that a search query is matched against. */
 function searchText(character: Character): string {

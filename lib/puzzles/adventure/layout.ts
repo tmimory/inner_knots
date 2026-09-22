@@ -24,17 +24,21 @@ import { spacing } from "@/theme/tokens";
 /** The one place the size of a decision card and the gaps around it are decided. */
 export const ADVENTURE_LAYOUT = {
   /** Width of a decision card, in px. */
-  nodeWidth: 280,
+  nodeWidth: 260,
   /** What a card takes up before its first option row: badges, context, decision. */
   nodeHeaderHeight: 144,
   /** Added per option row. */
   nodeOptionHeight: 30,
   /**
-   * Gap between one rank of nodes and the next, across the flow. Wide enough
-   * that an edge between two ranks has a straight run in the middle to carry
-   * its label — under about 180px it is all bend and the label lands on a curve.
+   * Gap between one rank of nodes and the next, across the flow.
+   *
+   * Two cards and the gap between them have to fit the canvas at something close
+   * to 1:1 — a graph fitted at 0.8 sets a 14px option row at 11px, which is a
+   * caption, not a line you read. So the gap is only as wide as an edge needs to
+   * bend and, where a node forks, to carry the option's name on the straight run
+   * in the middle of the bend.
    */
-  rankGap: spacing["4xl"] * 3,
+  rankGap: spacing["4xl"] * 2,
   /** Gap between siblings within a rank. */
   nodeGap: spacing["4xl"],
   /** Room kept for an edge label between siblings. */

@@ -108,25 +108,19 @@ export function PayoffMatrix({ value, onChange, names, className }: PayoffMatrix
       ));
 
   return (
-    <View className={cn("gap-lg", className)}>
+    <View className={cn("gap-xl", className)}>
       <LabeledToggle
         label="The same bargain for both"
         checked={symmetric}
         onCheckedChange={(next) => onChange({ symmetric: next })}
       />
 
-      <OutcomeGrid
-        rowPlayer="Player A"
-        columnPlayer="Player B"
-        cells={cells}
-        footnote={
-          <Text variant="muted">
-            {symmetric
-              ? "Each cell is what the player on that row walks away with."
-              : "Each cell holds both sides of the same outcome."}
-          </Text>
-        }
-      />
+      {/*
+        No caption: a two-by-two under "The payoffs", with both axes named and the
+        moves down the side, already says what a cell holds. The one line the
+        screen is allowed goes under the button that starts the run.
+      */}
+      <OutcomeGrid rowPlayer="Player A" columnPlayer="Player B" cells={cells} />
 
       {symmetric ? null : (
         <LabeledToggle

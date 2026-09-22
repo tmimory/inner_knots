@@ -141,9 +141,12 @@ function EmptySlot({
         </Text>
       ) : null}
       {/*
-        A seat that is not the next one to fill keeps its ring at full strength but
-        loses the `+`: the row is a count of seats, and fading four of five would
-        hide the capacity the row exists to show.
+        Every empty seat is drawn the same: the dashed ring at full strength with a
+        `+` inside it. Two seats side by side that differ only in whether they
+        carry a mark read as one seat being broken, when all that separates them is
+        which one the next pick happens to land in — and the row exists to show how
+        many seats there are, so fading four of five would hide its whole point.
+        The quieter ink on the seats that are not next is the only difference.
       */}
       <Pressable
         role="button"
@@ -156,11 +159,9 @@ function EmptySlot({
           enabled && "web:hover:bg-muted",
         )}
       >
-        {enabled ? (
-          <Text variant="muted" className="font-mono text-lg">
-            +
-          </Text>
-        ) : null}
+        <Text className={cn("font-mono text-lg", enabled ? "text-muted-foreground" : "text-subtle-foreground")}>
+          +
+        </Text>
       </Pressable>
     </View>
   );

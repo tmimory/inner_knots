@@ -14,11 +14,15 @@ import { cn } from "@/lib/utils";
  *   ghost        a tertiary action with no edge at all
  *   destructive  a red text link; it never gets a fill beside Save
  *   link         a text link in the rubric red
+ *   quiet-link   a utility link — "Refresh models", "Enter model id manually" —
+ *                set in body ink, so it does not join the page's red voices
  *
- * A disabled button keeps the shape it has when it works — the filled ones stay
- * filled, at `opacity-disabled` — because a primary that turns into an outline
- * while you are not looking at it has changed rank, not state. The reason it is
- * off belongs beside it as muted text, not in the button's own styling.
+ * A disabled primary drops its fill and becomes an outline in the same red at
+ * `opacity-disabled`: a filled oxblood block that happens to be 50% transparent
+ * still reads as the thing to press, and the parchment behind it is close enough
+ * in value that the dimming barely registers. The outline keeps the button's rank
+ * and colour while plainly not being available. The reason it is off belongs
+ * directly beneath it as muted text, not in the button's own styling.
  */
 const buttonVariants = cva(
   "flex-row items-center justify-center gap-sm rounded-sm transition-colors duration-fast web:focus-visible:outline-none web:focus-visible:ring-thick web:focus-visible:ring-ring",
@@ -32,6 +36,7 @@ const buttonVariants = cva(
         ghost: "bg-transparent active:bg-muted web:hover:bg-muted",
         destructive: "bg-transparent active:opacity-hover web:hover:opacity-hover",
         link: "bg-transparent",
+        "quiet-link": "bg-transparent",
       },
       size: {
         sm: "h-control-sm px-md",
@@ -47,14 +52,21 @@ const buttonVariants = cva(
     // Compound classes are emitted last, so they win the tailwind-merge pass.
     compoundVariants: [
       // A text link has no box: it sits on the line it belongs to.
-      { variant: ["destructive", "link"], class: "px-none" },
+      { variant: ["destructive", "link", "quiet-link"], class: "px-none" },
+      // The primary action, switched off: the red outline, not the red block.
+      { variant: "default", disabled: true, class: "border-hairline border-primary bg-transparent" },
       // Nothing hovers when it cannot be pressed.
-      { disabled: true, class: "web:hover:opacity-disabled" },
+      { disabled: true, class: "web:hover:opacity-disabled web:hover:bg-transparent" },
     ],
     defaultVariants: { variant: "default", size: "default", disabled: false },
   },
 );
 
+/**
+ * Links are not underlined at rest — a page of underlined red phrases reads as
+ * marked-up prose — and take the underline under the cursor, where it is the
+ * clearest possible "this is a link" and costs nothing when it is not wanted.
+ */
 const buttonTextVariants = cva("font-body", {
   variants: {
     variant: {
@@ -62,8 +74,9 @@ const buttonTextVariants = cva("font-body", {
       secondary: "text-secondary",
       outline: "text-foreground",
       ghost: "text-foreground",
-      destructive: "text-destructive underline web:hover:text-primary",
-      link: "text-primary underline web:hover:text-destructive",
+      destructive: "text-destructive web:hover:underline",
+      link: "text-primary web:hover:underline",
+      "quiet-link": "text-foreground web:hover:underline",
     },
     size: {
       sm: "text-sm",
@@ -78,7 +91,11 @@ const buttonTextVariants = cva("font-body", {
   },
   // A text link is read as part of a sentence, so it is set at body size whatever
   // box it is given: a 14px link beside 17px prose reads as a footnote.
-  compoundVariants: [{ variant: ["destructive", "link"], size: "sm", class: "text-base" }],
+  compoundVariants: [
+    { variant: ["destructive", "link", "quiet-link"], size: "sm", class: "text-base" },
+    // The disabled primary lost its fill, so its label takes the red back.
+    { variant: "default", disabled: true, class: "text-primary" },
+  ],
   defaultVariants: { variant: "default", size: "default", disabled: false },
 });
 

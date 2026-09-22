@@ -49,12 +49,14 @@ export function OutcomeGrid({
         row labels it belongs to, and the column player's is centred over the pair
         of columns it spans rather than sitting on the first one.
       */}
-      <View className="flex-row items-end gap-md">
+      <View className="flex-row items-end gap-xl">
+        {/* Over the column of row labels, because that column is this player. */}
         <View className="w-avatar-xl">
           <Text variant="meta" numberOfLines={1}>
             {rowPlayer}
           </Text>
         </View>
+        {/* Centred across both input columns and the gap between them. */}
         <View className="flex-1 items-center">
           <Text variant="meta" numberOfLines={1}>
             {columnPlayer}
@@ -62,7 +64,7 @@ export function OutcomeGrid({
         </View>
       </View>
 
-      <View className="flex-row items-end gap-md">
+      <View className="flex-row items-end gap-xl">
         <View className="w-avatar-xl" />
         {MOVES.map((move) => (
           <View key={move} className="flex-1">
@@ -72,7 +74,7 @@ export function OutcomeGrid({
       </View>
 
       {MOVES.map((move, row) => (
-        <View key={move} className="flex-row items-start gap-md">
+        <View key={move} className="flex-row items-start gap-xl">
           <View className="min-h-control-md w-avatar-xl justify-center">
             <Label numberOfLines={1}>{move}</Label>
           </View>

@@ -4,8 +4,8 @@ import { Pressable, View } from "react-native";
 
 import { AdventureBuilder } from "@/components/flow";
 import { NodeEditor, splitIssues } from "@/components/puzzles/adventure";
-import { PageHeader, Screen, Scroll } from "@/components/shell";
-import { Button, Field, Input, Separator, Text, Textarea } from "@/components/ui";
+import { PageHeader, Screen } from "@/components/shell";
+import { Button, Field, Input, SectionHeading, Text, Textarea } from "@/components/ui";
 import { useAdventure } from "@/lib/client/use-adventures";
 import {
   ADVENTURE_LIMITS,
@@ -82,16 +82,16 @@ export default function AdventureBuilderScreen() {
   }, [draft, setDraft]);
 
   if (loading) {
-    return <Screen title="Opening the tree" subtitle="ὁδός · branching paths, recorded" />;
+    return <Screen title="Opening the tree" subtitle="ὁδός — branching paths, recorded" />;
   }
 
   if (!draft) {
     return (
-      <Screen title="No such adventure" subtitle="ὁδός · branching paths, recorded">
+      <Screen title="No such adventure" subtitle="ὁδός — branching paths, recorded">
         <Text variant="lead">{error ?? "That adventure is not on the shelf any more."}</Text>
         <View className="flex-row">
           <Button variant="outline" onPress={() => router.push("/puzzles/adventure")}>
-            <Text>Back to the shelf</Text>
+            <Text>Back to adventures</Text>
           </Button>
         </View>
       </Screen>
@@ -114,10 +114,10 @@ export default function AdventureBuilderScreen() {
           onPress={() => router.push("/puzzles/adventure")}
         >
           <Text variant="meta" className="transition-colors duration-fast web:hover:text-primary">
-            ← Shelf
+            ← Adventures
           </Text>
         </Pressable>
-        <PageHeader title={draft.name} subtitle="ὁδός · branching paths, recorded" />
+        <PageHeader title={draft.name} subtitle="ὁδός — branching paths, recorded" />
       </View>
 
       <View className="flex-row flex-wrap items-center gap-sm">
@@ -140,29 +140,39 @@ export default function AdventureBuilderScreen() {
 
         <View className="flex-1" />
 
-        {/* One line about the draft's state. The Save button only appears when
-            there is something to save; the rest of the time autosave has it. */}
-        <Text variant="meta">{saveState}</Text>
+        {/* What the draft's state is, at the size of a marginal note and a clear
+            step away from Run: set at button size and eight pixels off it, it
+            read as a fourth control. The Save button only appears when there is
+            something to save; the rest of the time autosave has it. */}
+        <Text variant="meta" className="mr-lg text-xs">
+          {saveState}
+        </Text>
         {dirty || saving ? (
           <Button variant="outline" size="sm" disabled={saving} onPress={() => void save()}>
             <Text>Save</Text>
           </Button>
         ) : null}
-        {runnable ? null : (
-          <Text variant="meta">{`${pluralize(blocking.length, "problem")} to fix first`}</Text>
-        )}
-        <Button
-          size="sm"
-          disabled={!runnable}
-          onPress={() =>
-            router.push({
-              pathname: "/puzzles/adventure/[id]/run",
-              params: { id: draft.id },
-            })
-          }
-        >
-          <Text>Run</Text>
-        </Button>
+
+        {/* The reason Run is off sits under Run, where the eye already is. */}
+        <View className="items-end gap-xxs">
+          <Button
+            size="sm"
+            disabled={!runnable}
+            onPress={() =>
+              router.push({
+                pathname: "/puzzles/adventure/[id]/run",
+                params: { id: draft.id },
+              })
+            }
+          >
+            <Text>Run</Text>
+          </Button>
+          {runnable ? null : (
+            <Text variant="meta" className="text-xs">
+              {`${pluralize(blocking.length, "problem")} to fix first`}
+            </Text>
+          )}
+        </View>
       </View>
 
       {showIssues ? (
@@ -194,7 +204,13 @@ export default function AdventureBuilderScreen() {
         </Text>
       ) : null}
 
-      <View className="gap-lg wide:flex-row wide:items-start">
+      {/*
+        Canvas and inspector are two columns of one spread, not a canvas with a
+        card parked beside it: the inspector keeps no border of its own, and the
+        hairline between them runs the height of the row, so the two share a
+        bottom edge whichever of them is taller.
+      */}
+      <View className="gap-lg wide:flex-row wide:items-stretch wide:gap-xl">
         <View className="flex-1">
           <AdventureBuilder
             adventure={draft}
@@ -205,9 +221,9 @@ export default function AdventureBuilderScreen() {
           />
         </View>
 
-        <Scroll className="w-full wide:w-inspector">
+        <View className="w-full gap-lg wide:w-inspector wide:border-l-hairline wide:border-border wide:pl-xl">
           {/* The inspector reads top to bottom: the tree, then the card in it. */}
-          <Text variant="h4">Adventure</Text>
+          <SectionHeading title="Details" />
 
           <Field label="Title">
             <Input
@@ -228,8 +244,6 @@ export default function AdventureBuilderScreen() {
             />
           </Field>
 
-          <Separator />
-
           {selected ? (
             <NodeEditor
               adventure={draft}
@@ -242,7 +256,7 @@ export default function AdventureBuilderScreen() {
               Select a card to write it; drag an option&apos;s handle onto another card.
             </Text>
           )}
-        </Scroll>
+        </View>
       </View>
     </View>
   );

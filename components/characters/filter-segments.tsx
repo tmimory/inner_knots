@@ -1,9 +1,7 @@
 import { View } from "react-native";
 
-import { Text } from "@/components/ui";
+import { Segmented, Text } from "@/components/ui";
 import { cn } from "@/lib/utils";
-
-import { Segmented } from "./segmented";
 
 export type FacetOption<T extends string> = { value: T; label: string };
 
@@ -27,6 +25,11 @@ export type FilterSegmentsProps<T extends string> = {
  * "All" is a segment of its own rather than an implied state of no segment being
  * lit: a filter whose resting state looks like three unchosen buttons is a filter
  * nobody can read. A facet with nothing to choose between draws nothing at all.
+ *
+ * The facet's name sits inside the control's own left padding rather than beside
+ * it. Outside, it was a word floating in the gap between two fields, belonging to
+ * neither; inside, it is the control's eyebrow and the whole thing reads as one
+ * object the width of a field.
  */
 export function FilterSegments<T extends string>({
   label,
@@ -38,9 +41,16 @@ export function FilterSegments<T extends string>({
   if (options.length < 2) return null;
 
   return (
-    <View className={cn("flex-row items-center gap-sm", className)}>
-      <Text variant="meta">{label}</Text>
+    <View
+      className={cn(
+        "h-control-md flex-row items-center gap-sm self-start rounded-sm bg-input py-xs pl-md pr-xs",
+        className,
+      )}
+    >
+      <Text variant="subtle">{label}</Text>
       <Segmented
+        size="sm"
+        className="bg-transparent p-none"
         label={label}
         value={value ?? ANY}
         options={[{ value: ANY, label: "All" }, ...options]}

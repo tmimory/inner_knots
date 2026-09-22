@@ -44,9 +44,12 @@ function RadioMark({ selected }: { selected: boolean }) {
  * different depths and the row read as three unrelated cards; as rows the eye
  * runs down one edge and compares the sentences.
  *
- * Only the chosen row is drawn: a soft tan fill and a filled mark. Three bordered
- * rows weigh more than the text field above them, and a border around every
- * option says nothing, because what the eye is looking for is which one is on.
+ * Only the chosen row is drawn, in the app's one selection language: a tan fill,
+ * a hairline in the rubric red, the label in the same red — what a selected chip
+ * and a chosen segment wear. Three bordered rows weigh more than the text field
+ * above them, and a border around every option says nothing, because what the eye
+ * is looking for is which one is on. The unchosen rows keep a transparent
+ * hairline, so choosing does not shift the column a pixel.
  */
 export function VariantSelect<Id extends string = string>({
   value,
@@ -72,10 +75,10 @@ export function VariantSelect<Id extends string = string>({
             accessibilityHint={option.description}
             onPress={() => onChange(option.id)}
             className={cn(
-              "flex-row flex-wrap items-baseline gap-x-md gap-y-xxs rounded-sm px-md py-sm transition-colors duration-fast",
+              "flex-row flex-wrap items-baseline gap-x-md gap-y-xxs rounded-sm border-hairline px-md py-sm transition-colors duration-fast",
               selected
-                ? "bg-muted"
-                : "bg-transparent active:bg-muted/subtle web:hover:bg-muted/subtle",
+                ? "border-primary bg-muted"
+                : "border-transparent bg-transparent active:bg-muted/subtle web:hover:bg-muted/subtle",
             )}
           >
             <RadioMark selected={selected} />

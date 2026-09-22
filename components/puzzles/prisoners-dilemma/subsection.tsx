@@ -25,12 +25,12 @@ export type SubsectionProps = {
  */
 export function Subsection({ title, right, children, className }: SubsectionProps) {
   return (
-    <View className={cn("gap-sm", className)}>
+    <View className={cn("gap-md", className)}>
       <View className="flex-row items-center justify-between gap-lg">
         <Label className="flex-1">{title}</Label>
         {right ? <View className="flex-row flex-wrap items-center gap-sm">{right}</View> : null}
       </View>
-      <View className="gap-md">{children}</View>
+      <View className="gap-lg">{children}</View>
     </View>
   );
 }

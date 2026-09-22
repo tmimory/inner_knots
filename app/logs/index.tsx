@@ -1,4 +1,3 @@
-import { Link } from "expo-router";
 import { useMemo, useState } from "react";
 import { View } from "react-native";
 
@@ -11,24 +10,12 @@ import {
   type RunFilters,
 } from "@/components/logs";
 import { Screen } from "@/components/shell";
-import { Text, buttonTextVariants } from "@/components/ui";
+import { EmptyState, SectionHeading, Text } from "@/components/ui";
 import { LOGS_POLL_MS, useCharacterIndex, useRuns } from "@/lib/client/use-runs";
 import type { Run } from "@/lib/domain/run";
 import { dayKey, formatDay, pluralize } from "@/lib/format";
-import { cn } from "@/lib/utils";
 
 type DayGroup = { key: string; label: string; runs: Run[] };
-
-/**
- * Where an empty ledger sends the reader. The logs screen is the one place in
- * the app with nothing of its own to show until something has been run, so it
- * stops apologising and becomes the launchpad instead.
- */
-const LAUNCHPAD = [
-  { href: "/puzzles/trolley", label: "Trolley Problems" },
-  { href: "/puzzles/prisoners-dilemma", label: "Prisoner's Dilemma" },
-  { href: "/puzzles/adventure", label: "Adventure" },
-] as const;
 
 /** Runs by the day they started, newest day first, newest run first inside it. */
 function groupByDay(runs: readonly Run[]): DayGroup[] {
@@ -75,7 +62,7 @@ export default function LogsScreen() {
   return (
     <Screen
       title="Logs"
-      subtitle="ὑπομνήματα"
+      subtitle="ὑπομνήματα — every prompt, every answer"
       right={
         error ? (
           <Text variant="small" className="text-destructive">
@@ -94,10 +81,8 @@ export default function LogsScreen() {
 
       {groups.map((group) => (
         <View key={group.key} className="gap-sm">
-          <Text variant="h3" className="text-lg">
-            {group.label}
-          </Text>
-          <View>
+          <SectionHeading title={group.label} />
+          <View className="border-t-hairline border-border">
             {group.runs.map((run) => (
               <RunRow key={run.id} run={run} characters={characters} />
             ))}
@@ -109,27 +94,18 @@ export default function LogsScreen() {
         narrowed ? (
           <Text variant="lead">Nothing in the ledger answers to {narrowed}.</Text>
         ) : (
-          <View className="gap-sm">
-            <Text variant="lead">
-              Nothing has been run yet. Every prompt and every answer will be copied out here.
-            </Text>
-            {/* One row of destinations, not three stacked footnotes: the empty
-                ledger is the place to start a run from. */}
-            <View className="flex-row flex-wrap items-center gap-lg">
-              {LAUNCHPAD.map((puzzle) => (
-                <Link key={puzzle.href} href={puzzle.href}>
-                  <Text
-                    className={cn(
-                      buttonTextVariants({ variant: "link" }),
-                      "underline-offset-4 transition-colors duration-fast",
-                    )}
-                  >
-                    {puzzle.label}
-                  </Text>
-                </Link>
-              ))}
-            </View>
-          </View>
+          // The one screen in the app with nothing of its own to show until
+          // something has been run, so it stops apologising and becomes the
+          // launchpad: one way in, set as the primary, and the others beside it.
+          <EmptyState
+            title="No runs yet"
+            body="Every prompt sent to a model and every answer it gave is copied out here, run by run. Start one and the ledger fills itself."
+            action={{ label: "Run a trolley problem", href: "/puzzles/trolley" }}
+            links={[
+              { label: "Prisoner's dilemma", href: "/puzzles/prisoners-dilemma" },
+              { label: "Adventure", href: "/puzzles/adventure" },
+            ]}
+          />
         )
       ) : null}
     </Screen>

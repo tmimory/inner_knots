@@ -4,6 +4,7 @@ export { DecisionView } from "./decision-view";
 export { ExportButton, runBundle, type ExportButtonProps } from "./export-button";
 export { Field, FieldCode, FieldText } from "./field";
 export { JsonTree, type JsonTreeProps } from "./json-tree";
+export { PUZZLE_LABELS, PUZZLE_OPTIONS } from "./labels";
 export { LogList } from "./log-list";
 export { MessageBlock, type MessageBlockProps } from "./message-block";
 export {

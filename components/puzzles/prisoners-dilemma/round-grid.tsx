@@ -27,23 +27,23 @@ function describe(choice: PrisonersDilemmaChoice | undefined): { glyph: string; 
 function Move({ choice, name }: { choice: PrisonersDilemmaChoice | undefined; name: string }) {
   const { glyph, said } = describe(choice);
   const tone =
-    choice === "testify" ? "track1" : choice === "silent" ? "track2" : undefined;
+    choice === "testify" ? "testify" : choice === "silent" ? "silent" : undefined;
 
   return (
     <View
       accessibilityLabel={`${name} ${said}`}
       className={cn(
         "h-xl w-xl items-center justify-center rounded-sm border-thick",
-        tone === "track1" && "border-track1",
-        tone === "track2" && "border-track2",
+        tone === "testify" && "border-primary",
+        tone === "silent" && "border-track2",
         tone === undefined && "border-border",
       )}
     >
       <Text
         className={cn(
           "font-mono text-xs",
-          tone === "track1" && "text-track1",
-          tone === "track2" && "text-track2",
+          tone === "testify" && "text-primary",
+          tone === "silent" && "text-track2",
           tone === undefined && "text-muted-foreground",
         )}
       >
@@ -151,12 +151,12 @@ export function RoundGrid({ games, rounds, names, limit = ROUND_GRID_GAME_LIMIT,
       </ScrollView>
 
       <View className="flex-row flex-wrap items-center gap-md">
-        <Text variant="muted" className="text-xs">
+        <Text variant="muted">
           {`T testified · S stayed silent · · no answer — ${names.a} left, ${names.b} right`}
         </Text>
         <View className="flex-1" />
         {hidden > 0 ? (
-          <Text variant="muted" className="text-xs">
+          <Text variant="muted">
             {`${hidden} more ${hidden === 1 ? "game" : "games"} in the logs`}
           </Text>
         ) : null}
