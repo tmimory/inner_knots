@@ -17,7 +17,7 @@ export type PendingAnswersProps = {
  * The two answers that are not in yet.
  *
  * "Their answers appear here." is a sentence about a screen rather than a part of
- * one. The rail instead draws the shape the results will take — two named rows
+ * one. The screen instead draws the shape the results will take — two named rows
  * and the em dash that stands where a choice will go — so the empty state and the
  * filled one are the same table, once without its contents.
  */

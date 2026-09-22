@@ -4,7 +4,7 @@ import { Pressable, View } from "react-native";
 
 import { AdventureBuilder } from "@/components/flow";
 import { NodeEditor, PanelHeading, splitIssues } from "@/components/puzzles/adventure";
-import { PageHeader, Screen, SplitPane } from "@/components/shell";
+import { PageHeader, Screen } from "@/components/shell";
 import { Button, Field, Input, Text, Textarea } from "@/components/ui";
 import { useAdventure } from "@/lib/client/use-adventures";
 import {
@@ -198,71 +198,64 @@ export default function AdventureBuilderScreen() {
       ) : null}
 
       {/*
-        Canvas and inspector are two columns of one spread, not a canvas with a
-        card parked beside it: the inspector keeps no border of its own, and the
-        hairline between them is drawn on the column, so it runs the full depth of
-        the canvas and the workspace reads as one instrument rather than as a
-        drawing next to a form that stopped early.
+        The canvas first, at its own full width and the height the theme gives
+        it, and the inspector under it: a tree wants the whole column to be read
+        in, and an inspector beside it was a third of the page spent on two text
+        fields. The fields keep the reading measure rather than the width of the
+        canvas, so a title field is a title field and not a rule across the page.
       */}
-      <SplitPane
-        railWidth="inspector"
-        railRule="column"
-        main={
-          <AdventureBuilder
-            adventure={draft}
-            onChange={setDraft}
-            selectedNodeId={selectedNodeId}
-            onSelectNode={setSelectedNodeId}
-            fitSignal={fitSignal}
-          />
-        }
-        rail={
-          <View className="gap-lg">
-            {/*
-              The panel says what it is about rather than what it is: "Adventure"
-              while nothing is picked, and the card's own question once one is. A
-              heading reading "Details" over fields that change underneath it made
-              the reader work out which object they were editing.
-            */}
-            <PanelHeading>{selected ? panelHeading(selected) : "Adventure"}</PanelHeading>
-
-            {selected ? (
-              <NodeEditor
-                adventure={draft}
-                node={selected}
-                onChange={setDraft}
-                onRemoved={() => setSelectedNodeId(null)}
-              />
-            ) : (
-              <>
-                <Field label="Title">
-                  <Input
-                    maxLength={ADVENTURE_LIMITS.name}
-                    accessibilityLabel="Adventure name"
-                    value={draft.name}
-                    onChangeText={(name) => setDraft({ ...draft, name })}
-                  />
-                </Field>
-                <Field label="Briefing">
-                  <Textarea
-                    rows={5}
-                    maxLength={ADVENTURE_LIMITS.briefing}
-                    accessibilityLabel="Briefing"
-                    placeholder="Read to every character before every node."
-                    value={draft.briefing}
-                    onChangeText={(briefing) => setDraft({ ...draft, briefing })}
-                  />
-                </Field>
-                {/* The one helper line on the screen, and it is this panel's empty
-                    state — what to do to fill it — not a footnote under a counter. */}
-                <Text variant="muted">
-                  Select a card to write it; drag an option&apos;s handle onto another card.
-                </Text>
-              </>
-            )}
-          </View>
-        }
+      <AdventureBuilder
+        adventure={draft}
+        onChange={setDraft}
+        selectedNodeId={selectedNodeId}
+        onSelectNode={setSelectedNodeId}
+        fitSignal={fitSignal}
       />
+
+      <View className="max-w-measure gap-lg">
+        {/*
+          The panel says what it is about rather than what it is: "Adventure"
+          while nothing is picked, and the card's own question once one is. A
+          heading reading "Details" over fields that change underneath it made
+          the reader work out which object they were editing.
+        */}
+        <PanelHeading>{selected ? panelHeading(selected) : "Adventure"}</PanelHeading>
+
+        {selected ? (
+          <NodeEditor
+            adventure={draft}
+            node={selected}
+            onChange={setDraft}
+            onRemoved={() => setSelectedNodeId(null)}
+          />
+        ) : (
+          <>
+            <Field label="Title">
+              <Input
+                maxLength={ADVENTURE_LIMITS.name}
+                accessibilityLabel="Adventure name"
+                value={draft.name}
+                onChangeText={(name) => setDraft({ ...draft, name })}
+              />
+            </Field>
+            <Field label="Briefing">
+              <Textarea
+                rows={5}
+                maxLength={ADVENTURE_LIMITS.briefing}
+                accessibilityLabel="Briefing"
+                placeholder="Read to every character before every node."
+                value={draft.briefing}
+                onChangeText={(briefing) => setDraft({ ...draft, briefing })}
+              />
+            </Field>
+            {/* The one helper line on the screen, and it is this panel's empty
+                state — what to do to fill it — not a footnote under a counter. */}
+            <Text variant="muted">
+              Select a card to write it; drag an option&apos;s handle onto another card.
+            </Text>
+          </>
+        )}
+      </View>
     </View>
   );
 }
