@@ -1,7 +1,8 @@
 /**
  * The shared pen for the trolley object glyphs.
  *
- * Every glyph is a monochrome ink drawing in a 32×32 box, legible at 24px. An
+ * Every glyph is a monochrome ink drawing in a 32×32 box, drawn 1:1 at the
+ * theme's `icon-md` step and still legible at `icon-sm`. An
  * optional `tint` fills the one meaningful mass (an animal's body, a banknote, a
  * figure's clothes); without it the glyph fills with parchment and reads as line art.
  *
@@ -14,7 +15,7 @@ import Svg, { Circle, Path } from "react-native-svg";
 import { useTheme } from "@/theme";
 
 export type ObjectIconProps = {
-  /** Rendered edge length in px. Defaults to the 24px step of the spacing scale. */
+  /** Rendered edge length in px. Defaults to the theme's `icon-md` step. */
   size?: number;
   /** Spot color for the glyph's one fillable mass. Omitted means monochrome. */
   tint?: string;
@@ -67,7 +68,7 @@ export type GlyphFrameProps = {
 /** The 32×32 stage every glyph draws on. */
 export function GlyphFrame({ size, label, children }: GlyphFrameProps) {
   const theme = useTheme();
-  const px = size ?? theme.spacing.xl;
+  const px = size ?? theme.iconSizes["icon-md"];
   return (
     <Svg
       width={px}

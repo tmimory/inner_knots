@@ -24,7 +24,7 @@ function TrackItem({ id, objects }: { id: string; objects: ReadonlyMap<string, O
   const entry = objects.get(id);
   return (
     <View className="flex-row items-center gap-xs">
-      <View className="h-lg w-lg items-center justify-center">
+      <View className="h-icon-md w-icon-md items-center justify-center">
         <ObjectGlyph icon={entry?.icon ?? "question"} />
       </View>
       <Text variant="small">{entry?.label ?? id}</Text>

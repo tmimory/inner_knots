@@ -19,6 +19,7 @@ export {
   easings,
   fontSizes,
   fonts,
+  iconSizes,
   layout,
   lineHeights,
   opacities,

@@ -37,8 +37,12 @@ export const BOARD = {
   terminus: 24,
   /** Half the height of the buffer stop drawn across the rails at the terminus. */
   terminusHalfHeight: 12,
-  /** One slot on a track: the box a single object stands in. */
-  slotHeight: 32,
+  /**
+   * One slot on a track: the box a single object stands in. It clears the
+   * theme's `icon-md` glyph with a hairline border either side, so the chip
+   * that stands in it is not clipped.
+   */
+  slotHeight: 40,
   /**
    * How wide a placed chip may grow. It sizes to its own label — a five-column
    * grid made "Your Dog" two thirds empty box — but a chip wide enough to read

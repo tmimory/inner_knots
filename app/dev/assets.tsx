@@ -45,6 +45,7 @@ export default function AssetsScreen() {
     return pigment ? [pigment] : [];
   });
   const iconTint = tintIcons ? resolveAvatarColor(theme, color) : undefined;
+  const previewPx = PREVIEW_SIZES.map((size) => theme.avatarSizes[`avatar-${size}`]).join(", ") + " px";
 
   return (
     <Screen
@@ -55,8 +56,7 @@ export default function AssetsScreen() {
       <Scroll>
         <Text variant="h3">Avatars</Text>
         <Text variant="muted">
-          Fifteen shapes in three pigments, at 32, 64 and 96 px. Ink, parchment and
-          shading follow the theme; only the tinted region takes the pigment.
+          {`Fifteen shapes in three pigments, at ${previewPx}. Ink, parchment and shading follow the theme; only the tinted region takes the pigment.`}
         </Text>
         {previewPigments.map((pigment) => (
           <View key={pigment.id} className="gap-sm">
@@ -104,7 +104,9 @@ export default function AssetsScreen() {
             <Switch checked={tintIcons} onCheckedChange={setTintIcons} />
           </View>
         </View>
-        <Text variant="muted">{OBJECT_ICON_IDS.length} glyphs, drawn at 24 px.</Text>
+        <Text variant="muted">
+          {`${OBJECT_ICON_IDS.length} glyphs, drawn at ${theme.iconSizes["icon-md"]} px.`}
+        </Text>
         <View className="flex-row flex-wrap gap-md">
           {OBJECT_ICON_IDS.map((id) => (
             <View

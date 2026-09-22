@@ -304,6 +304,13 @@ export const controlSizes = {
  * Avatar medallion diameters, in px. Named so a character avatar reads
  * `h-avatar-md` rather than a magic number, and so the SVG art can be handed the
  * same number through `useTheme().avatarSizes`.
+ *
+ * The scale runs about a quarter larger than the stock 24/32/40/64/96 ladder,
+ * for the same reason the two smallest type steps were raised: the faces are
+ * ink drawings whose detail — an owl's eyes, a philosopher's beard — lives in
+ * hairlines, and on a large display the 32px list face read as a smudge beside
+ * a 16px name. The steps stay on the 4px grid so they still pair with the
+ * spacing scale and the control heights.
  */
 export const avatarSizes = {
   /**
@@ -311,11 +318,31 @@ export const avatarSizes = {
    * saying who answered without taking the line over. Unframed, because at this
    * size the parchment disc and its ring outweigh the drawing inside them.
    */
-  "avatar-xs": 24,
-  "avatar-sm": 32,
-  "avatar-md": 40,
-  "avatar-lg": 64,
-  "avatar-xl": 96,
+  "avatar-xs": 28,
+  "avatar-sm": 40,
+  "avatar-md": 48,
+  "avatar-lg": 80,
+  "avatar-xl": 112,
+} as const;
+
+/**
+ * Object glyph edge lengths, in px: the trolley's cows, crates and children, and
+ * any other pictorial icon drawn from the 32-unit glyph stage. Named so a glyph's
+ * box reads `h-icon-md` and the SVG is handed the same number through
+ * `useTheme().iconSizes`. The text-relative marks (chevrons, the search and lock
+ * glyphs) are not here: they are sized to the line they sit on via `fontSizes`.
+ */
+export const iconSizes = {
+  /** Beside a caption, or where a whole row of them must fit one line. */
+  "icon-sm": 24,
+  /**
+   * The default: a chip on a track, a row in the catalogue, a track item in a
+   * run's log. This is the glyph stage drawn at 1:1, so every hairline the
+   * drawing has is a whole pixel.
+   */
+  "icon-md": 32,
+  /** A glyph standing alone as an illustration; picker cells keep `icon-md` inside a `control-lg` target. */
+  "icon-lg": 48,
 } as const;
 
 /** Layout measures, in px: the left menu column and the readable content width. */
@@ -416,6 +443,7 @@ export const sizes = {
   ...spacing,
   ...controlSizes,
   ...avatarSizes,
+  ...iconSizes,
   ...borderWidths,
 } as const;
 
@@ -489,6 +517,7 @@ export type Theme = {
   spacing: typeof spacing;
   controlSizes: typeof controlSizes;
   avatarSizes: typeof avatarSizes;
+  iconSizes: typeof iconSizes;
   layout: typeof layout;
   radii: typeof radii;
   shadows: typeof shadows;
@@ -510,6 +539,7 @@ function buildTheme(name: ThemeName): Theme {
     spacing,
     controlSizes,
     avatarSizes,
+    iconSizes,
     layout,
     radii,
     shadows,
