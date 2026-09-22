@@ -27,12 +27,11 @@ export type SegmentedProps<T extends string> = {
  * screen than a select, and every alternative visible at once, which is what the
  * output-mode, steering-mode and filter choices want.
  *
- * The chosen segment wears the app's one selection language — a tan `muted` fill,
- * a hairline in the rubric red, the label in the same red — the same treatment a
- * selected {@link Badge} and a chosen variant row take. It used to be a near-black
- * block, which made a filter heavier than the page's primary button and put a
- * fifth tone into a four-tone palette. Unselected segments keep a transparent
- * hairline so nothing shifts a pixel when the choice moves.
+ * The chosen segment wears the app's one selection language — a tan `muted` fill
+ * and the label in the rubric red — the same treatment a selected {@link Badge}
+ * and a chosen variant row take. Fill and border together were two marks for one
+ * state, and the red hairline made a filter read as an error; the fill alone says
+ * "on" and lets the page's primary button stay the loudest thing on screen.
  *
  * A disabled segment stays hoverable on purpose — the tooltip explaining why it
  * cannot be chosen is the whole point of still drawing it.
@@ -71,11 +70,9 @@ export function Segmented<T extends string>({
               if (!blocked) onChange(option.value);
             }}
             className={cn(
-              "items-center justify-center rounded-sm border-hairline transition-colors duration-fast",
+              "items-center justify-center rounded-sm transition-colors duration-fast",
               size === "sm" ? "h-control-sm px-md" : "h-control-sm px-lg",
-              selected
-                ? "border-primary bg-muted"
-                : "border-transparent bg-transparent web:hover:bg-card",
+              selected ? "bg-muted" : "bg-transparent web:hover:bg-card",
               blocked && "opacity-disabled",
             )}
           >

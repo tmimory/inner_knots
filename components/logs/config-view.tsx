@@ -2,19 +2,22 @@ import { View } from "react-native";
 
 import { ObjectGlyph } from "@/components/icons/objects";
 import { Separator, Text } from "@/components/ui";
-import type { Character } from "@/lib/domain/character";
 import type { Payoffs, RunConfig } from "@/lib/domain/run";
 import type { ObjectEntry } from "@/lib/client/use-runs";
 
 import { Field, FieldText } from "./field";
-import { RosterList } from "./roster-avatars";
 
 /** One thing on a track: its glyph and the label the catalogue gives it. */
 function TrackItem({ id, objects }: { id: string; objects: ReadonlyMap<string, ObjectEntry> }) {
   const entry = objects.get(id);
   return (
     <View className="flex-row items-center gap-xs rounded-md border-hairline border-border bg-muted px-sm py-xxs">
-      <ObjectGlyph icon={entry?.icon ?? "question"} />
+      {/* Every glyph in the same square, whatever it draws: a cow fills its box
+          and a framed painting does not, so unboxed they set the chips at three
+          different heights and the widest-stroked one read as selected. */}
+      <View className="h-xl w-xl items-center justify-center">
+        <ObjectGlyph icon={entry?.icon ?? "question"} />
+      </View>
       <Text variant="small">{entry?.label ?? id}</Text>
     </View>
   );
@@ -89,7 +92,6 @@ function PayoffTable({ payoffs }: { payoffs: Payoffs }) {
 
 export type ConfigViewProps = {
   config: RunConfig;
-  characters: ReadonlyMap<string, Character>;
   objects: ReadonlyMap<string, ObjectEntry>;
   /** Resolved name of the adventure a run walked, when it still exists. */
   adventureName?: string;
@@ -100,7 +102,7 @@ export type ConfigViewProps = {
  * it. A run keeps its own copy of this, so what is shown here is what the models
  * were actually given — not what the object, character or adventure says today.
  */
-export function ConfigView({ config, characters, objects, adventureName }: ConfigViewProps) {
+export function ConfigView({ config, objects, adventureName }: ConfigViewProps) {
   return (
     <View className="gap-lg">
       {config.puzzle === "trolley" ? (
@@ -147,10 +149,6 @@ export function ConfigView({ config, characters, objects, adventureName }: Confi
           <FieldText label="Memory" value={config.amnesia ? "amnesia — each node alone" : "full history"} />
         </View>
       ) : null}
-
-      <Field label="Roster">
-        <RosterList config={config} characters={characters} />
-      </Field>
     </View>
   );
 }

@@ -20,7 +20,14 @@ import type { Theme } from "@/theme";
 /** The id of the injected element, so a second canvas reuses the same sheet. */
 const STYLE_ID = "inner-knots-flow-chrome";
 
-/** Marks the source handle of an option that currently ends the adventure. */
+/**
+ * Marks the source handle of an option that currently ends the adventure.
+ *
+ * It used to hide the handle until the card was hovered, because an invisible
+ * handle kept a settled graph to one dot per edge. The square now *is* how an
+ * ending is said — it replaced the word "end" set beside the option — so it is
+ * always drawn, and the class is left only for the cursor it deserves.
+ */
 export const TERMINAL_HANDLE_CLASS = "ik-handle-terminal";
 
 /** How big a zoom button is drawn: the smallest control the theme names, halved. */
@@ -91,14 +98,7 @@ export function flowChromeCss(theme: Theme): string {
   text-decoration: none;
 }
 .react-flow__node .${TERMINAL_HANDLE_CLASS} {
-  opacity: 0;
   transition: opacity ${motion};
-}
-.react-flow__node:hover .${TERMINAL_HANDLE_CLASS},
-.react-flow__node.selected .${TERMINAL_HANDLE_CLASS},
-.react-flow__node .${TERMINAL_HANDLE_CLASS}.connecting,
-.react-flow.connecting .${TERMINAL_HANDLE_CLASS} {
-  opacity: 1;
 }
 `;
 }

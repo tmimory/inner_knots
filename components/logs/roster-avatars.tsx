@@ -1,11 +1,17 @@
 import { View } from "react-native";
 
-import { Avatar, medallionVariants, type AvatarSize } from "@/components/avatars";
+import {
+  Avatar,
+  avatarShape,
+  medallionVariants,
+  resolveAvatarColor,
+  type AvatarSize,
+} from "@/components/avatars";
 import { Text } from "@/components/ui";
 import { characterDisplayName, type Character } from "@/lib/domain/character";
 import type { RunConfig } from "@/lib/domain/run";
-import { pluralize } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/theme";
 
 /** One seat on a run's roster: who answered, and how many times they were asked. */
 export type RosterSeat = {
@@ -66,48 +72,70 @@ export function nameOf(characterId: string, characters: ReadonlyMap<string, Char
   return character ? characterDisplayName(character) : characterId;
 }
 
-export type RosterAvatarsProps = {
-  config: RunConfig;
-  characters: ReadonlyMap<string, Character>;
-  size?: AvatarSize;
-};
+/**
+ * The smallest a face is drawn: two or three of them on one line of a ledger,
+ * saying who answered without taking the line over.
+ *
+ * Drawn here rather than through {@link CharacterFace} because a medallion at
+ * this size is all frame: the parchment disc and its hairline ring outweighed the
+ * drawing inside them and turned a name-plus-faces row into a row of buttons. So
+ * the ink goes straight onto the page, with no ring and no fill.
+ */
+function MiniFace({ character }: { character?: Character }) {
+  const theme = useTheme();
 
-/** The roster as a row of faces, for a list row. */
-export function RosterAvatars({ config, characters, size = "sm" }: RosterAvatarsProps) {
+  if (!character) {
+    return (
+      <View
+        accessibilityRole="image"
+        accessibilityLabel="a character that no longer exists"
+        className="h-xl w-xl items-center justify-center rounded-full bg-muted"
+      >
+        <Text variant="muted" className="font-mono text-xs">
+          ?
+        </Text>
+      </View>
+    );
+  }
+
+  const { Component, label } = avatarShape(character.avatar.shape);
   return (
-    <View className="flex-row items-center gap-xs">
-      {rosterOf(config).map((seat, index) => (
-        <CharacterFace
-          key={`${seat.slot ?? ""}${seat.characterId}-${index}`}
-          character={characters.get(seat.characterId)}
-          size={size}
-        />
-      ))}
+    <View
+      accessibilityRole="image"
+      accessibilityLabel={label}
+      className="h-xl w-xl items-center justify-center overflow-hidden rounded-full"
+    >
+      <Component color={resolveAvatarColor(theme, character.avatar.color)} size={theme.spacing.xl} />
     </View>
   );
 }
 
-/** The roster as named rows with their run counts, for the overview tab. */
-export function RosterList({ config, characters }: Omit<RosterAvatarsProps, "size">) {
+export type RosterAvatarsProps = {
+  config: RunConfig;
+  characters: ReadonlyMap<string, Character>;
+  size?: AvatarSize;
+  /** Draw the faces at their smallest, with no medallion, for a one-line row. */
+  dense?: boolean;
+};
+
+/** The roster as a row of faces, for a list row. */
+export function RosterAvatars({ config, characters, size = "sm", dense = false }: RosterAvatarsProps) {
   return (
-    <View className="gap-sm">
-      {rosterOf(config).map((seat, index) => (
-        <View key={`${seat.slot ?? ""}${seat.characterId}-${index}`} className="flex-row items-center gap-sm">
-          <CharacterFace character={characters.get(seat.characterId)} size="md" />
-          <View className="flex-1 gap-xs">
-            <Text variant="small" className="font-display">
-              {seat.slot ? `${seat.slot} · ` : ""}
-              {nameOf(seat.characterId, characters)}
-            </Text>
-            <Text variant="muted" className="font-mono text-xs">
-              {seat.characterId}
-            </Text>
-          </View>
-          <Text variant="muted" className="text-xs">
-            {pluralize(seat.runs, "run")}
-          </Text>
-        </View>
-      ))}
+    <View className="flex-row items-center gap-xs">
+      {rosterOf(config).map((seat, index) =>
+        dense ? (
+          <MiniFace
+            key={`${seat.slot ?? ""}${seat.characterId}-${index}`}
+            character={characters.get(seat.characterId)}
+          />
+        ) : (
+          <CharacterFace
+            key={`${seat.slot ?? ""}${seat.characterId}-${index}`}
+            character={characters.get(seat.characterId)}
+            size={size}
+          />
+        ),
+      )}
     </View>
   );
 }

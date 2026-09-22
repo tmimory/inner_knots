@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 
 import { Avatar } from "@/components/avatars";
 import { CountStepper } from "@/components/puzzles/count-stepper";
@@ -16,7 +16,7 @@ import { RunProgress } from "@/components/puzzles/run-progress";
 import { Section } from "@/components/puzzles/section";
 import { VariantSelect, type VariantOption } from "@/components/puzzles/variant-select";
 import { Screen } from "@/components/shell";
-import { Button, Label, Slider, Text, Textarea } from "@/components/ui";
+import { Button, Label, Text, Textarea } from "@/components/ui";
 import { previewPrisonersDilemmaPrompt } from "@/lib/client/prompts";
 import { useCharacters } from "@/lib/client/use-characters";
 import { usePersistedState } from "@/lib/client/use-persisted-state";
@@ -163,7 +163,7 @@ export default function PrisonersDilemmaScreen() {
         <View className="flex-1 gap-3xl">
           {/* What the puzzle is: who plays it, and how it is put to them. */}
           <Section title="Setup" className="gap-2xl">
-            <Subsection title="The players">
+            <Subsection title="Players">
               <RosterBar
                 value={setup.roster}
                 onChange={(roster) => patch({ roster })}
@@ -171,6 +171,7 @@ export default function PrisonersDilemmaScreen() {
                 max={PLAYER_COUNT}
                 min={0}
                 showRuns={false}
+                showCount={false}
                 labels={PLAYER_LABELS}
                 fixedSlots={PLAYER_COUNT}
                 allowDuplicates
@@ -210,7 +211,7 @@ export default function PrisonersDilemmaScreen() {
               ) : null}
             </Subsection>
 
-            <Subsection title="The framing">
+            <Subsection title="Framing">
               <VariantSelect
                 value={setup.variant}
                 onChange={(variant) => patch({ variant })}
@@ -221,23 +222,15 @@ export default function PrisonersDilemmaScreen() {
 
           {/* What the puzzle's rules are: the charge, the bargain, the length. */}
           <Section title="Rules" className="gap-2xl">
-            <Subsection
-              title="The charge"
-              right={
-                <Button
-                  variant="link"
-                  size="sm"
-                  onPress={() => patch({ crimeUnlocked: !setup.crimeUnlocked })}
-                >
-                  <Text>{setup.crimeUnlocked ? "Done" : "Edit"}</Text>
-                </Button>
-              }
-            >
+            <Subsection title="Charge">
               {/*
                 Locked, the charge is prose on the page rather than a field that
                 has been switched off: grey text in a sunken box reads as broken
                 twice over — an input nobody may type in, holding what looks like
-                a placeholder. It becomes a field only when "Edit" says so.
+                a placeholder. The sentence is its own edit control — press the
+                words to change the words — rather than a link parked at the far
+                end of a heading row, three hundred pixels from the thing it acts
+                on and indistinguishable from the links that open dialogs.
               */}
               {setup.crimeUnlocked ? (
                 <>
@@ -252,8 +245,8 @@ export default function PrisonersDilemmaScreen() {
                     onChangeText={(crime) => patch({ crime })}
                     accessibilityLabel="The charge"
                   />
-                  {setup.crime !== DEFAULT_CRIME ? (
-                    <View className="flex-row justify-end">
+                  <View className="flex-row justify-end gap-md">
+                    {setup.crime !== DEFAULT_CRIME ? (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -261,15 +254,29 @@ export default function PrisonersDilemmaScreen() {
                       >
                         <Text>Reset to default</Text>
                       </Button>
-                    </View>
-                  ) : null}
+                    ) : null}
+                    <Button
+                      variant="link"
+                      size="sm"
+                      onPress={() => patch({ crimeUnlocked: false })}
+                    >
+                      <Text>Done</Text>
+                    </Button>
+                  </View>
                 </>
               ) : (
-                <Text>{setup.crime}</Text>
+                <Pressable
+                  role="button"
+                  accessibilityLabel={`The charge: ${setup.crime}. Activate to edit it.`}
+                  onPress={() => patch({ crimeUnlocked: true })}
+                  className="self-start"
+                >
+                  <Text className="web:hover:underline">{setup.crime}</Text>
+                </Pressable>
               )}
             </Subsection>
 
-            <Subsection title="The payoffs">
+            <Subsection title="Payoffs">
               {/* `patch` widens cleanly: every key of the matrix is a key of the setup. */}
               <PayoffMatrix value={setup} onChange={patch} names={names} />
             </Subsection>
@@ -295,25 +302,27 @@ export default function PrisonersDilemmaScreen() {
                 and the single one answers for itself, so they arrive together
                 with it rather than sitting under "Single" doing nothing.
               */}
+              {/*
+                Two counts, one idiom: a slider for the rounds and a stepper for
+                the games made two unrelated controls out of the same question,
+                and a slider is a poor way to say "three". Each label keeps its
+                own control immediately beside it rather than across a column of
+                air, so the pair reads as one line of arithmetic.
+              */}
               {setup.iterated ? (
-                <View className="gap-lg">
-                  <View className="gap-xs">
-                    <View className="flex-row items-center gap-md">
-                      <Label>Rounds per game</Label>
-                      <View className="flex-1" />
-                      <Text className="font-mono">{setup.rounds}</Text>
-                    </View>
-                    <Slider
+                <View className="flex-row flex-wrap items-center gap-xl">
+                  <View className="flex-row items-center gap-md">
+                    <Label>Rounds per game</Label>
+                    <CountStepper
                       value={setup.rounds}
+                      onChange={(rounds) => patch({ rounds })}
                       min={MIN_ITERATED_ROUNDS}
                       max={RUN_LIMITS.maxIterations}
-                      step={1}
-                      onValueChange={(rounds) => patch({ rounds })}
-                      accessibilityLabel="Rounds per game"
+                      label="Rounds per game"
                     />
                   </View>
 
-                  <View className="flex-row flex-wrap items-center gap-md">
+                  <View className="flex-row items-center gap-md">
                     <Label>Games</Label>
                     <CountStepper
                       value={setup.runs}
@@ -335,10 +344,12 @@ export default function PrisonersDilemmaScreen() {
           payoff matrix you are. A hairline down its inside edge is what makes it
           a rail rather than a column of text that happens to sit on the right,
           and its heading takes the same rule-and-air as "Setup" so the two
-          columns start on one line.
+          columns start on one line. The rule is drawn on the contents rather than
+          on the full-height column: a line that runs a thousand pixels past the
+          last thing in the rail is a divider between a page and nothing.
         */}
-        <View className="w-full wide:w-inspector wide:self-stretch wide:border-l-hairline wide:border-border wide:pl-xl">
-          <View className="gap-xl web:sticky web:top-xl">
+        <View className="w-full wide:w-inspector wide:self-stretch">
+          <View className="gap-xl wide:border-l-hairline wide:border-border wide:pl-xl web:sticky web:top-xl">
             <Section title="Run">
               {/*
                 The screen's one filled button, what stops it directly underneath,
@@ -360,7 +371,7 @@ export default function PrisonersDilemmaScreen() {
                     )} × 2 players.`}
                 </Text>
                 <Button variant="link" size="sm" onPress={() => void prompt.show()}>
-                  <Text>Prompt view</Text>
+                  <Text>View prompt</Text>
                 </Button>
               </View>
 

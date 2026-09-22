@@ -12,6 +12,7 @@ import {
   updateOption,
 } from "@/lib/puzzles/adventure/edits";
 
+import { PanelHeading } from "./panel-heading";
 import { StartLabel } from "./start-label";
 
 export type NodeEditorProps = {
@@ -57,8 +58,12 @@ export function NodeEditor({ adventure, node, onChange, onRemoved }: NodeEditorP
   return (
     <View className="gap-md">
       <View className="flex-row flex-wrap items-center gap-sm">
-        <Text variant="h4" className="flex-1" numberOfLines={1}>
-          {`Node · ${node.id}`}
+        {/* The panel above already says which card this is, in its own words, so
+            what is left here is the card's id — a marginal fact, set as one —
+            and the two things that can be done to the whole card. A second
+            display-size heading four pixels under the first read as two panels. */}
+        <Text variant="meta" className="flex-1 font-mono" numberOfLines={1}>
+          {node.id}
         </Text>
         {isStart ? (
           <StartLabel />
@@ -99,7 +104,7 @@ export function NodeEditor({ adventure, node, onChange, onRemoved }: NodeEditorP
       <Separator />
 
       <View className="flex-row items-center justify-between gap-md">
-        <Text variant="h4">Options</Text>
+        <PanelHeading>Options</PanelHeading>
         <Text variant="muted">{`${node.options.length} / ${ADVENTURE_LIMITS.maxOptions}`}</Text>
       </View>
 

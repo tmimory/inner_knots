@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils";
 import { useTheme } from "@/theme";
 
 import { PALETTE } from "./geometry";
-import { ObjectGlyph } from "./object-glyph";
 
 /** How far the pointer must travel before this is a drag rather than a tap. */
 const DRAG_THRESHOLD = 6;
@@ -28,6 +27,8 @@ export type DraggableObjectProps = {
   onTap: () => void;
   /** Rendered under the tile when its little "add to…" menu is open. */
   menu?: React.ReactNode;
+  /** The grid column this tile fills, in px. Every cell in a row gets the same. */
+  width?: number;
   disabled?: boolean;
 };
 
@@ -45,6 +46,7 @@ export function DraggableObject({
   onDrop,
   onTap,
   menu,
+  width,
   disabled = false,
 }: DraggableObjectProps) {
   const theme = useTheme();
@@ -124,31 +126,27 @@ export function DraggableObject({
           accessibilityHint={item.prompt}
         >
           <View
-            style={{
-              height: PALETTE.tileHeight,
-              minWidth: PALETTE.minTileWidth,
-              maxWidth: PALETTE.maxTileWidth,
-            }}
+            style={{ height: PALETTE.tileHeight, width }}
             className={cn(
               // Borderless at rest: a border is what a tile earns by standing on a
               // track. The hover ring is drawn on a transparent border already in
-              // the box, so picking a tile out does not nudge the row beside it.
-              "items-center justify-center gap-xxs rounded-sm border-hairline border-transparent bg-transparent px-sm py-xs",
+              // the box, so picking a tile out does not nudge the one beside it.
+              "justify-center rounded-sm border-hairline border-transparent bg-transparent px-xs",
               "transition-colors duration-fast web:hover:border-border web:hover:bg-muted",
               dragging && "border-thick border-ring bg-card shadow-ink-lifted",
               disabled && "opacity-disabled",
             )}
           >
-            <ObjectGlyph icon={item.icon} />
             {/*
-              The label's two lines are reserved whether it needs them or not, so
-              a one-word tile and a three-word tile put their glyphs on the same
-              line rather than each row rocking up and down.
+              Two lines of label, reserved whether the name needs them or not, so
+              every cell of a row is the same height rather than the grid rocking
+              up and down. A name too long for two lines is clipped here and read
+              whole by a screen reader, from the label on the tile itself.
             */}
             <View style={{ height: PALETTE.labelHeight }} className="w-full justify-center">
               <Text
-                variant="muted"
-                className="text-center text-xs"
+                variant="meta"
+                className="text-center"
                 numberOfLines={2}
                 ellipsizeMode="tail"
               >

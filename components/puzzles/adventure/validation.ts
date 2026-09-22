@@ -35,6 +35,15 @@ export function splitIssues(issues: readonly AdventureIssue[]): IssueSplit {
   };
 }
 
+/**
+ * What a graph with nothing to say about it is called.
+ *
+ * Exported so a list can leave it out: a status column where every row reads
+ * "Ready" is an adjective repeated, not information, and the rows that do deviate
+ * are what the reader is scanning for.
+ */
+export const READY_LABEL = "Ready";
+
 export type IssueBadge = {
   variant: "secondary" | "accent" | "destructive";
   label: string;
@@ -55,5 +64,5 @@ export function issueBadge(issues: readonly AdventureIssue[]): IssueBadge {
       label: pluralize(warnings.length, "note"),
     };
   }
-  return { variant: "secondary", label: "Ready" };
+  return { variant: "secondary", label: READY_LABEL };
 }

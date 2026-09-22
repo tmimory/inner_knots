@@ -25,8 +25,13 @@ import { spacing } from "@/theme/tokens";
 export const ADVENTURE_LAYOUT = {
   /** Width of a decision card, in px. */
   nodeWidth: 260,
-  /** What a card takes up before its first option row: badges, context, decision. */
-  nodeHeaderHeight: 144,
+  /**
+   * What a card takes up before its first option row: badges, context, decision.
+   *
+   * The setup clamps to three lines rather than two — two cut a sentence in half
+   * on nearly every card — so the header is one metadata line taller than it was.
+   */
+  nodeHeaderHeight: 164,
   /** Added per option row. */
   nodeOptionHeight: 30,
   /**

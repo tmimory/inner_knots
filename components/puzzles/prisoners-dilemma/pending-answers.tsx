@@ -25,6 +25,16 @@ export function PendingAnswers({ players, className }: PendingAnswersProps) {
 
   return (
     <View className={cn("gap-none", className)}>
+      {/*
+        The one heading the empty table needs: without it the two em dashes at the
+        end of the rows are a column of punctuation nobody has named.
+      */}
+      <View className="flex-row items-center gap-sm">
+        <Text variant="meta" className="flex-1">
+          Player
+        </Text>
+        <Text variant="meta">Choice</Text>
+      </View>
       {(["a", "b"] as const).map((side, index) => {
         const character = players[side];
         const label = PLAYER_LABELS[index];

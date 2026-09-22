@@ -15,6 +15,7 @@ import { Button, EmptyState, Input, Text } from "@/components/ui";
 import { useCharacters } from "@/lib/client/use-characters";
 import { useProviders } from "@/lib/client/use-providers";
 import { STEERING_MODES, type SteeringMode } from "@/lib/domain";
+import { pluralize } from "@/lib/format";
 
 export default function CharactersScreen() {
   const { characters, loading, error } = useCharacters();
@@ -83,13 +84,13 @@ export default function CharactersScreen() {
       ) : null}
 
       {characters.length > 0 ? (
-        // Search, facets and count are one toolbar: the segmented controls share
-        // the search box's height and field fill so the row reads as a single
-        // strip of chrome rather than a field with some buttons after it.
-        <View className="flex-row flex-wrap items-center gap-md">
+        // Search, facet and count are one toolbar: the segmented track carries the
+        // search box's hairline and height, so the row reads as one strip of chrome
+        // at one border weight rather than a saturated field beside a faint box.
+        <View className="flex-row flex-wrap items-center gap-lg">
           <View className="min-w-popover flex-1">
             <Input
-              className="pl-2xl pr-3xl"
+              className="pl-2xl"
               value={search}
               onChangeText={setSearch}
               placeholder={CHARACTER_SEARCH_PLACEHOLDER}
@@ -102,22 +103,6 @@ export default function CharactersScreen() {
             >
               <SearchGlyph />
             </View>
-            {/*
-              How much of the roster is left, inside the field that narrowed it —
-              and only while something is narrowing it. Parked after the filters it
-              was an orphan number with nothing to belong to, and it said "3
-              characters" beside a list of exactly three visible rows.
-            */}
-            {narrowed ? (
-              <View
-                pointerEvents="none"
-                className="absolute bottom-none right-md top-none justify-center"
-              >
-                <Text variant="subtle" className="font-mono text-xs">
-                  {`${visible.length} of ${characters.length}`}
-                </Text>
-              </View>
-            ) : null}
           </View>
           <FilterSegments
             label="Steering"
@@ -130,6 +115,17 @@ export default function CharactersScreen() {
               <Text>Clear</Text>
             </Button>
           ) : null}
+          {/*
+            How long the roster is, at the end of the row that narrows it — always,
+            so the line does not appear and vanish as you type, and in the lining
+            figures the app counts in. Inside the search field it was a number
+            sitting on top of the text you were typing.
+          */}
+          <Text variant="meta" className="tabular">
+            {narrowed
+              ? `${visible.length} of ${characters.length}`
+              : pluralize(characters.length, "character")}
+          </Text>
         </View>
       ) : null}
 

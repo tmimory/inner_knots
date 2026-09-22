@@ -229,7 +229,14 @@ export default function TrolleyScreen() {
 
   return (
     <Screen title="Trolley Problems" subtitle="ἁμαξοστοιχία · the lever and the lesser evil">
-      <Section title="Roster">
+      {/*
+        No heading over the faces: five medallions with a name under each are the
+        only thing on the page that could be called a roster, and a small-caps
+        word above them was a label on a picture of itself. The rule stays, so the
+        cast is still a step of the page rather than something loose under the
+        title.
+      */}
+      <View className="gap-lg border-t-hairline border-border pt-xl">
         <RosterBar
           value={board.roster}
           onChange={(roster) => patch({ roster })}
@@ -237,14 +244,16 @@ export default function TrolleyScreen() {
           max={RUN_LIMITS.maxRoster}
           min={0}
           showRuns
+          // Five circles with two faces in them already say "two of five".
+          showCount={false}
         />
-      </Section>
+      </View>
 
       <Section
         title="Framing"
         right={
           <Button variant="link" size="sm" onPress={() => void prompt.show()}>
-            <Text>Prompt view</Text>
+            <Text>View prompt</Text>
           </Button>
         }
       >
@@ -299,24 +308,26 @@ export default function TrolleyScreen() {
 
         {/*
           The run belongs to the board: a heading and a rule over one button made a
-          section out of the thing the section above is for. It stays the screen's
-          only filled control, and what stops it is written directly underneath —
-          a reason set beside a disabled button reads as the button's caption.
+          section out of the thing the section above is for. Instead it closes the
+          section as a footer — a hairline across the column, what the run comes to
+          on the left, and the screen's one filled control at the right edge, where
+          a page's terminal action belongs. Blocked, the same line says what is
+          missing instead of counting decisions.
         */}
-        <View className="items-start gap-sm">
-          <Button
-            disabled={blocked !== null || starter.starting}
-            onPress={() => void startRun()}
-          >
-            <Text>{starter.starting ? "Starting…" : "Pull the lever"}</Text>
-          </Button>
-          <Text variant="muted">
+        <View className="flex-row flex-wrap items-center justify-end gap-lg border-t-hairline border-border pt-lg">
+          <Text variant="muted" className="flex-1">
             {blocked ??
               `${pluralize(total, "decision")} across ${pluralize(
                 board.roster.length,
                 "character",
               )}.`}
           </Text>
+          <Button
+            disabled={blocked !== null || starter.starting}
+            onPress={() => void startRun()}
+          >
+            <Text>{starter.starting ? "Starting…" : "Pull the lever"}</Text>
+          </Button>
         </View>
 
         <RunProgress run={run ?? null} />

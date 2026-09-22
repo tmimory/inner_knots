@@ -53,7 +53,7 @@ function Choice({ label, value, options, placeholder, onChange }: ChoiceProps) {
       value={current}
       onValueChange={(option) => onChange(option?.value === ANY ? undefined : option?.value)}
     >
-      <SelectTrigger className="flex-1" accessibilityLabel={label}>
+      <SelectTrigger accessibilityLabel={label}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
@@ -73,8 +73,13 @@ export type RunFiltersBarProps = {
 };
 
 /**
- * One toolbar over the ledger: the free-text search, widest because it is the one
- * that gets typed into, then the three facets that narrow the query.
+ * One toolbar over the ledger: the free-text search and the three facets that
+ * narrow the query, as one group at the left.
+ *
+ * The search is a card's width, not half the window: what goes into it is a short
+ * hash, and stretched to 566px it left the facets marooned two hundred pixels
+ * away with nothing between them. Sized to its content, the four controls butt
+ * against each other and read as one toolbar.
  */
 export function RunFiltersBar({ filters, characters, onChange }: RunFiltersBarProps) {
   const characterOptions = [...characters.values()].map((character) => ({
@@ -85,7 +90,7 @@ export function RunFiltersBar({ filters, characters, onChange }: RunFiltersBarPr
   return (
     <View className="gap-md wide:flex-row wide:items-center">
       <Input
-        className="flex-1"
+        className="wide:w-card"
         accessibilityLabel="Search by run id"
         value={filters.search}
         placeholder="search the ledger by run id"
@@ -93,7 +98,7 @@ export function RunFiltersBar({ filters, characters, onChange }: RunFiltersBarPr
         autoCorrect={false}
         onChangeText={(search) => onChange({ ...filters, search })}
       />
-      <View className="flex-row items-center gap-md wide:flex-1 wide:justify-end">
+      <View className="flex-row items-center gap-md">
         <Choice
           label="Puzzle"
           placeholder="every puzzle"

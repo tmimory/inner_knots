@@ -10,6 +10,57 @@
 import { ADVENTURE_LAYOUT } from "@/lib/puzzles/adventure/layout";
 import type { Theme } from "@/theme";
 
+/**
+ * The smallest zoom at which a decision card is still a card.
+ *
+ * Derived rather than picked. A card is set in two sizes — the question one step
+ * up, its setup and options at body size — so the smallest type on the canvas is
+ * the body step, and the floor is whatever keeps that at or above the caption
+ * step, the smallest size the rest of the app is allowed to use. Scaled below it,
+ * the cards stop being read and start being recognised, which is a diagram of an
+ * adventure rather than the adventure.
+ */
+export function zoomFloor(theme: Theme): number {
+  return theme.fontSizes.xs / theme.fontSizes.base;
+}
+
+/**
+ * How far one edge's bend is pushed off the shared corridor.
+ *
+ * Five options landing on one card's single input handle draw five identical
+ * right-angled runs on top of each other, and what looks like one edge is five.
+ * Giving each edge in a bundle its own step-out distance and its own bend
+ * position spreads those runs laterally, so the count of lines into a card is the
+ * count of ways into it.
+ *
+ * `index` is the edge's place in the bundle arriving at one node; `size` is how
+ * many there are. A lone edge gets the plain middle bend.
+ */
+export function edgePathOptions(
+  theme: Theme,
+  index: number,
+  size: number,
+): { offset: number; borderRadius: number; stepPosition: number } {
+  const middle = (size - 1) / 2;
+  const rank = index - middle;
+  return {
+    // The straight run out of a handle before the first corner.
+    offset: theme.spacing.lg + index * theme.spacing.sm,
+    borderRadius: theme.radii.sm,
+    // Where along the gap the vertical run sits, 0 at the source and 1 at the
+    // target. Spread around the midpoint, and never so far out that a bend
+    // touches the card it left.
+    stepPosition: clampStep(EDGE_STEP.center + rank * EDGE_STEP.spread),
+  };
+}
+
+/** How the bends of a bundle of edges are spread around the midpoint of the gap. */
+const EDGE_STEP = { center: 0.5, spread: 0.11, min: 0.2, max: 0.8 } as const;
+
+function clampStep(value: number): number {
+  return Math.min(EDGE_STEP.max, Math.max(EDGE_STEP.min, value));
+}
+
 /** Style for an edge, given how many walks took it and whether it is highlighted. */
 export type EdgeTone = { share?: number; onPath?: boolean };
 
@@ -96,28 +147,31 @@ export function nodeCardStyle(theme: Theme, tone: NodeTone): Record<string, stri
 }
 
 /**
- * A connection point, in one color and two shapes: a hollow ring where an edge
- * arrives, a filled dot where one leaves. Two colors needed a key; a ring and a
- * dot do not. Both are pushed clear of the card edge — React Flow centres a
- * handle on the border by default, which reads as decoration rather than as
- * something to drag.
+ * A connection point, in one color and three shapes: a hollow ring where an edge
+ * arrives, a filled dot where one leaves, and a filled square where taking the
+ * option ends the adventure. Colors would have needed a key; a ring, a dot and a
+ * square do not, and the square is what replaced the word "end" set at seven
+ * pixels beside it. All three are pushed clear of the card edge — React Flow
+ * centres a handle on the border by default, which reads as decoration rather
+ * than as something to drag.
  */
 export function handleStyle(
   theme: Theme,
-  kind: "source" | "target",
+  kind: "source" | "target" | "terminal",
 ): Record<string, string | number> {
   const size = theme.spacing.md;
   // The handle is centred on its edge, so half its width plus a gap clears the border.
   const offset = -(size / 2 + theme.spacing.xs);
+  const filled = kind !== "target";
 
   return {
     width: size,
     height: size,
-    borderRadius: theme.radii.full,
-    backgroundColor: kind === "source" ? theme.colors.primary : theme.colors.card,
+    borderRadius: kind === "terminal" ? theme.radii.none : theme.radii.full,
+    backgroundColor: filled ? theme.colors.primary : theme.colors.card,
     borderColor: theme.colors.primary,
     borderWidth: theme.borderWidths.thick,
-    ...(kind === "source" ? { right: offset } : { left: offset }),
+    ...(kind === "target" ? { left: offset } : { right: offset }),
   };
 }
 

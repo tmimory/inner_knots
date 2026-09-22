@@ -7,6 +7,7 @@ import {
   ExportButton,
   FieldCode,
   LogList,
+  STAT_MIN_WIDTH,
   PUZZLE_LABELS,
   SpanDetail,
   SpanTree,
@@ -14,7 +15,7 @@ import {
   SummaryView,
   spanDepths,
 } from "@/components/logs";
-import { Screen } from "@/components/shell";
+import { Screen, SplitPane } from "@/components/shell";
 import {
   Button,
   EmptyState,
@@ -98,16 +99,26 @@ export default function RunDetailScreen() {
         </>
       }
     >
-      <View className="gap-lg">
+      <View className="max-w-reading gap-lg">
         <View className="flex-row flex-wrap items-center gap-xl">
           {/* The id is what this page is, so it leads the stat row rather than
               standing in for the Greek subtitle every other screen carries. */}
-          <FieldCode label="Run" value={run.id} />
-          <FieldCode label="Started" value={formatDateTime(run.startedAt)} />
-          <FieldCode label="Duration" value={formatElapsed(run.startedAt, run.finishedAt)} />
-          <FieldCode label="Progress" value={`${run.progress.done} / ${run.progress.total}`} />
-          <FieldCode label="Spans" value={String(spans.length)} />
-          <FieldCode label="Log lines" value={String(logs.length)} />
+          <FieldCode label="Run" value={run.id} className={STAT_MIN_WIDTH} />
+          <FieldCode
+            label="Started"
+            value={formatDateTime(run.startedAt)}
+            className={STAT_MIN_WIDTH}
+          />
+          <FieldCode
+            label="Duration"
+            value={formatElapsed(run.startedAt, run.finishedAt)}
+            className={STAT_MIN_WIDTH}
+          />
+          <FieldCode
+            label="Progress"
+            value={`${run.progress.done} / ${run.progress.total}`}
+            className={STAT_MIN_WIDTH}
+          />
         </View>
         {isRunActive(run) ? (
           <Progress
@@ -127,28 +138,30 @@ export default function RunDetailScreen() {
       </View>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="self-start">
+        {/* How much there is of each thing rides its own tab: as two more stats
+            in the meta row they were counts of things the reader could not see
+            yet, sitting beside the id and the clock as though they ranked with
+            them. */}
+        <TabsList>
           <TabsTrigger value="overview">
             <Text>Overview</Text>
           </TabsTrigger>
-          <TabsTrigger value="spans">
+          <TabsTrigger value="spans" count={spans.length}>
             <Text>Spans</Text>
           </TabsTrigger>
-          <TabsTrigger value="logs">
+          <TabsTrigger value="logs" count={logs.length}>
             <Text>Logs</Text>
           </TabsTrigger>
         </TabsList>
 
+        {/* Capped at the reading measure so the summary's numerals and the labels
+            above them end on one edge: a table whose right column ran to the
+            window while the fields above it stopped at 500px read as two pages. */}
         <TabsContent value="overview">
-          <View className="gap-xl">
+          <View className="max-w-reading gap-xl">
             <View className="gap-lg">
               <SectionHeading title="Configuration" />
-              <ConfigView
-                config={run.config}
-                characters={characters}
-                objects={objects}
-                adventureName={adventureName}
-              />
+              <ConfigView config={run.config} objects={objects} adventureName={adventureName} />
             </View>
             <View className="gap-lg border-t-hairline border-border pt-md">
               <SectionHeading title="Summary" />
@@ -160,8 +173,9 @@ export default function RunDetailScreen() {
         <TabsContent value="spans">
           {/* The tree and what it opens are two columns of one spread, divided by
               a rule. Two bordered panels side by side read as two documents. */}
-          <View className="gap-lg wide:flex-row wide:items-stretch wide:gap-xl">
-            <View className="flex-1">
+          <SplitPane
+            railWidth="inspector"
+            main={
               <SpanTree
                 spans={spans}
                 puzzle={run.puzzle}
@@ -169,16 +183,16 @@ export default function RunDetailScreen() {
                 selectedId={selectedSpanId}
                 onSelect={setSelectedSpanId}
               />
-            </View>
-            <View className="flex-1 wide:border-l-hairline wide:border-border wide:pl-xl">
+            }
+            rail={
               <SpanDetail
                 span={selected}
                 puzzle={run.puzzle}
                 depth={selected ? (depths.get(selected.spanId) ?? 0) : 0}
                 characters={characters}
               />
-            </View>
-          </View>
+            }
+          />
         </TabsContent>
 
         <TabsContent value="logs">

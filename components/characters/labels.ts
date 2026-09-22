@@ -69,22 +69,35 @@ export function characterBlurb(character: Character): string {
 }
 
 /**
- * The one muted line on a roster row: who runs it, on what, and how much of a
- * self it was given, always in that order and always with the steering mode in
- * the third slot — a slot that says "4 convictions" on one row and "bio only" on
- * the next is three columns that do not line up.
+ * The facts a roster row states about a character, as the parts a row sets in
+ * different inks: the model it runs (the anchor), who serves it, how much of a
+ * self it was given, and how many convictions it carries.
+ *
+ * Parts rather than one joined string because the line is not one voice: the
+ * model is the thing you scan for, the provider is context, the mode is a token
+ * and the count is a number. Every row fills all four slots — a slot that says
+ * "4 convictions" on one row and nothing on the next is a column that does not
+ * line up — so a character with none says so.
  */
-export function characterMeta(character: Character): string {
+export type CharacterMetaParts = {
+  /** The model id, set in the mono voice so its figures line up row to row. */
+  model: string;
+  provider: string;
+  /** The steering mode as a small-caps token: "raw", "bio only", "full". */
+  mode: string;
+  /** "6 convictions", or "no convictions" for a character carrying none. */
+  convictions: string;
+};
+
+export function characterMetaParts(character: Character): CharacterMetaParts {
   const { mode, principles, values } = character.steering;
   const convictions = principles.length + values.length;
-  return [
-    character.provider,
-    character.model,
-    STEERING_MODE_META[mode],
-    mode === "full" && convictions > 0 ? pluralize(convictions, "conviction") : undefined,
-  ]
-    .filter((part) => part !== undefined)
-    .join(" · ");
+  return {
+    model: character.model,
+    provider: character.provider,
+    mode: STEERING_MODE_META[mode],
+    convictions: convictions === 0 ? "no convictions" : pluralize(convictions, "conviction"),
+  };
 }
 
 /** Shown in the effort select for a character that sets no effort of its own. */

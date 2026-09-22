@@ -9,18 +9,18 @@ import { Avatar } from "./avatar";
 import { AVATAR_SHAPES } from "./shapes";
 
 /**
- * Columns in the face plate.
+ * Columns in the face plate: all fifteen faces, one row.
  *
- * Eight, because a picker is a plate of choices that should fill the measure it
- * is given: at five the fifteen faces stacked into three tall rows that ended two
- * hundred pixels short of the fields above them, and the first fold of the form
- * was nothing but dots. Eight across puts them in two rows between the form's own
- * edges, and the identity block stops outweighing everything under it.
+ * A plate of choices should end where the fields above it end. Eight across left
+ * a second row seven cells long with a hole where the last eight would have been,
+ * and the eye reads that hole as a missing option. Fifteen across is one flush
+ * band of faces spanning the form's own measure, and the identity block stops
+ * outweighing everything under it.
  */
-export const SHAPE_PICKER_COLUMNS = 8;
+export const SHAPE_PICKER_COLUMNS = 15;
 
-/** Columns in the pigment plate: twenty-five swatches in two rows. */
-export const COLOR_PICKER_COLUMNS = 13;
+/** Columns in the pigment plate: all twenty-five swatches, one flush row. */
+export const COLOR_PICKER_COLUMNS = 25;
 
 /**
  * The width of one cell, as a share of the plate.
@@ -35,10 +35,14 @@ export function pickerColumnWidth(columns: number): `${number}%` {
 }
 
 /**
- * How a chosen face or pigment is marked: a two-pixel ink ring held two pixels off
- * the medallion. One treatment, shared by both pickers — the old pair (a ring on
- * the faces, a ring plus a check glyph on the pigments) read as two different
- * kinds of selection, and the check hid the very pigment it was marking.
+ * How a chosen face or pigment is marked: a two-pixel ring in the rubric red,
+ * held two pixels off the medallion.
+ *
+ * The ring box is drawn at the same diameter whether or not the cell is chosen —
+ * only the ring's colour changes — so picking a face never makes it jump a size
+ * larger than the fourteen beside it. One treatment shared by both pickers: the
+ * old pair (a ring on the faces, a ring plus a check glyph on the pigments) read
+ * as two kinds of selection, and the check hid the very pigment it marked.
  */
 export const PICKER_RING = "rounded-full border-thick p-xxs";
 
@@ -100,7 +104,7 @@ export function PickerGrid<T>({
                   className={cn(
                     PICKER_RING,
                     PICKER_CELL,
-                    selected ? "border-foreground" : "border-transparent",
+                    selected ? "border-primary" : "border-transparent",
                   )}
                 >
                   {renderSwatch(item)}
@@ -127,8 +131,8 @@ export type ShapePickerProps = {
 };
 
 /**
- * The fifteen faces as an even plate, eight to a row, named on hover. The chosen
- * one wears the ring, and only the ring.
+ * The fifteen faces as one flush band across the form's measure, named on hover.
+ * The chosen one wears the ring, and only the ring.
  */
 export function ShapePicker({ value, onChange, color, className }: ShapePickerProps) {
   return (
@@ -139,7 +143,7 @@ export function ShapePicker({ value, onChange, color, className }: ShapePickerPr
       labelOf={(shape) => shape.label}
       isSelected={(shape) => shape.id === value}
       onPick={(shape) => onChange(shape.id)}
-      renderSwatch={(shape) => <Avatar shape={shape.id} color={color} size="lg" />}
+      renderSwatch={(shape) => <Avatar shape={shape.id} color={color} size="md" />}
       className={className}
     />
   );

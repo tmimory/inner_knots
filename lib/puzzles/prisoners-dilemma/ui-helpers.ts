@@ -58,19 +58,22 @@ export type AsymmetricPayoffValues = Record<AsymmetricPayoffField, PayoffPair>;
  * The wording follows the fragments these values are injected into — the
  * symmetric one reads "you each get {{bothTestify}}", so the default is "5 years"
  * and not "5 years each" — which is why the defaults live beside the screen that
- * labels the fields rather than in the domain.
+ * labels the fields rather than in the domain. All four are the same quantity for
+ * the same reason: three sentences of years and one of "to walk free" made a
+ * matrix whose cells could not be compared by looking at them, and the fragment
+ * reads "gets 0 years" as happily as it reads "gets 5 years".
  */
 export const DEFAULT_SYMMETRIC_PAYOFFS: SymmetricPayoffValues = {
   bothTestify: "5 years",
-  onlyTestifier: "to walk free",
+  onlyTestifier: "0 years",
   onlySilent: "10 years",
   bothSilent: "1 year",
 };
 
 export const DEFAULT_ASYMMETRIC_PAYOFFS: AsymmetricPayoffValues = {
   bothTestify: { a: "5 years", b: "5 years" },
-  onlyATestifies: { a: "to walk free", b: "10 years" },
-  onlyBTestifies: { a: "10 years", b: "to walk free" },
+  onlyATestifies: { a: "0 years", b: "10 years" },
+  onlyBTestifies: { a: "10 years", b: "0 years" },
   bothSilent: { a: "1 year", b: "1 year" },
 };
 

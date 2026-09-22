@@ -27,6 +27,11 @@ const twMerge = extendTailwindMerge({
       "border-w-r": [{ "border-r": BORDER_WIDTHS }],
       "border-w-b": [{ "border-b": BORDER_WIDTHS }],
       "border-w-l": [{ "border-l": BORDER_WIDTHS }],
+      // The focus ring has the same problem, and worse consequences: read as a
+      // colour, `ring-thick` was deleted by the `ring-ring` beside it and every
+      // focus ring in the app came out at the stock width.
+      "ring-w": [{ ring: BORDER_WIDTHS }],
+      "outline-w": [{ outline: BORDER_WIDTHS }],
       w: [{ w: LAYOUT_MEASURES }],
       "max-w": [{ "max-w": LAYOUT_MEASURES }],
       "min-w": [{ "min-w": LAYOUT_MEASURES }],

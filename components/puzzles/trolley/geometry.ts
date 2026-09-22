@@ -86,46 +86,49 @@ export const TROLLEY = {
 } as const;
 
 /**
- * The palette flow, in px.
+ * The catalogue grid, in px.
  *
- * The tiles wrap like words rather than filling a rigid grid — eleven equal
- * columns made "Stranger" and "Suitcase with $10,000 in It" the same object — so
- * only the bounds of one tile are fixed here, plus the rough cost of a tile used
- * to clip the flow to about two rows.
+ * The tiles are text, laid into a fixed grid of equal columns: tiles that sized
+ * to their own labels wrapped into a ragged paragraph of words, and the glyph
+ * above each one repeated four drawings across a row without telling the eye
+ * anything the word had not already said. A glyph is what an object earns by
+ * standing on a track; in the catalogue a name is the whole of it.
  */
 export const PALETTE = {
+  /** One cell: two lines of label and the air around them. */
+  tileHeight: 44,
   /**
-   * One tile's height, fixed: glyph, two lines of label, and the air around them.
-   * Fixed so a one-word tile and a three-word tile leave the row on the same
-   * baseline rather than making every row a different height.
+   * The label's own box: two lines of the caption step, reserved whether the
+   * label needs one line or two, so every cell in a row is the same height.
    */
-  tileHeight: 72,
-  /**
-   * The label's own box: two lines of the `xs` step, reserved whether the label
-   * needs one line or two, so the glyph above it sits at the same height in every
-   * tile of a row instead of drifting with the label's depth.
-   */
-  labelHeight: 32,
-  /** A tile is never narrower than this, so a one-word label still reads as a tile. */
-  minTileWidth: 80,
-  /** Nor wider: past this the label wraps to its second line instead of stretching. */
-  maxTileWidth: 152,
-  /** What one tile costs a row on average, for clipping the flow to whole rows. */
-  averageTileWidth: 118,
+  labelHeight: 36,
+  /** How many columns the grid is cut into where there is room for them all. */
+  columns: 9,
+  /** Narrower than this a column stops holding a word, so the grid drops one. */
+  minColumnWidth: 88,
   /** How many rows of tiles the palette shows before "Show more" is pressed. */
   visibleRows: 2,
 } as const;
 
+/** How many equal columns fit across `width`, never more than the grid's own. */
+export function paletteColumns(width: number): number {
+  if (width <= 0) return PALETTE.columns;
+  const fits = Math.floor(width / PALETTE.minColumnWidth);
+  return Math.max(2, Math.min(PALETTE.columns, fits));
+}
+
 /**
- * Roughly how many tiles fill `rows` rows of a flow `width` across.
- *
- * A wrapped flow of variable-width tiles has no row count until it has been laid
- * out, so the clip is an estimate from the average tile: two rows of chips, give
- * or take one, which is what "two rows" means to the eye.
+ * The width of one cell in a `columns`-wide grid `width` across, with `gap`
+ * between neighbours. Returned in px so every cell is drawn to the same measure
+ * rather than to its own label.
  */
-export function paletteBudget(width: number, rows: number): number {
-  const perRow = Math.max(1, Math.round(width / PALETTE.averageTileWidth));
-  return perRow * Math.max(1, rows);
+export function paletteCellWidth(width: number, columns: number, gap: number): number {
+  return Math.max(PALETTE.minColumnWidth, (width - gap * (columns - 1)) / columns);
+}
+
+/** How many tiles fill `rows` rows of a `columns`-wide grid. */
+export function paletteBudget(columns: number, rows: number): number {
+  return Math.max(1, columns) * Math.max(1, rows);
 }
 
 export type TrackId = 1 | 2;

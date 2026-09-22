@@ -9,7 +9,7 @@ export type FacetOption<T extends string> = { value: T; label: string };
 const ANY = "\u0000all";
 
 export type FilterSegmentsProps<T extends string> = {
-  /** Name of the facet, shown before the control. */
+  /** Name of the facet, shown as an eyebrow before the control. */
   label: string;
   /** The chosen value, or `null` for "any". */
   value: T | null;
@@ -19,17 +19,21 @@ export type FilterSegmentsProps<T extends string> = {
 };
 
 /**
- * One facet of the character filter, drawn as the form's segmented control so the
- * toolbar reads as one row of fields rather than a search box beside some chips.
+ * One facet of the character filter, drawn as a segmented control on the same
+ * line as the search box.
  *
  * "All" is a segment of its own rather than an implied state of no segment being
  * lit: a filter whose resting state looks like three unchosen buttons is a filter
  * nobody can read. A facet with nothing to choose between draws nothing at all.
  *
- * The facet's name sits inside the control's own left padding rather than beside
- * it. Outside, it was a word floating in the gap between two fields, belonging to
- * neither; inside, it is the control's eyebrow and the whole thing reads as one
- * object the width of a field.
+ * The facet's name is an eyebrow outside the track, in the small-caps voice the
+ * app gives labels. Inside the control's own padding it read as a fifth option
+ * that happened to be unselectable; outside and in the label voice it names the
+ * thing the segments choose between.
+ *
+ * The track carries the search field's own hairline and height, so the toolbar
+ * reads as one row of chrome at one border weight rather than a saturated field
+ * beside a box that is almost not there.
  */
 export function FilterSegments<T extends string>({
   label,
@@ -41,16 +45,13 @@ export function FilterSegments<T extends string>({
   if (options.length < 2) return null;
 
   return (
-    <View
-      className={cn(
-        "h-control-md flex-row items-center gap-sm self-start rounded-sm bg-input py-xs pl-md pr-xs",
-        className,
-      )}
-    >
-      <Text variant="subtle">{label}</Text>
+    <View className={cn("flex-row items-center gap-sm", className)}>
+      <Text variant="muted" className="font-display text-xs">
+        {label}
+      </Text>
       <Segmented
         size="sm"
-        className="bg-transparent p-none"
+        className="h-control-md border-hairline border-border"
         label={label}
         value={value ?? ANY}
         options={[{ value: ANY, label: "All" }, ...options]}

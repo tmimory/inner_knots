@@ -16,7 +16,14 @@
  * size; the adventure is only written to when a gesture finishes.
  */
 import { applyEdgeChanges, applyNodeChanges } from "@xyflow/react";
-import type { Connection, Edge, EdgeChange, Node, NodeChange } from "@xyflow/react";
+import type {
+  Connection,
+  Edge,
+  EdgeChange,
+  Node,
+  NodeChange,
+  SmoothStepPathOptions,
+} from "@xyflow/react";
 import { useCallback, useMemo, useState } from "react";
 
 import type { Adventure } from "@/lib/domain/adventure";
@@ -24,7 +31,7 @@ import type { AdventurePathSummary, AdventureSummary } from "@/lib/domain/summar
 import { removeNode, setNodePositions, setOptionTarget } from "@/lib/puzzles/adventure/edits";
 import type { Theme } from "@/theme";
 
-import { edgeLabelBackgroundStyle, edgeLabelStyle, edgeStyle } from "./flow-style";
+import { edgePathOptions, edgeLabelBackgroundStyle, edgeLabelStyle, edgeStyle } from "./flow-style";
 import {
   DECISION_NODE,
   NODE_TARGET_HANDLE,
@@ -33,7 +40,14 @@ import {
 } from "./types";
 
 export type AdventureFlowNode = Node<DecisionNodeData, typeof DECISION_NODE>;
-export type AdventureFlowEdge = Edge<AdventureEdgeData>;
+/**
+ * One option, as React Flow draws it. `pathOptions` is carried on the type because
+ * every edge here is a smooth step and each one is bent differently, so that a
+ * bundle arriving at one card reads as several lines rather than one.
+ */
+export type AdventureFlowEdge = Edge<AdventureEdgeData> & {
+  pathOptions?: SmoothStepPathOptions;
+};
 
 /** An edge's id: the option it stands for, qualified by the node it leaves. */
 export function edgeId(nodeId: string, optionId: string): string {
@@ -73,6 +87,18 @@ export function decorationFromSummary(
     pathNodeIds,
     pathEdgeIds,
   };
+}
+
+/** How many edges arrive at each node: the size of every bundle. */
+function incomingBundles(adventure: Adventure, known: ReadonlySet<string>): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const node of adventure.nodes) {
+    for (const option of node.options) {
+      if (option.nextNodeId === null || !known.has(option.nextNodeId)) continue;
+      counts.set(option.nextNodeId, (counts.get(option.nextNodeId) ?? 0) + 1);
+    }
+  }
+  return counts;
 }
 
 /** Every node some option leads to: the cards that need a place for an edge to land. */
@@ -130,11 +156,19 @@ export function toFlowEdges(
   const known = new Set(adventure.nodes.map((node) => node.id));
   const edges: AdventureFlowEdge[] = [];
 
+  // Every card's single input handle is a corridor several edges may share, so
+  // each edge is told its place in that bundle before it is drawn.
+  const bundles = incomingBundles(adventure, known);
+  const placed = new Map<string, number>();
+
   for (const node of adventure.nodes) {
     for (const option of node.options) {
       if (option.nextNodeId === null || !known.has(option.nextNodeId)) continue;
 
       const id = edgeId(node.id, option.id);
+      const target = option.nextNodeId;
+      const index = placed.get(target) ?? 0;
+      placed.set(target, index + 1);
       const hits = decoration?.optionHits[node.id]?.[option.id] ?? 0;
       const onPath = decoration?.pathEdgeIds.has(id) ?? false;
       const tone = {
@@ -149,6 +183,7 @@ export function toFlowEdges(
         target: option.nextNodeId,
         targetHandle: NODE_TARGET_HANDLE,
         type: "smoothstep",
+        pathOptions: edgePathOptions(theme, index, bundles.get(target) ?? 1),
         // An edge leaves from the row of the option it stands for, so repeating
         // that option's name on the edge says nothing the picture has not said —
         // and on a forked graph the plaques land on top of the cards. What the

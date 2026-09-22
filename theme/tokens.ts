@@ -203,6 +203,13 @@ export const shadows = {
 export const opacities = {
   /** Non-interactive controls. */
   disabled: 0.5,
+  /**
+   * The primary action while it is off. Dimmed enough to read as unavailable,
+   * strong enough to still be the loudest thing on the page — at the plain
+   * disabled value the outline dissolved into the parchment and the screen lost
+   * the one control it is about.
+   */
+  dimmed: 0.7,
   /** Hover and press feedback on filled surfaces. */
   hover: 0.9,
   /** Dimming behind a dialog or drawer. */
@@ -290,6 +297,19 @@ export const layout = {
   /** The inspector column beside a canvas: wide enough for a labelled textarea. */
   inspector: 360,
   /**
+   * One roster seat: a face, a name and the stepper that says how many times it
+   * answers, in a column wide enough to hold the widest of the three. Fixing the
+   * column is what keeps the steppers from colliding when two seats are filled
+   * and what centres each one under its own face.
+   */
+  seat: 136,
+  /**
+   * The smallest a numeric field may be drawn. A two-digit count in a 48px box
+   * sits with a pixel either side of it and reads as cramped; 56 gives the
+   * numerals room without turning a stepper into a text field.
+   */
+  field: 56,
+  /**
    * Smallest a floating menu may be — a select's list, a dropdown. Named apart
    * from `menu` (the nav rail) so tuning the sidebar cannot resize every popover.
    */
@@ -308,12 +328,17 @@ export const borderWidths = {
  * Font sizes, in px, named rather than numeric so type scale stays one decision.
  *
  * A screen should only ever show four of these: `3xl` for its title, `xl`/`lg`
- * for section headings, `base` for everything you read, `sm` for the metadata
- * line under it. `xs` is the monospace exception — ids and payloads set larger
- * than their point size — and `2xl` belongs to the wordmark alone.
+ * for section headings, `base` for everything you read, `xs` for the caption and
+ * metadata line under it, and `2xl` for the wordmark alone.
+ *
+ * `xs` is the floor: captions, micro-labels, table headers and the metadata line
+ * all share it, so a screen has one size below the body rather than three. It is
+ * 13 rather than 12 because the body serif is an old-style face with a small
+ * x-height — a 12px Cormorant caption measures like a 10px sans one, which is
+ * where every reviewer read the marginalia as unreadable.
  */
 export const fontSizes = {
-  xs: 12,
+  xs: 13,
   sm: 14,
   base: 17,
   lg: 20,
@@ -325,7 +350,7 @@ export const fontSizes = {
 
 /** Line heights, in px, paired with `fontSizes` by key. */
 export const lineHeights = {
-  xs: 16,
+  xs: 18,
   sm: 20,
   base: 26,
   lg: 28,

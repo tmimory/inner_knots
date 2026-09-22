@@ -12,17 +12,20 @@ import { cn } from "@/lib/utils";
  *   secondary    an outlined action in the verdigris tone
  *   outline      an outlined action in the neutral ink
  *   ghost        a tertiary action with no edge at all
- *   destructive  a red text link; it never gets a fill beside Save
+ *   destructive  a text link in the body ink that turns red under the cursor;
+ *                it never gets a fill beside Save
  *   link         a text link in the rubric red
  *   quiet-link   a utility link — "Refresh models", "Enter model id manually" —
  *                set in body ink, so it does not join the page's red voices
  *
  * A disabled primary drops its fill and becomes an outline in the same red at
- * `opacity-disabled`: a filled oxblood block that happens to be 50% transparent
+ * `opacity-dimmed`: a filled oxblood block that happens to be half transparent
  * still reads as the thing to press, and the parchment behind it is close enough
  * in value that the dimming barely registers. The outline keeps the button's rank
- * and colour while plainly not being available. The reason it is off belongs
- * directly beneath it as muted text, not in the button's own styling.
+ * and colour while plainly not being available — and it is held at 0.7 rather
+ * than the general disabled value, because at 0.5 the outline faded into the page
+ * and the screen stopped having a primary action at all. The reason it is off
+ * belongs directly beneath it as muted text, not in the button's own styling.
  */
 const buttonVariants = cva(
   "flex-row items-center justify-center gap-sm rounded-sm transition-colors duration-fast web:focus-visible:outline-none web:focus-visible:ring-thick web:focus-visible:ring-ring",
@@ -53,10 +56,17 @@ const buttonVariants = cva(
     compoundVariants: [
       // A text link has no box: it sits on the line it belongs to.
       { variant: ["destructive", "link", "quiet-link"], class: "px-none" },
-      // The primary action, switched off: the red outline, not the red block.
-      { variant: "default", disabled: true, class: "border-hairline border-primary bg-transparent" },
       // Nothing hovers when it cannot be pressed.
       { disabled: true, class: "web:hover:opacity-disabled web:hover:bg-transparent" },
+      // The primary action, switched off: the red outline, not the red block, and
+      // held one step brighter than everything else that is off. Emitted after the
+      // generic disabled rule so it takes the hover state with it.
+      {
+        variant: "default",
+        disabled: true,
+        class:
+          "border-hairline border-primary bg-transparent opacity-dimmed web:hover:opacity-dimmed",
+      },
     ],
     defaultVariants: { variant: "default", size: "default", disabled: false },
   },
@@ -74,7 +84,11 @@ const buttonTextVariants = cva("font-body", {
       secondary: "text-secondary",
       outline: "text-foreground",
       ghost: "text-foreground",
-      destructive: "text-destructive web:hover:underline",
+      // At rest it is one more thing you could do, set in the same ink as the
+      // prose around it; the red arrives with the cursor, where it is a warning
+      // rather than a fifth red voice competing with the page's one primary
+      // action. "Clear tracks" in permanent red read as the thing to press.
+      destructive: "text-foreground web:hover:text-destructive",
       link: "text-primary web:hover:underline",
       "quiet-link": "text-foreground web:hover:underline",
     },

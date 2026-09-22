@@ -143,6 +143,21 @@ ${colorBlock(themeColors.nightScroll, "      ")}
     color: rgb(var(${cssVarNames.color("subtleForeground")}) / 1);
   }
 }
+
+@layer utilities {
+  /*
+   * Lining, tabular figures — the numeral style for counts, ids, durations and
+   * every column of a table. The body serif is an old-style face, so by default
+   * \`3\` and \`7\` hang below the baseline and \`1\` sits at x-height: lovely in a
+   * sentence, illegible in a stat row, and of varying width, so a column of
+   * numbers will not line up. There is no Tailwind utility for
+   * \`font-variant-numeric\` in this build, so the one class lives here and
+   * \`<Text variant="data">\` is the only thing that reaches for it.
+   */
+  .tabular {
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+}
 `;
 
 const colorEntries = Object.keys(themeColors.scroll).map(

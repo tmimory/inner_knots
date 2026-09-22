@@ -24,8 +24,16 @@ import { handleStyle, nodeCardStyle } from "./flow-style";
 import type { AdventureFlowNode } from "./use-adventure-graph";
 import { NODE_TARGET_HANDLE } from "./types";
 
-/** Lines of context and of decision text a card shows before it trails off. */
-const CONTEXT_LINES = 2;
+/**
+ * Lines of context and of decision text a card shows before it trails off.
+ *
+ * Three of context rather than two: two clipped a setup mid-sentence on almost
+ * every card, and the third line is what turns a fragment back into a sentence.
+ * The full text is on the card's accessibility label — React Native Web has no
+ * `title` attribute to hang a tooltip from, and the label is what a screen reader
+ * and a hover-capable browser both reach.
+ */
+const CONTEXT_LINES = 3;
 const DECISION_LINES = 2;
 
 export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
@@ -35,7 +43,10 @@ export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
 
   return (
     // No `overflow-hidden`: the option handles sit outside the card border.
-    <View style={nodeCardStyle(theme, { selected, onPath, unvisited, isStart })}>
+    <View
+      accessibilityLabel={`${node.decision.trim()} — ${node.context.trim()}`}
+      style={nodeCardStyle(theme, { selected, onPath, unvisited, isStart })}
+    >
       {/*
         Nothing arrives at the start of an adventure, so it is drawn with no place
         for anything to arrive. A node that is both the start and the target of
@@ -60,10 +71,16 @@ export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
           </View>
         ) : null}
 
-        <Text variant="muted" numberOfLines={CONTEXT_LINES}>
+        {/*
+          Two sizes on a card and no more: the question one step up, the setup and
+          the option rows at body size. Nothing on a card is set at the caption
+          step, because a card is drawn at whatever zoom the graph fits at and a
+          caption scaled down is no longer type.
+        */}
+        <Text variant="muted" className="text-base" numberOfLines={CONTEXT_LINES}>
           {node.context.trim() === "" ? "No context yet" : node.context}
         </Text>
-        <Text className="font-bodyMedium text-base" numberOfLines={DECISION_LINES}>
+        <Text className="font-bodySemiBold text-lg" numberOfLines={DECISION_LINES}>
           {node.decision.trim() === "" ? "No decision yet" : node.decision}
         </Text>
       </View>
@@ -74,7 +91,7 @@ export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
             className="justify-center px-md"
             style={{ height: ADVENTURE_LAYOUT.nodeOptionHeight }}
           >
-            <Text variant="muted" className="text-xs">
+            <Text variant="muted" className="text-base">
               No options yet
             </Text>
           </View>
@@ -86,31 +103,29 @@ export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
             className="flex-row items-center gap-xs px-md"
             style={{ height: ADVENTURE_LAYOUT.nodeOptionHeight }}
           >
-            <Text className="flex-1 text-sm" numberOfLines={1}>
+            <Text className="flex-1 text-base" numberOfLines={1}>
               {option.label}
             </Text>
             {counted ? (
-              <Text variant="muted" className="font-mono text-xs">
+              <Text variant="muted" className="font-mono text-base tabular">
                 {optionHits?.[option.id] ?? 0}
               </Text>
             ) : null}
-            {option.nextNodeId === null ? (
-              <Text variant="subtle" className="text-xs">
-                end
-              </Text>
-            ) : null}
             {/*
-              An option that ends the adventure says so in words; its handle
-              would contradict them. It is still there — that is how an ending
-              is joined to a card — but it only surfaces on hover, so a settled
-              graph shows one dot per edge and not one per option.
+              An option that ends the adventure used to say "end" in a seven-pixel
+              word beside its handle — a third type size on the card, unreadable at
+              any zoom a whole graph is read at. The ending is now the handle
+              itself: a filled square where every other option has a round dot, so
+              the terminals of a tree are countable at a glance and the card keeps
+              its two sizes.
             */}
             <Handle
               type="source"
               id={option.id}
               position={Position.Right}
               className={option.nextNodeId === null ? TERMINAL_HANDLE_CLASS : undefined}
-              style={handleStyle(theme, "source")}
+              style={handleStyle(theme, option.nextNodeId === null ? "terminal" : "source")}
+              aria-label={option.nextNodeId === null ? "ends the adventure" : undefined}
             />
           </View>
         ))}

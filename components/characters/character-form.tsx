@@ -1,12 +1,11 @@
 import { useCallback, useMemo, useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
 
 import { ColorPicker, DEFAULT_AVATAR_SHAPE, ShapePicker } from "@/components/avatars";
 import {
   Button,
   ConfirmDialog,
   Input,
-  Label,
   Segmented,
   Select,
   SelectContent,
@@ -15,9 +14,6 @@ import {
   SelectValue,
   Text,
   Textarea,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   useToast,
   type SegmentedOption,
 } from "@/components/ui";
@@ -45,11 +41,10 @@ import { useTheme } from "@/theme";
 import { ConvictionList } from "./conviction-list";
 import { Field, FormSection } from "./field";
 import { FinalPrompt } from "./final-prompt";
-import { LockGlyph, WarningGlyph } from "./glyphs";
+import { WarningGlyph } from "./glyphs";
 import {
   OUTPUT_MODE_LABELS,
   PROVIDER_DEFAULT_EFFORT,
-  STEERING_MODE_HINTS,
   STEERING_MODE_LABELS,
 } from "./labels";
 
@@ -71,37 +66,11 @@ function sentenceCase(text: string | null): string | null {
  * On the label row rather than under the control: a counter hung below a field is
  * the smallest type on the page, alone on a line of its own, and it pushes the
  * next label down by a row it did not need. Beside the label it is a fact about
- * the thing the label names, and the mono figures keep one width as they count.
+ * the thing the label names, set in lining, fixed-width figures so the number
+ * neither drops below the line nor shifts as it counts.
  */
 function Counter({ value, max }: { value: number; max: number }) {
-  return <Text variant="subtle" className="font-mono text-xs">{`${value} / ${max}`}</Text>;
-}
-
-/**
- * The identifier of a character that already exists: one read-only row.
- *
- * The identifier is the key in the store, in every run config and in every span
- * record, so it cannot change — and a label, a value and a line of explanation
- * stacked at three sizes made the most fixed thing on the form look like its
- * first field. The reason waits on the lock.
- */
-function FixedIdentifier({ id }: { id: string }) {
-  return (
-    <View className="min-h-control-md flex-row items-center gap-md">
-      <Label>Identifier</Label>
-      <Text className="font-mono text-sm">{id}</Text>
-      <Tooltip delayDuration={0}>
-        <TooltipTrigger asChild>
-          <Pressable accessibilityLabel="Why the identifier cannot be changed" className="p-xxs">
-            <LockGlyph />
-          </Pressable>
-        </TooltipTrigger>
-        <TooltipContent>
-          <Text>Fixed after creation. Make another character to use a different name.</Text>
-        </TooltipContent>
-      </Tooltip>
-    </View>
-  );
+  return <Text variant="subtle" className="tabular">{`${value} / ${max}`}</Text>;
 }
 
 type Draft = {
@@ -359,16 +328,20 @@ export function CharacterForm({
 
   return (
     <View className="gap-2xl wide:flex-row wide:items-start wide:gap-2xl">
-      <View className="max-w-reading flex-1 gap-2xl">
+      <View className="w-full max-w-reading flex-1 gap-2xl">
         {/*
           The first group is a section like the two under it: an untitled block of
           fields above a titled one reads as a preamble that lost its heading, and
           the rule under "Model" then looked like the page starting over.
         */}
         <FormSection title="Mask" divider={false}>
-          {editing ? (
-            <FixedIdentifier id={draft.id} />
-          ) : (
+          {/*
+            A character that already exists has no identifier field: the id is the
+            key in the store, in every run config and in every span record, so it
+            can be chosen once and never again. It is stated once, in the page
+            header under the name, where a fact about the whole page belongs.
+          */}
+          {editing ? null : (
             <Field
               label="Identifier"
               error={idError}
@@ -377,7 +350,7 @@ export function CharacterForm({
             >
               <View className="flex-row items-center gap-sm">
                 <Input
-                  className="flex-1"
+                  className="max-w-inspector flex-1"
                   value={draft.id}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -402,26 +375,41 @@ export function CharacterForm({
             </Field>
           )}
 
-          <Field label="Face">
-            <ShapePicker
-              value={draft.avatar.shape}
-              color={draft.avatar.color}
-              onChange={(shape) => patch({ avatar: { ...draft.avatar, shape } })}
-            />
-          </Field>
+          {/*
+            One module, two flush bands: fifteen faces on one row and twenty-five
+            pigments on the row under it, both spanning the form's measure and
+            sharing its left and right edges. Split into two fields a step apart,
+            each with its own ragged last row, they read as two unrelated grids
+            that happened to land near each other.
+          */}
+          <View className="gap-md">
+            <Field label="Face">
+              <ShapePicker
+                value={draft.avatar.shape}
+                color={draft.avatar.color}
+                onChange={(shape) => patch({ avatar: { ...draft.avatar, shape } })}
+              />
+            </Field>
 
-          <Field label="Color">
-            <ColorPicker
-              value={draft.avatar.color}
-              onChange={(color) => patch({ avatar: { ...draft.avatar, color } })}
-            />
-          </Field>
+            <Field label="Color">
+              <ColorPicker
+                value={draft.avatar.color}
+                onChange={(color) => patch({ avatar: { ...draft.avatar, color } })}
+              />
+            </Field>
+          </View>
         </FormSection>
 
         <FormSection title="Model">
           <Field label="Provider">
+            {/*
+              A select is as wide as the longest thing it will ever hold, not as
+              wide as the page: "Anthropic" in a 700px trough reads as a field
+              waiting for a sentence. Capped at the inspector measure, the provider
+              and the model end on one edge with the identifier above them.
+            */}
             <View className="flex-row items-center gap-sm">
-              <View className="flex-1">
+              <View className="max-w-inspector flex-1">
                 <Select
                   value={
                     provider === undefined
@@ -484,9 +472,13 @@ export function CharacterForm({
           </Field>
 
           <Field label="Model" error={modelError}>
-            <View className="gap-xs">
+            <View className="max-w-inspector gap-xs">
               {manual ? (
+                // A model id is an identifier, not prose: typed in the mono voice
+                // its figures are lining and one character wide, so "claude-sonnet-5"
+                // stops setting its 5 as an old-style figure that drops below the line.
                 <Input
+                  className="font-mono text-sm"
                   value={model}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -521,23 +513,23 @@ export function CharacterForm({
                 </Select>
               )}
               {/*
-                Everything you can do to the catalogue, on one quiet line under the
+                Everything you can do to the catalogue, on one line under the
                 control it acts on: re-read it, or stop using it and type the id.
-                One above the field in the rubric red and one below it underlined
-                made two utility links look like two more decisions. A provider
-                whose catalogue will not load has neither.
+                In the rubric red the app gives every link — set in body ink they
+                read as two more labels nobody suspects of being pressable. A
+                provider whose catalogue will not load has neither.
               */}
               {models.error === null ? (
                 <View className="flex-row flex-wrap items-center gap-lg">
                   <Button
-                    variant="quiet-link"
+                    variant="link"
                     size="sm"
                     disabled={models.loading || provider === undefined}
                     onPress={() => void models.refresh()}
                   >
                     <Text>{models.loading ? "Reading…" : "Refresh models"}</Text>
                   </Button>
-                  <Button variant="quiet-link" size="sm" onPress={() => setManualModel(!manual)}>
+                  <Button variant="link" size="sm" onPress={() => setManualModel(!manual)}>
                     <Text>{manual ? "Choose from the catalogue" : "Enter model id manually"}</Text>
                   </Button>
                 </View>
@@ -555,7 +547,7 @@ export function CharacterForm({
           </Field>
 
           {effortLevels.length > 0 ? (
-            <Field label="Reasoning effort">
+            <Field label="Reasoning effort" className="max-w-inspector">
               <Select
                 value={{
                   value: effort ?? NO_EFFORT,
@@ -583,7 +575,13 @@ export function CharacterForm({
         </FormSection>
 
         <FormSection title="Steering">
-          <Field label="Mode" hint={STEERING_MODE_HINTS[steering.mode]}>
+          {/*
+            No helper under the control: the rail beside the form shows what this
+            mode actually sends, down to the mode that sends nothing at all. A
+            sentence describing the thing displayed two columns over is the page
+            explaining its own demonstration.
+          */}
+          <Field label="Mode">
             <Segmented
               label="Steering mode"
               value={steering.mode}

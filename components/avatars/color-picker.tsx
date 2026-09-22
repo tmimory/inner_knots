@@ -12,8 +12,8 @@ export type ColorPickerProps = {
 };
 
 /**
- * The scribe's pigment box: twenty-five swatches, each named on hover, thirteen to
- * a row between the same edges as the faces above them.
+ * The scribe's pigment box: twenty-five swatches, each named on hover, all on one
+ * row between the same edges as the faces above them.
  *
  * The chosen pigment wears the pickers' one selection ring and nothing else. A
  * check drawn inside the dot marked it by covering it — the one swatch you wanted
@@ -33,7 +33,10 @@ export function ColorPicker({ value, onChange, className }: ColorPickerProps) {
       onPick={(pigment) => onChange(pigment.id)}
       renderSwatch={(pigment) => (
         <View
-          className="h-avatar-md w-avatar-md rounded-full border-hairline border-border"
+          // A hairline on every swatch, not only the dark ones: without it the
+          // pale beige and the unbleached vellum simply vanish into the page and
+          // the plate reads as twenty-three pigments with two holes in it.
+          className="h-lg w-lg rounded-full border-hairline border-foreground/subtle"
           style={{ backgroundColor: pigment.hex }}
         />
       )}

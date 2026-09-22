@@ -20,16 +20,16 @@ export type VariantSelectProps<Id extends string = string> = {
   className?: string;
 };
 
-/** The leading radio: a ring that fills with the rubric red when the row is chosen. */
+/** The leading radio: an empty ring that takes a solid rubric-red dot when chosen. */
 function RadioMark({ selected }: { selected: boolean }) {
   return (
     <View
       className={cn(
-        "h-md w-md items-center justify-center self-center rounded-full border-hairline transition-colors duration-fast",
-        selected ? "border-primary bg-primary" : "border-border bg-input",
+        "h-lg w-lg items-center justify-center self-center rounded-full border-hairline transition-colors duration-fast",
+        selected ? "border-primary bg-transparent" : "border-border bg-input",
       )}
     >
-      {selected ? <View className="h-xs w-xs rounded-full bg-primary-foreground" /> : null}
+      {selected ? <View className="h-sm w-sm rounded-full bg-primary" /> : null}
     </View>
   );
 }
@@ -44,12 +44,12 @@ function RadioMark({ selected }: { selected: boolean }) {
  * different depths and the row read as three unrelated cards; as rows the eye
  * runs down one edge and compares the sentences.
  *
- * Only the chosen row is drawn, in the app's one selection language: a tan fill,
- * a hairline in the rubric red, the label in the same red — what a selected chip
- * and a chosen segment wear. Three bordered rows weigh more than the text field
- * above them, and a border around every option says nothing, because what the eye
- * is looking for is which one is on. The unchosen rows keep a transparent
- * hairline, so choosing does not shift the column a pixel.
+ * Choosing marks the row and nothing else: the radio fills with the rubric red
+ * and the label takes the same red. No band, no border, no fill. A full-width tan
+ * plate under the chosen line outweighed the screen's primary button and made the
+ * two unchosen rows look like they had been switched off, when all the eye is
+ * looking for is which dot is filled. Every row keeps the same padding in both
+ * states, so choosing does not shift the column a pixel.
  */
 export function VariantSelect<Id extends string = string>({
   value,
@@ -75,10 +75,10 @@ export function VariantSelect<Id extends string = string>({
             accessibilityHint={option.description}
             onPress={() => onChange(option.id)}
             className={cn(
-              "flex-row flex-wrap items-baseline gap-x-md gap-y-xxs rounded-sm border-hairline px-md py-sm transition-colors duration-fast",
+              "flex-row flex-wrap items-baseline gap-x-md gap-y-xxs rounded-sm px-md py-sm transition-colors duration-fast",
               selected
-                ? "border-primary bg-muted"
-                : "border-transparent bg-transparent active:bg-muted/subtle web:hover:bg-muted/subtle",
+                ? "bg-transparent"
+                : "bg-transparent active:bg-muted/subtle web:hover:bg-muted/subtle",
             )}
           >
             <RadioMark selected={selected} />

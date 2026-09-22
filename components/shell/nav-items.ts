@@ -17,7 +17,13 @@ export type NavGroup = {
 
 export type NavItem = NavLeaf | NavGroup;
 
-/** The left menu, top to bottom. Add a screen here and it appears in the menu. */
+/**
+ * The left menu, top to bottom. Add a screen here and it appears in the menu.
+ *
+ * Labels are sentence case: the nav is set in the display face, which small-caps
+ * every lowercase letter, so Title Case arrived as a second row of full capitals
+ * and the rail shouted over the page it points at.
+ */
 export const navItems: NavItem[] = [
   { kind: "leaf", label: "Characters", href: "/characters", match: "/characters" },
   {
@@ -25,10 +31,10 @@ export const navItems: NavItem[] = [
     label: "Puzzles",
     match: "/puzzles",
     children: [
-      { kind: "leaf", label: "Trolley Problems", href: "/puzzles/trolley", match: "/puzzles/trolley" },
+      { kind: "leaf", label: "Trolley problem", href: "/puzzles/trolley", match: "/puzzles/trolley" },
       {
         kind: "leaf",
-        label: "Prisoner's Dilemma",
+        label: "Prisoner's dilemma",
         href: "/puzzles/prisoners-dilemma",
         match: "/puzzles/prisoners-dilemma",
       },

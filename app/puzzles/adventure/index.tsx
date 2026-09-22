@@ -2,7 +2,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 
-import { issueBadge } from "@/components/puzzles/adventure";
+import { READY_LABEL, issueBadge } from "@/components/puzzles/adventure";
 import { Screen } from "@/components/shell";
 import {
   Button,
@@ -19,6 +19,14 @@ import { usePendingDelete } from "@/lib/client/use-pending-delete";
 import { validateAdventure, type Adventure } from "@/lib/domain/adventure";
 import { formatRelative, formatStamp, pluralize } from "@/lib/format";
 import { starterAdventure } from "@/lib/puzzles/adventure/edits";
+
+/**
+ * The overflow control: a square exactly one small control wide, with no padding
+ * of its own, so its right edge lands on the rule the row is closed with and on
+ * the right edge of the header's button. A 40px icon button left the ellipsis
+ * hanging twenty pixels inside the column.
+ */
+const OVERFLOW_HIT = "h-control-sm w-control-sm";
 
 /**
  * One saved tree as a row: the title is the way in, Run sits beside it, and the
@@ -47,7 +55,13 @@ function AdventureRow({
 }) {
   const [showActions, setShowActions] = useState(false);
   const badge = issueBadge(validateAdventure(adventure));
-  const meta = `${badge.label} · ${pluralize(adventure.nodes.length, "node")} · edited ${formatRelative(adventure.updatedAt)}`;
+  // A status is worth a word only when it deviates: "Ready" repeated down every
+  // row is a column of the same adjective, and a reader learns nothing from a
+  // list where every line agrees.
+  const state = badge.label === READY_LABEL ? undefined : badge.label;
+  const meta = [state, pluralize(adventure.nodes.length, "node"), `edited ${formatRelative(adventure.updatedAt)}`]
+    .filter((part): part is string => part !== undefined)
+    .join(" · ");
 
   return (
     // The row is the hover surface, but only the words are the way in: a Run
@@ -61,7 +75,7 @@ function AdventureRow({
           onPress={onOpen}
         >
           <Text
-            className="font-bodyMedium text-base text-foreground web:hover:underline"
+            className="font-bodySemiBold text-base text-foreground web:hover:underline"
             numberOfLines={1}
           >
             {adventure.name}
@@ -95,50 +109,33 @@ function AdventureRow({
           <Button
             variant="ghost"
             size="icon"
+            className={OVERFLOW_HIT}
             accessibilityLabel="Hide actions"
             onPress={() => setShowActions(false)}
           >
-            <Text>×</Text>
+            <Text className="text-muted-foreground">×</Text>
           </Button>
         </>
       ) : (
         <>
-          <Button size="sm" onPress={onRun}>
+          {/* Outlined, not filled: one row of a list is not the page's primary
+              action, and three filled buttons down a column argue with the one
+              in the header that is. */}
+          <Button variant="outline" size="sm" onPress={onRun}>
             <Text>Run</Text>
           </Button>
           <Button
             variant="ghost"
             size="icon"
+            className={OVERFLOW_HIT}
             accessibilityLabel={`More for ${adventure.name}`}
             onPress={() => setShowActions(true)}
           >
-            <Text>…</Text>
+            <Text className="text-muted-foreground">…</Text>
           </Button>
         </>
       )}
     </View>
-  );
-}
-
-/**
- * The floor of the list: a dashed rule and the next thing to do.
- *
- * A list that simply stops has no bottom edge, and a page whose content trails
- * off into parchment reads as half-loaded. The row is deliberately quiet — the
- * filled button in the header is still the one primary action — but it closes
- * the ledger and repeats the offer where the reader's eye has ended up.
- */
-function NewAdventureRow({ busy, onPress }: { busy: boolean; onPress: () => void }) {
-  return (
-    <Pressable
-      role="button"
-      disabled={busy}
-      accessibilityLabel="New adventure"
-      className="flex-row items-center gap-sm border-b-hairline border-dashed border-border py-md transition-colors duration-fast web:hover:bg-muted/subtle"
-      onPress={onPress}
-    >
-      <Text variant="meta">+ New adventure</Text>
-    </Pressable>
   );
 }
 
@@ -229,7 +226,6 @@ export default function AdventureListScreen() {
               onDelete={() => deleting.request(adventure)}
             />
           ))}
-          <NewAdventureRow busy={busy} onPress={startNew} />
         </View>
       ) : null}
 

@@ -13,6 +13,8 @@ export type CountStepperProps = {
   step?: number;
   /** Accessible name for the field — "Runs", "Games". */
   label: string;
+  /** Classes for the number field itself, e.g. a wider box for a four-digit count. */
+  fieldClassName?: string;
   className?: string;
 };
 
@@ -30,6 +32,10 @@ export function clampCount(value: number, min: number, max: number): number {
  * once: what was typed is kept on screen, tagged with the count it produced, so a
  * half-typed "1" on the way to "12" survives while a count changed from outside
  * still wins.
+ *
+ * The field is `layout.field` wide: a two-digit count in a 48px box sat with a
+ * pixel either side of the numerals, and the whole control read as cramped beside
+ * the buttons that drive it.
  */
 export function CountStepper({
   value,
@@ -38,6 +44,7 @@ export function CountStepper({
   max,
   step = 1,
   label,
+  fieldClassName,
   className,
 }: CountStepperProps) {
   const [typed, setTyped] = useState<{ text: string; from: number } | null>(null);
@@ -56,7 +63,10 @@ export function CountStepper({
         <Text className="font-mono">−</Text>
       </Button>
       <Input
-        className="h-control-sm w-3xl px-xs text-center"
+        className={cn(
+          "h-control-sm w-field min-w-field px-xs text-center tabular",
+          fieldClassName,
+        )}
         keyboardType="number-pad"
         accessibilityLabel={label}
         value={text}

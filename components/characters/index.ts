@@ -8,7 +8,7 @@ export { FinalPrompt, type FinalPromptProps } from "./final-prompt";
 export { LockGlyph, SearchGlyph, WarningGlyph, type GlyphProps } from "./glyphs";
 export {
   characterBlurb,
-  characterMeta,
+  characterMetaParts,
   characterTitle,
   OUTPUT_MODE_LABELS,
   OUTPUT_MODE_META,
@@ -16,5 +16,6 @@ export {
   STEERING_MODE_HINTS,
   STEERING_MODE_LABELS,
   STEERING_MODE_META,
+  type CharacterMetaParts,
 } from "./labels";
 export { CHARACTER_SEARCH_PLACEHOLDER, matchesCharacterQuery } from "./search";

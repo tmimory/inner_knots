@@ -5,6 +5,8 @@ import type { RunStatus } from "@/lib/domain/run";
 import type { LogLevel, SpanStatus } from "@/lib/domain/span";
 import { cn } from "@/lib/utils";
 
+import { LabelText } from "./field";
+
 /**
  * A state, shown as a bullet and a word rather than a filled pill.
  *
@@ -12,15 +14,24 @@ import { cn } from "@/lib/utils";
  * nobody is waiting on stays in the muted ink. A pill claims to be a control;
  * these states are not actionable, so they read as metadata.
  */
+function Dot({ tone, label }: { tone: string; label: string }) {
+  return (
+    <View
+      accessibilityRole="image"
+      accessibilityLabel={label}
+      className={cn("h-sm w-sm rounded-full", tone)}
+    />
+  );
+}
+
+/* The bullet and, beside it, the state as a label — small caps in the display
+   face, like the tabs and the section headings. Set in quiet body serif a state
+   read as prose that had lost its sentence. */
 function Mark({ dot, label }: { dot: string; label: string }) {
   return (
     <View className="flex-row items-center gap-xs">
-      <View
-        accessibilityRole="image"
-        accessibilityLabel={label}
-        className={cn("h-sm w-sm rounded-full", dot)}
-      />
-      <Text variant="meta">{label}</Text>
+      <Dot tone={dot} label={label} />
+      <LabelText>{label}</LabelText>
     </View>
   );
 }
@@ -36,6 +47,25 @@ const RUN_STATUS_DOTS: Record<RunStatus, string> = {
 /** How a run is going, for the ledger and the run header. */
 export function StatusMark({ status }: { status: RunStatus }) {
   return <Mark dot={RUN_STATUS_DOTS[status]} label={status} />;
+}
+
+/**
+ * How a finished run went, given how many of its calls failed.
+ *
+ * A ledger where nine rows in ten read "finished" has spent a column saying
+ * nothing, so the settled state is a bullet on its own. A run that finished with
+ * failures is a different state, not a footnote on the same one, and it takes the
+ * gilt bullet and says how many in the failure ink.
+ */
+export function FinishedMark({ failures }: { failures: number }) {
+  if (failures === 0) return <Dot tone={RUN_STATUS_DOTS.finished} label="finished" />;
+
+  return (
+    <View className="flex-row items-center gap-xs">
+      <Dot tone={RUN_STATUS_DOTS.running} label="finished with failures" />
+      <Text variant="meta" className="text-destructive">{`${failures} failed`}</Text>
+    </View>
+  );
 }
 
 const LOG_LEVEL_DOTS: Record<LogLevel, string> = {

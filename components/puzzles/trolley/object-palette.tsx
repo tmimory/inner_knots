@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { useTheme } from "@/theme";
 
 import { DraggableObject, type DragPoint } from "./draggable-object";
-import { PALETTE, paletteBudget, type TrackId } from "./geometry";
+import { PALETTE, paletteBudget, paletteCellWidth, paletteColumns, type TrackId } from "./geometry";
 
 export type ObjectPaletteProps = {
   /** The merged catalogue: custom objects first, then the built-ins. */
@@ -68,10 +68,44 @@ const REST_TAGS: readonly string[] = ALL_TAGS.filter((tag) => !PRIMARY_TAGS.incl
  * One filter, as a chip.
  *
  * At rest a chip is a word: no border, no fill, nothing for the eye to count.
- * Switched on it takes the selection language the whole app uses — a tan fill, a
- * hairline, the rubric red — so "which of these is on" is one glance, not twenty.
- * Selected filters are ANDed, so they narrow rather than widen.
+ * Switched on it takes the selection language the whole app uses — a tan fill and
+ * the rubric red — so "which of these is on" is one glance, not twenty. Selected
+ * filters are ANDed, so they narrow rather than widen. The word takes the badge's
+ * own caption step, which is the size the tile labels under it are set at: a
+ * filter row smaller than everything around it reads as fine print, not as a
+ * control.
  */
+function TagChip({
+  label,
+  selected,
+  role,
+  accessibilityLabel,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  role: "checkbox" | "button";
+  accessibilityLabel: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      role={role}
+      accessibilityState={role === "checkbox" ? { checked: selected, selected } : undefined}
+      accessibilityLabel={accessibilityLabel}
+      onPress={onPress}
+      className="rounded-sm transition-colors duration-fast web:hover:bg-muted/subtle"
+    >
+      <Badge
+        variant={selected ? "selected" : "outline"}
+        className={cn(!selected && "border-transparent")}
+      >
+        <Text>{label}</Text>
+      </Badge>
+    </Pressable>
+  );
+}
+
 function TagToggle({
   tag,
   selected,
@@ -82,17 +116,13 @@ function TagToggle({
   onPress: () => void;
 }) {
   return (
-    <Pressable
+    <TagChip
+      label={tag}
+      selected={selected}
       role="checkbox"
-      accessibilityState={{ checked: selected, selected }}
       accessibilityLabel={`Filter by ${tag}`}
       onPress={onPress}
-      className="rounded-sm transition-colors duration-fast web:hover:bg-muted/subtle"
-    >
-      <Badge variant={selected ? "selected" : "outline"} className={cn(!selected && "border-transparent")}>
-        <Text>{tag}</Text>
-      </Badge>
-    </Pressable>
+    />
   );
 }
 
@@ -100,9 +130,9 @@ function TagToggle({
  * The catalogue dealt round-robin across its four families.
  *
  * Built in grammar order the list opens with a hundred variations on one noun, so
- * the first rows of the flow are a hundred identical figures and the glyphs look
- * like decoration. Dealing person, animal, thing, group in turn puts four
- * different drawings in every row while keeping each family's own order intact.
+ * the first two rows are a hundred near-identical names. Dealing person, animal,
+ * thing, group in turn puts four different kinds in every row while keeping each
+ * family's own order intact.
  */
 function interleaveFamilies(items: readonly TrolleyObject[]): TrolleyObject[] {
   const buckets = new Map<string, TrolleyObject[]>();
@@ -130,12 +160,12 @@ function interleaveFamilies(items: readonly TrolleyObject[]): TrolleyObject[] {
  * Everything that can go on a track, searchable.
  *
  * The built-in catalogue runs to several hundred entries, so the search box and
- * the filters are what make it usable; the flow itself opens at two rows and
+ * the filters are what make it usable; the grid itself opens at two rows and
  * grows two at a time. Two rows is deliberate — the board above is the thing the
  * screen is about, and a wall of four hundred tiles was answering a question
- * nobody had asked yet. The tiles wrap like words and size to their labels rather
- * than filling equal columns, so "Stranger" costs a word and "Suitcase with
- * $10,000 in It" costs a phrase.
+ * nobody had asked yet. The tiles are laid into equal columns rather than wrapped
+ * like words: a ragged paragraph of names is a paragraph, and a catalogue is a
+ * list of things you scan down.
  */
 export function ObjectPalette({
   items,
@@ -173,7 +203,9 @@ export function ObjectPalette({
   }, [filtered]);
 
   const filtering = tags.length > 0 || query.trim() !== "";
-  const budget = paletteBudget(width || PALETTE.averageTileWidth, rows);
+  const columns = paletteColumns(width);
+  const cell = paletteCellWidth(width, columns, theme.spacing.xs);
+  const budget = paletteBudget(columns, rows);
   const visible = useMemo(() => ordered.slice(0, budget), [budget, ordered]);
   const more = filtered.length - visible.length;
 
@@ -219,13 +251,19 @@ export function ObjectPalette({
           autoCorrect={false}
           accessibilityLabel="Search objects"
         />
-        {/* Three ways to rearrange the board, none of them the screen's action. */}
+        {/* Two ways to fill the board, none of them the screen's action. */}
         <Button variant="ghost" onPress={onRandomize}>
           <Text>Randomize</Text>
         </Button>
         <Button variant="ghost" onPress={onCreate}>
           <Text>New object</Text>
         </Button>
+        {/*
+          Emptying the board is not a third way of filling it: a rule and a step of
+          air stand between it and the two above, so the thing that takes the
+          tracks away is never the word next to the thing that fills them.
+        */}
+        <View className="h-lg w-hairline bg-border" />
         <Button variant="destructive" onPress={onClear}>
           <Text>Clear tracks</Text>
         </Button>
@@ -258,10 +296,15 @@ export function ObjectPalette({
             onPress={() => toggleTag(CUSTOM_TAG)}
           />
         ) : null}
+        {/* The last chip in the row, in the row's own voice rather than a red link. */}
         {showRest ? null : (
-          <Button variant="link" size="sm" onPress={() => setMoreTags(true)}>
-            <Text>More</Text>
-          </Button>
+          <TagChip
+            label="More"
+            selected={false}
+            role="button"
+            accessibilityLabel="Show the rest of the filters"
+            onPress={() => setMoreTags(true)}
+          />
         )}
       </View>
 
@@ -273,6 +316,7 @@ export function ObjectPalette({
             <DraggableObject
               key={entry.id}
               item={entry}
+              width={cell}
               onDragStart={onDragStart}
               onDragMove={onDragMove}
               onDrop={(point) => onDropItem(entry, point)}

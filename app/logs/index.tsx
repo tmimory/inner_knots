@@ -55,6 +55,15 @@ export default function LogsScreen() {
   const groups = useMemo(() => groupByDay(shown), [shown]);
   const narrowed = filterSummary(filters);
 
+  // The subtitle carries a fact about the ledger rather than a slogan about it:
+  // "every prompt, every answer" is true of every screenshot ever taken of this
+  // page, which is another way of saying it told the reader nothing.
+  const puzzles = new Set(shown.map((run) => run.puzzle)).size;
+  const ledger =
+    shown.length === 0
+      ? "ὑπομνήματα"
+      : `ὑπομνήματα — ${pluralize(shown.length, "run")} · ${pluralize(puzzles, "puzzle")}`;
+
   // A filter row over an empty ledger is dead UI: it only appears once there is
   // something to sift, or once the reader has already narrowed the query.
   const sifting = runs.length > 0 || narrowed !== undefined;
@@ -62,7 +71,7 @@ export default function LogsScreen() {
   return (
     <Screen
       title="Logs"
-      subtitle="ὑπομνήματα — every prompt, every answer"
+      subtitle={ledger}
       right={
         error ? (
           <Text variant="small" className="text-destructive">
@@ -70,8 +79,6 @@ export default function LogsScreen() {
           </Text>
         ) : loading && runs.length === 0 ? (
           <Text variant="meta">opening the ledger…</Text>
-        ) : shown.length > 0 ? (
-          <Text variant="meta">{pluralize(shown.length, "run")}</Text>
         ) : null
       }
     >
@@ -79,9 +86,14 @@ export default function LogsScreen() {
         <RunFiltersBar filters={filters} characters={characters} onChange={setFilters} />
       ) : null}
 
-      {groups.map((group) => (
+      {/* The count rides the day's own rule, right-aligned to the column the rows
+          end at, instead of floating in the corner above the page title. */}
+      {groups.map((group, index) => (
         <View key={group.key} className="gap-sm">
-          <SectionHeading title={group.label} />
+          <SectionHeading
+            title={group.label}
+            right={index === 0 ? <Text variant="meta">{pluralize(shown.length, "run")}</Text> : undefined}
+          />
           <View className="border-t-hairline border-border">
             {group.runs.map((run) => (
               <RunRow key={run.id} run={run} characters={characters} />

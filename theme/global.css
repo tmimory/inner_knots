@@ -38,7 +38,7 @@
     /* easing */
     --easing-standard: cubic-bezier(0.65, 0, 0.35, 1);
     /* font-size */
-    --font-size-xs: 12px;
+    --font-size-xs: 13px;
     --font-size-sm: 14px;
     --font-size-base: 17px;
     --font-size-lg: 20px;
@@ -47,7 +47,7 @@
     --font-size-3xl: 31px;
     --font-size-4xl: 48px;
     /* line-height */
-    --line-height-xs: 16px;
+    --line-height-xs: 18px;
     --line-height-sm: 20px;
     --line-height-base: 26px;
     --line-height-lg: 28px;
@@ -84,6 +84,8 @@
     --layout-card: 320px;
     --layout-canvas: 640px;
     --layout-inspector: 360px;
+    --layout-seat: 136px;
+    --layout-field: 56px;
     --layout-popover: 264px;
     --layout-wide-breakpoint: 900px;
     /* radius */
@@ -98,6 +100,7 @@
     --border-width-thick: 2px;
     /* opacity */
     --opacity-disabled: 0.5;
+    --opacity-dimmed: 0.7;
     --opacity-hover: 0.9;
     --opacity-scrim: 0.4;
     --opacity-subtle: 0.6;
@@ -208,5 +211,20 @@
    */
   [data-placeholder] {
     color: rgb(var(--color-subtle-foreground) / 1);
+  }
+}
+
+@layer utilities {
+  /*
+   * Lining, tabular figures — the numeral style for counts, ids, durations and
+   * every column of a table. The body serif is an old-style face, so by default
+   * `3` and `7` hang below the baseline and `1` sits at x-height: lovely in a
+   * sentence, illegible in a stat row, and of varying width, so a column of
+   * numbers will not line up. There is no Tailwind utility for
+   * `font-variant-numeric` in this build, so the one class lives here and
+   * `<Text variant="data">` is the only thing that reaches for it.
+   */
+  .tabular {
+    font-variant-numeric: lining-nums tabular-nums;
   }
 }

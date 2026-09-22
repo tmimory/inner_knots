@@ -32,6 +32,12 @@ export type RosterBarProps = {
   min?: number;
   /** Show the per-character run count. Off for puzzles that run each once. */
   showRuns?: boolean;
+  /**
+   * Show the "2 of 5 seats filled" line under the row. The seats themselves
+   * already say it — five circles, two of them with faces in — so a screen that
+   * draws the whole row can turn the sentence off.
+   */
+  showCount?: boolean;
   /** Names for the slots, e.g. `["Player A", "Player B"]`. */
   labels?: readonly string[];
   /**
@@ -47,6 +53,17 @@ export type RosterBarProps = {
   allowDuplicates?: boolean;
   className?: string;
 };
+
+/**
+ * The width of one seat, and the air between two of them.
+ *
+ * A seat is a fixed column — `layout.seat`, wide enough for the stepper, which is
+ * the widest of the three things stacked in it — with everything in it centred on
+ * the face above. Sized to the avatar instead, the steppers of two neighbouring
+ * seats ran into each other and read as one six-button control belonging to
+ * nobody. The gap is a full `xl` so the columns stay separate objects.
+ */
+const SEAT = "w-seat items-center gap-xs";
 
 /** One column of the bar: a face, a name, and what it is asked to do. */
 function Medallion({
@@ -71,10 +88,7 @@ function Medallion({
   const name = character ? characterDisplayName(character) : fallbackId;
 
   return (
-    // Left-aligned rather than centred: a centred 64px face inside a 96px column
-    // sits 16px in from the heading above it, and the indent is the first thing
-    // the eye catches.
-    <View className="w-avatar-xl items-start gap-xs">
+    <View className={SEAT}>
       {label ? (
         <Text variant="meta" numberOfLines={1}>
           {label}
@@ -95,10 +109,12 @@ function Medallion({
           />
         </Pressable>
         {onRemove ? (
+          // Nudged a hairline pair outward so the badge sits tangent to the ring
+          // rather than biting a chunk out of the face behind it.
           <Button
             variant="outline"
             size="icon"
-            className="absolute right-none top-none h-lg w-lg rounded-full bg-card"
+            className="absolute -right-xxs -top-xxs h-lg w-lg rounded-full bg-card"
             accessibilityLabel={`Remove ${name}`}
             onPress={onRemove}
           >
@@ -106,17 +122,28 @@ function Medallion({
           </Button>
         ) : null}
       </View>
-      <Text variant="small" numberOfLines={1}>
+      <Text variant="small" numberOfLines={1} className="text-center">
         {name}
       </Text>
       {showRuns ? (
-        <CountStepper
-          value={runs}
-          onChange={onRuns}
-          min={RUN_LIMITS.minRuns}
-          max={RUN_LIMITS.maxRuns}
-          label="Runs"
-        />
+        // The caption is what turns a bare number under a portrait into a count of
+        // answers — "3" alone could be anything the roster happens to know about
+        // him. It sits under the control rather than beside it because a seat is a
+        // centred column and a leading word would push the stepper off its face;
+        // a "×" would have read as a multiplier, but the badge that takes a
+        // character off the roster is already a "×" two lines above it.
+        <View className="items-center gap-xxs">
+          <CountStepper
+            value={runs}
+            onChange={onRuns}
+            min={RUN_LIMITS.minRuns}
+            max={RUN_LIMITS.maxRuns}
+            label="Runs"
+          />
+          <Text variant="subtle" aria-hidden>
+            runs
+          </Text>
+        </View>
       ) : null}
     </View>
   );
@@ -134,7 +161,7 @@ function EmptySlot({
   onPress: () => void;
 }) {
   return (
-    <View className="w-avatar-xl items-start gap-xs">
+    <View className={SEAT}>
       {label ? (
         <Text variant="meta" numberOfLines={1}>
           {label}
@@ -202,6 +229,7 @@ export function RosterBar({
   max = RUN_LIMITS.maxRoster,
   min = RUN_LIMITS.minRoster,
   showRuns = true,
+  showCount = true,
   labels,
   fixedSlots,
   allowDuplicates = false,
@@ -263,7 +291,7 @@ export function RosterBar({
 
   return (
     <View className={cn("gap-sm", className)}>
-      <View className="flex-row flex-wrap items-start gap-lg">
+      <View className="flex-row flex-wrap items-start gap-xl">
         {Array.from({ length: slots }, (_, index) => {
           const entry = value[index];
           const label = labels?.[index];
@@ -296,7 +324,9 @@ export function RosterBar({
         })}
       </View>
 
-      <Text variant="meta">{`${value.length} of ${pluralize(max, "seat")} filled`}</Text>
+      {showCount ? (
+        <Text variant="meta">{`${value.length} of ${pluralize(max, "seat")} filled`}</Text>
+      ) : null}
 
       <Dialog open={picking !== null} onOpenChange={(open) => setPicking(open ? picking : null)}>
         <DialogContent>
