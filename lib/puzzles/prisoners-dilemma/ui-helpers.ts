@@ -320,6 +320,25 @@ export function blockedReason(setup: PrisonersDilemmaSetup): string | null {
   return null;
 }
 
+/**
+ * Whether the game-by-game grid earns its space.
+ *
+ * One game of one round is the outcome strip written twice, and nothing else.
+ * Anything more — twenty single bargains, or one bargain put seven times — is a
+ * shape worth laying out as rows.
+ */
+export function showsGameGrid(games: number, rounds: number): boolean {
+  return games > 1 || rounds > 1;
+}
+
+/**
+ * What to call that grid: a single-round run is read down the games, an iterated
+ * one across the rounds, and the heading says which way to read it.
+ */
+export function gameGridLabel(rounds: number): string {
+  return rounds > 1 ? "Round by round" : "Game by game";
+}
+
 /** Decisions a run will ask for: games × rounds × the two players. */
 export function decisionTotal(setup: PrisonersDilemmaSetup): number {
   return setup.runs * iterationsOf(setup) * PLAYER_COUNT;

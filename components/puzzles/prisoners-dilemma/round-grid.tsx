@@ -93,9 +93,10 @@ function EmptyCell() {
  * Every game as a row of rounds, so a cooperation pattern is one glance rather
  * than a scroll through the logs.
  *
- * Only an iterated run has anything to show here: a single game is one round, and
- * the outcomes strip already says how it came out. A game that ended early — a
- * round that never produced two answers ends its game — simply runs out of cells.
+ * A single-round run is one column wide and is read down rather than across: the
+ * twenty games of one bargain are twenty rows, and the column of round numbers
+ * that names them all "1" is dropped. A game that ended early — a round that
+ * never produced two answers ends its game — simply runs out of cells.
  */
 export function RoundGrid({ games, rounds, names, limit = ROUND_GRID_GAME_LIMIT, className }: RoundGridProps) {
   const shown = games.slice(0, limit);
@@ -114,16 +115,20 @@ export function RoundGrid({ games, rounds, names, limit = ROUND_GRID_GAME_LIMIT,
     <View className={cn("gap-sm", className)}>
       <ScrollView horizontal showsHorizontalScrollIndicator contentContainerClassName="gap-xxs">
         <View className="gap-xxs">
-          <View className="flex-row items-end gap-xxs">
-            <View className="w-avatar-xl" />
-            {columns.map((round) => (
-              <View key={round} className="w-4xl items-center">
-                <Text variant="muted" className="font-mono text-xs">
-                  {round}
-                </Text>
-              </View>
-            ))}
-          </View>
+          {/* A row of round numbers over a single column is the number 1 said
+              once for every game: the header arrives with the second round. */}
+          {columns.length > 1 ? (
+            <View className="flex-row items-end gap-xxs">
+              <View className="w-avatar-xl" />
+              {columns.map((round) => (
+                <View key={round} className="w-4xl items-center">
+                  <Text variant="muted" className="font-mono text-xs">
+                    {round}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
 
           {shown.map((game) => (
             <View key={game.game} className="flex-row items-center gap-xxs">

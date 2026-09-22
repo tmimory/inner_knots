@@ -342,13 +342,7 @@ export default function PrisonersDilemmaScreen() {
           <Subsection title="Game length">
             <VariantSelect
               value={setup.iterated ? "iterated" : "single"}
-              onChange={(length) =>
-                patch(
-                  length === "iterated"
-                    ? { iterated: true }
-                    : { iterated: false, runs: RUN_LIMITS.minRuns },
-                )
-              }
+              onChange={(length) => patch({ iterated: length === "iterated" })}
               options={LENGTHS}
               label="Game length"
             />
@@ -381,7 +375,6 @@ export default function PrisonersDilemmaScreen() {
                 </View>
               ) : null}
 
-              {setup.iterated ? (
               <View className="flex-row items-center gap-md">
                 <Label>Games</Label>
                 <CountStepper
@@ -392,7 +385,6 @@ export default function PrisonersDilemmaScreen() {
                   label="Games"
                 />
               </View>
-              ) : null}
             </View>
           </Subsection>
         </View>

@@ -8,7 +8,11 @@ import { Button, Label, Text } from "@/components/ui";
 import type { Character } from "@/lib/domain/character";
 import type { PlayerTally, PrisonersDilemmaSummary } from "@/lib/domain/summary";
 import { countNote, pluralize } from "@/lib/format";
-import { playerNames } from "@/lib/puzzles/prisoners-dilemma/ui-helpers";
+import {
+  gameGridLabel,
+  playerNames,
+  showsGameGrid,
+} from "@/lib/puzzles/prisoners-dilemma/ui-helpers";
 import { cn } from "@/lib/utils";
 
 import { OutcomeGrid } from "./outcome-grid";
@@ -27,7 +31,7 @@ export type PrisonersDilemmaResultsProps = {
   summary: PrisonersDilemmaSummary | undefined;
   /** The seated characters, for names and faces. Either may be empty. */
   players: { a?: Character; b?: Character };
-  /** Rounds a full game runs to; above one, the round grid is worth drawing. */
+  /** Rounds a full game runs to, so the grid has its columns before they are played. */
   iterations: number;
   runId?: string | null;
   className?: string;
@@ -79,6 +83,7 @@ export function PrisonersDilemmaResults({
     });
   }, [names, players, summary]);
 
+  const games = summary?.games.length ?? 0;
   const rounds = summary?.games.reduce((sum, game) => sum + game.rounds.length, 0) ?? 0;
 
   // Before a round exists there is nothing to chart: zero tiles and an empty
@@ -117,15 +122,20 @@ export function PrisonersDilemmaResults({
         }
       />
 
-      {iterations > 1 ? (
+      {/* Twenty single bargains are twenty rows, not one line of arithmetic:
+          the grid is drawn whenever there is more than one game to compare or
+          more than one round to follow. */}
+      {showsGameGrid(games, iterations) ? (
         <View className="gap-sm">
-          <Label>Round by round</Label>
+          <Label>{gameGridLabel(iterations)}</Label>
           <RoundGrid games={summary.games} rounds={iterations} names={names} />
         </View>
       ) : null}
 
       <View className="flex-row flex-wrap items-center gap-md">
-        <Text variant="muted">{`${pluralize(rounds, "round")} recorded`}</Text>
+        <Text variant="muted">
+          {`${pluralize(games, "game")} · ${pluralize(rounds, "round")} recorded`}
+        </Text>
         <View className="flex-1" />
         {runId ? (
           <Link href={`/logs/${runId}`} asChild>

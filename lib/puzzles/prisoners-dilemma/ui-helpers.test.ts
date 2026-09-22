@@ -12,12 +12,14 @@ import {
   symmetricFieldFor,
   blockedReason,
   decisionTotal,
+  gameGridLabel,
   iterationsOf,
   playerNames,
   parseSetup,
   payoffsOf,
   playersOf,
   puzzleConfig,
+  showsGameGrid,
   type PrisonersDilemmaSetup,
 } from "./ui-helpers";
 
@@ -171,6 +173,24 @@ describe("decisionTotal", () => {
   it("counts both players of every round of every game", () => {
     expect(decisionTotal({ ...seated, runs: 5 })).toBe(10);
     expect(decisionTotal({ ...seated, runs: 5, iterated: true, rounds: 4 })).toBe(40);
+  });
+});
+
+describe("showsGameGrid", () => {
+  it("keeps the grid away from the one game of one round", () => {
+    expect(showsGameGrid(1, 1)).toBe(false);
+  });
+
+  it("draws it for many single games as readily as for one iterated game", () => {
+    expect(showsGameGrid(20, 1)).toBe(true);
+    expect(showsGameGrid(1, 7)).toBe(true);
+  });
+});
+
+describe("gameGridLabel", () => {
+  it("says which way the grid is read", () => {
+    expect(gameGridLabel(1)).toBe("Game by game");
+    expect(gameGridLabel(2)).toBe("Round by round");
   });
 });
 
