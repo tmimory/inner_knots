@@ -7,7 +7,7 @@
  * view honest: a thick edge is thick because more walks took it, between a
  * hairline and the widest stroke the theme has a step for.
  */
-import { ADVENTURE_LAYOUT } from "@/lib/puzzles/adventure/layout";
+import { ADVENTURE_LAYOUT, optionLaneCentre } from "@/lib/puzzles/adventure/layout";
 import type { Theme } from "@/theme";
 
 /**
@@ -175,14 +175,20 @@ export function handleStyle(
   };
 }
 
-/** The centre of one option's lane along the card's bottom edge, as a percentage. */
+/**
+ * The centre of one option's lane along the card's bottom edge, as a CSS
+ * percentage.
+ *
+ * The fraction itself comes from `optionLaneCentre` in the layout, which is also
+ * what the uncrossing sweep measures a handle's x with: the picture and the
+ * placement read the same number, so a card cannot be placed under a lane it is
+ * not actually drawn under.
+ */
 function laneCentre(lane: { index: number; count: number } | undefined): number {
-  if (lane === undefined || lane.count <= 1) return HALF_PERCENT;
-  return ((lane.index + 0.5) / lane.count) * FULL_PERCENT;
+  return optionLaneCentre(lane?.index ?? 0, lane?.count ?? 1) * FULL_PERCENT;
 }
 
 const FULL_PERCENT = 100;
-const HALF_PERCENT = 50;
 
 /**
  * The canvas itself. React Flow reads its edges, handles and selection box from
