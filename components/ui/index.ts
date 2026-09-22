@@ -1,6 +1,17 @@
 /** Barrel for the shadcn-style UI kit. Import from `@/components/ui`. */
-export { Badge, badgeTextVariants, badgeVariants, type BadgeProps } from "./badge";
-export { Button, buttonTextVariants, buttonVariants, type ButtonProps } from "./button";
+export {
+  Badge,
+  badgeTextVariants,
+  badgeVariants,
+  type BadgeProps,
+  type BadgeVariant,
+} from "./badge";
+export {
+  Button,
+  buttonTextVariants,
+  buttonVariants,
+  type ButtonProps,
+} from "./button";
 export {
   Card,
   CardContent,
@@ -53,12 +64,21 @@ export {
   type SelectOption,
   type SelectTriggerProps,
 } from "./select";
-export { Segmented, type SegmentedOption, type SegmentedProps } from "./segmented";
+export {
+  Segmented,
+  type SegmentedOption,
+  type SegmentedProps,
+} from "./segmented";
 export { Separator, type SeparatorProps } from "./separator";
 export { Slider, type SliderProps } from "./slider";
 export { Switch, type SwitchProps } from "./switch";
 export { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs";
 export { Text, TextClassContext, textVariants, type TextProps } from "./text";
 export { Textarea, type TextareaProps } from "./textarea";
-export { ToastProvider, useToast, type ToastOptions, type ToastTone } from "./toast";
+export {
+  ToastProvider,
+  useToast,
+  type ToastOptions,
+  type ToastTone,
+} from "./toast";
 export { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";

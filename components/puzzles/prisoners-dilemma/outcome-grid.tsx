@@ -45,9 +45,11 @@ export function OutcomeGrid({
   return (
     <View className={cn("gap-sm", className)}>
       {/*
-        Both axes named on one line: the row player's name sits over the column of
-        row labels it belongs to, and the column player's is centred over the pair
-        of columns it spans rather than sitting on the first one.
+        Both axes named on one line, each on the left edge of the column it names:
+        the row player over the column of row labels, the column player over the
+        first of the two move columns. Centring the column player across the pair
+        put it at a third x of its own, so the table had two names, two move
+        labels and four fields starting at four different places.
       */}
       <View className="flex-row items-end gap-xl">
         {/* Over the column of row labels, because that column is this player. */}
@@ -56,12 +58,13 @@ export function OutcomeGrid({
             {rowPlayer}
           </Text>
         </View>
-        {/* Centred across both input columns and the gap between them. */}
-        <View className="flex-1 items-center">
+        <View className="flex-1">
           <Text variant="meta" numberOfLines={1}>
             {columnPlayer}
           </Text>
         </View>
+        {/* The second move column, so the name above sits on the first one's edge. */}
+        <View className="flex-1" />
       </View>
 
       <View className="flex-row items-end gap-xl">

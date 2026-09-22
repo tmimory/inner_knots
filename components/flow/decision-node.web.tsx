@@ -7,9 +7,12 @@
  * outgoing edge is an ending, and says so. In the outcome view the same card
  * shows how many walks came through it and how they split.
  *
- * The card holds itself to two type sizes: the context and the option rows in
- * the metadata size, the question in body. Where a walk begins is said by the
- * card's rubric left edge (see `nodeCardStyle`) rather than by a third one.
+ * The whole tree is fitted into the canvas, which means a card is read at
+ * something near two-thirds of the size it is drawn at. So the card is set a step
+ * up throughout — the question at `xl`, the options at `lg`, the setup at the
+ * body step — and what a reader sees is ordinary type rather than a diagram of
+ * type. Where a walk begins is a small-caps "Start" in the card's own header; the
+ * coloured left edge is reserved for the card the author has selected.
  */
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { View } from "react-native";
@@ -45,7 +48,7 @@ export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
     // No `overflow-hidden`: the option handles sit outside the card border.
     <View
       accessibilityLabel={`${node.decision.trim()} — ${node.context.trim()}`}
-      style={nodeCardStyle(theme, { selected, onPath, unvisited, isStart })}
+      style={nodeCardStyle(theme, { selected, onPath, unvisited })}
     >
       {/*
         Nothing arrives at the start of an adventure, so it is drawn with no place
@@ -63,24 +66,35 @@ export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
       )}
 
       <View className="gap-xs px-md pb-sm pt-md">
-        {counted ? (
+        {isStart || counted ? (
           <View className="flex-row items-center gap-sm">
-            <Badge variant={unvisited ? "muted" : "secondary"}>
-              <Text>{`${hits} · ${formatPercent(share ?? 0)}`}</Text>
-            </Badge>
+            {/*
+              Where the walk begins, said in the card's own header rather than
+              with a rubric bar down its left edge. That bar is the same mark the
+              active page wears in the menu, so on the canvas it read as "this
+              card is selected" — which is exactly what it now means.
+            */}
+            {isStart ? <Text className="font-display text-lg text-primary">Start</Text> : null}
+            {counted ? (
+              <Badge variant={unvisited ? "muted" : "secondary"}>
+                <Text>{`${hits} · ${formatPercent(share ?? 0)}`}</Text>
+              </Badge>
+            ) : null}
           </View>
         ) : null}
 
         {/*
-          Two sizes on a card and no more: the question one step up, the setup and
-          the option rows at body size. Nothing on a card is set at the caption
-          step, because a card is drawn at whatever zoom the graph fits at and a
-          caption scaled down is no longer type.
+          Two steps, both one up from where they were: the question at `xl`, the
+          setup and the option rows at `lg`. The whole graph is fitted into the
+          canvas, so a card is read at about two thirds of the size it is drawn —
+          type picked for 1:1 arrives as a caption, and the setup, being the
+          smallest line on the card, was arriving at ten pixels. What separates it
+          from the question is its ink, not a third size.
         */}
-        <Text variant="muted" className="text-base" numberOfLines={CONTEXT_LINES}>
+        <Text variant="muted" className="text-lg" numberOfLines={CONTEXT_LINES}>
           {node.context.trim() === "" ? "No context yet" : node.context}
         </Text>
-        <Text className="font-bodySemiBold text-lg" numberOfLines={DECISION_LINES}>
+        <Text className="font-bodySemiBold text-xl" numberOfLines={DECISION_LINES}>
           {node.decision.trim() === "" ? "No decision yet" : node.decision}
         </Text>
       </View>
@@ -91,7 +105,7 @@ export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
             className="justify-center px-md"
             style={{ height: ADVENTURE_LAYOUT.nodeOptionHeight }}
           >
-            <Text variant="muted" className="text-base">
+            <Text variant="muted" className="text-lg">
               No options yet
             </Text>
           </View>
@@ -100,10 +114,12 @@ export function DecisionNode({ data, selected }: NodeProps<AdventureFlowNode>) {
         {node.options.map((option) => (
           <View
             key={option.id}
-            className="flex-row items-center gap-xs px-md"
+            // The row an option's edge leaves from is also the row you aim at to
+            // drag one, so it answers the cursor.
+            className="flex-row items-center gap-xs px-md transition-colors duration-fast web:hover:bg-muted/subtle"
             style={{ height: ADVENTURE_LAYOUT.nodeOptionHeight }}
           >
-            <Text className="flex-1 text-base" numberOfLines={1}>
+            <Text className="flex-1 text-lg" numberOfLines={1}>
               {option.label}
             </Text>
             {counted ? (

@@ -8,13 +8,27 @@ import { useTheme } from "@/theme";
 export type TextareaProps = ComponentProps<typeof TextInput> & {
   /** Rendered height in text rows. */
   rows?: number;
-  /** When set together with `maxLength`, shows an "n / max" counter under the field. */
+  /** When set together with `maxLength`, offers the "n / max" counter. */
   showCount?: boolean;
 };
 
 /**
+ * The share of the limit a field has to reach before its counter appears on its
+ * own. Below this the number is noise: nobody writing the second sentence of a
+ * 500-character briefing is rationing characters, and a permanent "124 / 500"
+ * under every field puts a second, smaller number beside every label on the page.
+ * Past it the limit is real news, so the counter stays up whether or not the
+ * field has the cursor.
+ */
+const COUNT_THRESHOLD = 0.8;
+
+/**
  * Multi-line field. Pass `maxLength` to enforce a limit (prompts and briefings all
- * have one) and `showCount` to display the "n / max" counter.
+ * have one) and `showCount` to offer the "n / max" counter.
+ *
+ * The counter is shown while the field is focused, or once the text is past
+ * {@link COUNT_THRESHOLD} of the limit. The row it sits in keeps its height in
+ * both states, so a field does not jump when it takes the cursor.
  */
 export function Textarea({
   className,
@@ -25,16 +39,23 @@ export function Textarea({
   value,
   defaultValue,
   onChangeText,
+  onFocus,
+  onBlur,
   ...props
 }: TextareaProps) {
   const theme = useTheme();
   const [internal, setInternal] = useState(defaultValue ?? "");
+  const [focused, setFocused] = useState(false);
   const text = value ?? internal;
 
   function handleChangeText(next: string) {
     if (value === undefined) setInternal(next);
     onChangeText?.(next);
   }
+
+  const counted = showCount && maxLength !== undefined;
+  const near =
+    counted && text.length >= Math.floor(maxLength * COUNT_THRESHOLD);
 
   return (
     <View className="gap-xs">
@@ -54,11 +75,23 @@ export function Textarea({
           !editable && "opacity-disabled",
           className,
         )}
+        onFocus={(event) => {
+          setFocused(true);
+          onFocus?.(event);
+        }}
+        onBlur={(event) => {
+          setFocused(false);
+          onBlur?.(event);
+        }}
         {...props}
       />
-      {showCount && maxLength !== undefined ? (
-        <Text variant="subtle" className="self-end">
-          {`${text.length} / ${maxLength}`}
+      {counted ? (
+        <Text
+          variant="meta"
+          className="self-end"
+          aria-hidden={!(focused || near)}
+        >
+          {focused || near ? `${text.length} / ${maxLength}` : " "}
         </Text>
       ) : null}
     </View>

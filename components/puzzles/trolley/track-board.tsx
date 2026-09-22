@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useCallback, useState } from "react";
-import { LayoutChangeEvent, Pressable, ScrollView, View } from "react-native";
+import { LayoutChangeEvent, ScrollView, View } from "react-native";
 import Svg, { Circle, G, Path } from "react-native-svg";
 
 import { Text } from "@/components/ui";
@@ -21,7 +21,7 @@ import {
   tieXs,
   type TrackId,
 } from "./geometry";
-import { ObjectGlyph } from "./object-glyph";
+import { ObjectChip } from "./object-chip";
 import type { DropZoneBinding, UseDropZones } from "./use-drop-zones";
 
 /** The two tracks, as drop-zone ids. */
@@ -174,35 +174,6 @@ function Rails({ width, theme }: { width: number; theme: Theme }) {
         <Path d={TROLLEY.lever.arm} stroke={theme.colors.accent} strokeWidth={theme.borderWidths.thick} />
       </G>
     </Svg>
-  );
-}
-
-/** One thing standing on a track, with the way to take it off again. */
-function ObjectChip({
-  item,
-  onRemove,
-}: {
-  item: TrolleyObject;
-  onRemove: () => void;
-}) {
-  return (
-    <View
-      style={{ height: BOARD.slotHeight, maxWidth: BOARD.chipMaxWidth }}
-      className="flex-row items-center gap-xs rounded-sm border-hairline border-border bg-card px-sm shadow-ink-soft"
-    >
-      <ObjectGlyph icon={item.icon} />
-      <Text variant="small" numberOfLines={1} className="shrink">
-        {item.label}
-      </Text>
-      <Pressable
-        role="button"
-        accessibilityLabel={`Take ${item.label} off the track`}
-        onPress={onRemove}
-        className="h-lg w-lg items-center justify-center rounded-full transition-colors duration-fast active:bg-muted web:hover:bg-muted"
-      >
-        <Text className="font-mono text-xs">×</Text>
-      </Pressable>
-    </View>
   );
 }
 

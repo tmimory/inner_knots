@@ -14,7 +14,8 @@ import { cn } from "@/lib/utils";
  *   ghost        a tertiary action with no edge at all
  *   destructive  a text link in the body ink that turns red under the cursor;
  *                it never gets a fill beside Save
- *   link         a text link in the rubric red
+ *   link         a text link in the rubric red; `size="sm"` sets it at the caption
+ *                size, for a link that belongs to a metadata line
  *   quiet-link   a utility link — "Refresh models", "Enter model id manually" —
  *                set in body ink, so it does not join the page's red voices
  *
@@ -35,9 +36,11 @@ const buttonVariants = cva(
         default: "bg-primary active:opacity-hover web:hover:opacity-hover",
         secondary:
           "border-hairline border-secondary bg-transparent active:bg-muted web:hover:bg-muted",
-        outline: "border-hairline border-border bg-transparent active:bg-muted web:hover:bg-muted",
+        outline:
+          "border-hairline border-border bg-transparent active:bg-muted web:hover:bg-muted",
         ghost: "bg-transparent active:bg-muted web:hover:bg-muted",
-        destructive: "bg-transparent active:opacity-hover web:hover:opacity-hover",
+        destructive:
+          "bg-transparent active:opacity-hover web:hover:opacity-hover",
         link: "bg-transparent",
         "quiet-link": "bg-transparent",
       },
@@ -57,7 +60,10 @@ const buttonVariants = cva(
       // A text link has no box: it sits on the line it belongs to.
       { variant: ["destructive", "link", "quiet-link"], class: "px-none" },
       // Nothing hovers when it cannot be pressed.
-      { disabled: true, class: "web:hover:opacity-disabled web:hover:bg-transparent" },
+      {
+        disabled: true,
+        class: "web:hover:opacity-disabled web:hover:bg-transparent",
+      },
       // The primary action, switched off: the red outline, not the red block, and
       // held one step brighter than everything else that is off. Emitted after the
       // generic disabled rule so it takes the hover state with it.
@@ -103,10 +109,17 @@ const buttonTextVariants = cva("font-body", {
       false: "",
     },
   },
-  // A text link is read as part of a sentence, so it is set at body size whatever
-  // box it is given: a 14px link beside 17px prose reads as a footnote.
+  // A text link is read as part of a sentence, so it takes the size of the line it
+  // sits on rather than the size of a box: `default` is body size, and `sm` is the
+  // caption size, for a link that belongs to a metadata line or a toolbar. What it
+  // never does is land between the two — a 14px link beside 17px prose read as a
+  // footnote, so `sm` is the same `xs` every caption in the app uses.
   compoundVariants: [
-    { variant: ["destructive", "link", "quiet-link"], size: "sm", class: "text-base" },
+    {
+      variant: ["destructive", "link", "quiet-link"],
+      size: "sm",
+      class: "text-xs",
+    },
     // The disabled primary lost its fill, so its label takes the red back.
     { variant: "default", disabled: true, class: "text-primary" },
   ],
@@ -116,14 +129,25 @@ const buttonTextVariants = cva("font-body", {
 export type ButtonProps = ComponentProps<typeof Pressable> &
   Omit<VariantProps<typeof buttonVariants>, "disabled">;
 
-export function Button({ className, variant, size, disabled, ...props }: ButtonProps) {
+export function Button({
+  className,
+  variant,
+  size,
+  disabled,
+  ...props
+}: ButtonProps) {
   const off = disabled ?? false;
   return (
-    <TextClassContext value={buttonTextVariants({ variant, size, disabled: off })}>
+    <TextClassContext
+      value={buttonTextVariants({ variant, size, disabled: off })}
+    >
       <Pressable
         role="button"
         disabled={off}
-        className={cn(buttonVariants({ variant, size, disabled: off }), className)}
+        className={cn(
+          buttonVariants({ variant, size, disabled: off }),
+          className,
+        )}
         {...props}
       />
     </TextClassContext>

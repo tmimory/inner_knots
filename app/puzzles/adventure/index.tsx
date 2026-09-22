@@ -118,10 +118,11 @@ function AdventureRow({
         </>
       ) : (
         <>
-          {/* Outlined, not filled: one row of a list is not the page's primary
-              action, and three filled buttons down a column argue with the one
-              in the header that is. */}
-          <Button variant="outline" size="sm" onPress={onRun}>
+          {/* Ghost, not outlined: a row of a list is not the page's primary
+              action, and a column of outlined boxes down the right of the shelf
+              argued with the one filled button in the header that is. The word
+              is the control; the fill arrives with the cursor. */}
+          <Button variant="ghost" size="sm" onPress={onRun}>
             <Text>Run</Text>
           </Button>
           <Button
@@ -131,7 +132,11 @@ function AdventureRow({
             accessibilityLabel={`More for ${adventure.name}`}
             onPress={() => setShowActions(true)}
           >
-            <Text className="text-muted-foreground">…</Text>
+            {/* A kebab rather than three full stops: an ellipsis set in the body
+                serif reads as a sentence that trailed off, and the reader has to
+                work out that it is a control. The glyph comes from the mono stack
+                because that is the family certain to draw it at every weight. */}
+            <Text className="font-mono text-base text-muted-foreground">⋮</Text>
           </Button>
         </>
       )}
@@ -174,6 +179,7 @@ export default function AdventureListScreen() {
 
   return (
     <Screen
+      width="reading"
       title="Adventures"
       subtitle="ὁδός — branching paths, recorded"
       right={
@@ -205,6 +211,9 @@ export default function AdventureListScreen() {
       {loading && adventures.length === 0 ? <Text variant="meta">Reading the shelf…</Text> : null}
 
       {adventures.length > 0 ? (
+        /* A rule above the first row and the last row's own rule below: the
+           shelf is closed at both ends, so it reads as a list that was set
+           rather than as rows that happen to stop. */
         <View className="border-t-hairline border-border">
           {adventures.map((adventure) => (
             <AdventureRow

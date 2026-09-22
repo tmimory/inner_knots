@@ -3,7 +3,10 @@ import { useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 
 import { Avatar } from "@/components/avatars";
-import { CHARACTER_SEARCH_PLACEHOLDER, matchesCharacterQuery } from "@/components/characters";
+import {
+  CHARACTER_SEARCH_PLACEHOLDER,
+  matchesCharacterQuery,
+} from "@/components/characters";
 import { CountStepper } from "@/components/puzzles/count-stepper";
 import {
   Button,
@@ -14,7 +17,12 @@ import {
   Input,
   Text,
 } from "@/components/ui";
-import { characterDisplayName, RUN_LIMITS, type Character, type RosterEntry } from "@/lib/domain";
+import {
+  characterDisplayName,
+  RUN_LIMITS,
+  type Character,
+  type RosterEntry,
+} from "@/lib/domain";
 import { pluralize } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -126,24 +134,19 @@ function Medallion({
         {name}
       </Text>
       {showRuns ? (
-        // The caption is what turns a bare number under a portrait into a count of
-        // answers — "3" alone could be anything the roster happens to know about
-        // him. It sits under the control rather than beside it because a seat is a
-        // centred column and a leading word would push the stepper off its face;
-        // a "×" would have read as a multiplier, but the badge that takes a
-        // character off the roster is already a "×" two lines above it.
-        <View className="items-center gap-xxs">
-          <CountStepper
-            value={runs}
-            onChange={onRuns}
-            min={RUN_LIMITS.minRuns}
-            max={RUN_LIMITS.maxRuns}
-            label="Runs"
-          />
-          <Text variant="subtle" aria-hidden>
-            runs
-          </Text>
-        </View>
+        // No caption under the stepper. The word "runs" was the smallest type in
+        // the app, set under a control that already says what it counts — a minus,
+        // a number and a plus under a portrait is a count of that character's
+        // answers, and the screen's own section names it. The label lives on the
+        // control instead, where a screen reader reads it and the page does not
+        // have to carry a fourth type size.
+        <CountStepper
+          value={runs}
+          onChange={onRuns}
+          min={RUN_LIMITS.minRuns}
+          max={RUN_LIMITS.maxRuns}
+          label="runs"
+        />
       ) : null}
     </View>
   );
@@ -177,7 +180,9 @@ function EmptySlot({
       */}
       <Pressable
         role="button"
-        accessibilityLabel={label ? `Add a character to ${label}` : "Add a character"}
+        accessibilityLabel={
+          label ? `Add a character to ${label}` : "Add a character"
+        }
         disabled={!enabled}
         onPress={onPress}
         className={cn(
@@ -186,7 +191,12 @@ function EmptySlot({
           enabled && "web:hover:bg-muted",
         )}
       >
-        <Text className={cn("font-mono text-lg", enabled ? "text-muted-foreground" : "text-subtle-foreground")}>
+        <Text
+          className={cn(
+            "font-mono text-lg",
+            enabled ? "text-muted-foreground" : "text-subtle-foreground",
+          )}
+        >
           +
         </Text>
       </Pressable>
@@ -203,9 +213,11 @@ function EmptySlot({
 function NoCharacters() {
   return (
     <View className="flex-row flex-wrap items-center gap-sm">
-      <Text variant="muted">No characters yet.</Text>
+      <Text variant="muted" className="text-base">
+        No characters yet.
+      </Text>
       <Link href="/characters" asChild>
-        <Button variant="link" size="sm">
+        <Button variant="link">
           <Text>Make one</Text>
         </Button>
       </Link>
@@ -251,8 +263,11 @@ export function RosterBar({
 
   const candidates = useMemo(() => {
     // The character in the seat being refilled stays on offer; the rest do not.
-    const replacing = picking !== null ? value[picking]?.characterId : undefined;
-    const taken = new Set(allowDuplicates ? [] : value.map((entry) => entry.characterId));
+    const replacing =
+      picking !== null ? value[picking]?.characterId : undefined;
+    const taken = new Set(
+      allowDuplicates ? [] : value.map((entry) => entry.characterId),
+    );
     return characters.filter(
       (character) =>
         (character.id === replacing || !taken.has(character.id)) &&
@@ -262,18 +277,27 @@ export function RosterBar({
 
   function put(index: number, characterId: string) {
     const next = value.map((entry) => ({ ...entry }));
-    const entry = { characterId, runs: next[index]?.runs ?? RUN_LIMITS.minRuns };
+    const entry = {
+      characterId,
+      runs: next[index]?.runs ?? RUN_LIMITS.minRuns,
+    };
     if (index < next.length) next[index] = entry;
     else next.push(entry);
     onChange(next.slice(0, max));
   }
 
   function setRuns(index: number, runs: number) {
-    onChange(value.map((entry, at) => (at === index ? { ...entry, runs } : { ...entry })));
+    onChange(
+      value.map((entry, at) =>
+        at === index ? { ...entry, runs } : { ...entry },
+      ),
+    );
   }
 
   function removeAt(index: number) {
-    onChange(value.filter((_, at) => at !== index).map((entry) => ({ ...entry })));
+    onChange(
+      value.filter((_, at) => at !== index).map((entry) => ({ ...entry })),
+    );
   }
 
   function openPicker(index: number) {
@@ -307,7 +331,9 @@ export function RosterBar({
                 showRuns={showRuns}
                 onRuns={(runs) => setRuns(index, runs)}
                 onPress={() => openPicker(index)}
-                onRemove={value.length > min ? () => removeAt(index) : undefined}
+                onRemove={
+                  value.length > min ? () => removeAt(index) : undefined
+                }
               />
             );
           }
@@ -317,7 +343,11 @@ export function RosterBar({
               key={`empty-${index}`}
               label={label}
               // Seats fill left to right, so only the next free one accepts a pick.
-              enabled={index === value.length && value.length < max && candidates.length > 0}
+              enabled={
+                index === value.length &&
+                value.length < max &&
+                candidates.length > 0
+              }
               onPress={() => openPicker(index)}
             />
           );
@@ -328,7 +358,10 @@ export function RosterBar({
         <Text variant="meta">{`${value.length} of ${pluralize(max, "seat")} filled`}</Text>
       ) : null}
 
-      <Dialog open={picking !== null} onOpenChange={(open) => setPicking(open ? picking : null)}>
+      <Dialog
+        open={picking !== null}
+        onOpenChange={(open) => setPicking(open ? picking : null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Choose a character</DialogTitle>
@@ -351,9 +384,15 @@ export function RosterBar({
                   setPicking(null);
                 }}
               >
-                <Avatar shape={character.avatar.shape} color={character.avatar.color} size="sm" />
+                <Avatar
+                  shape={character.avatar.shape}
+                  color={character.avatar.color}
+                  size="sm"
+                />
                 <View className="flex-1">
-                  <Text numberOfLines={1}>{characterDisplayName(character)}</Text>
+                  <Text numberOfLines={1}>
+                    {characterDisplayName(character)}
+                  </Text>
                   <Text variant="meta" numberOfLines={1}>
                     {`${character.provider} · ${character.model}`}
                   </Text>
@@ -361,7 +400,9 @@ export function RosterBar({
               </Pressable>
             ))}
             {candidates.length === 0 ? (
-              <Text variant="muted">Every character is already on the roster.</Text>
+              <Text variant="muted">
+                Every character is already on the roster.
+              </Text>
             ) : null}
           </ScrollView>
           <View className="flex-row justify-end">

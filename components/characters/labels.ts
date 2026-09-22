@@ -18,9 +18,15 @@ export const OUTPUT_MODE_LABELS: Record<OutputMode, string> = {
   tool: "Tool call",
 };
 
+/**
+ * The three modes as a control names them. One word each, so the filter, the
+ * editor's segmented control and a roster row's token all say the same thing:
+ * "Bio only" beside "Raw" and "Full" was the one phrase in the set, and it made
+ * the segment that sends the least look like the one with a condition attached.
+ */
 export const STEERING_MODE_LABELS: Record<SteeringMode, string> = {
   raw: "Raw",
-  bio: "Bio only",
+  bio: "Bio",
   full: "Full",
 };
 
@@ -31,22 +37,24 @@ export const OUTPUT_MODE_META: Record<OutputMode, string> = {
 };
 
 /**
- * The steering modes as a roster row says them — the same three words the filter
- * and the editor use, lowered to the metadata line's voice.
+ * The steering modes as a roster row says them — the same three modes the filter
+ * and the editor name, cut to one word each for the column they are set in.
  *
- * They used to be a second vocabulary ("no steering", "full steering") beside the
- * control's ("Raw", "Full"), so the row above the list and the row inside it named
- * the same setting two different ways.
+ * A column of tokens is read by its shape, not its sentence: "bio only" is the
+ * filter's phrasing, where three segments are being told apart from each other,
+ * while the row states one mode in a cell of its own. They used to be a second
+ * vocabulary ("no steering", "full steering") beside the control's, which is the
+ * drift this record exists to prevent.
  */
 export const STEERING_MODE_META: Record<SteeringMode, string> = {
   raw: "raw",
-  bio: "bio only",
+  bio: "bio",
   full: "full",
 };
 
 /** What each steering mode actually sends, one line each, for the editor. */
 export const STEERING_MODE_HINTS: Record<SteeringMode, string> = {
-  raw: "No system prompt at all. The model answers as itself.",
+  raw: "The model answers as itself; nothing is said about a character.",
   bio: "The bio sentence alone becomes the system prompt.",
   full: "Bio, then principles, then values. Empty sections are left out.",
 };
@@ -83,7 +91,7 @@ export type CharacterMetaParts = {
   /** The model id, set in the mono voice so its figures line up row to row. */
   model: string;
   provider: string;
-  /** The steering mode as a small-caps token: "raw", "bio only", "full". */
+  /** The steering mode as a small-caps token: "raw", "bio", "full". */
   mode: string;
   /** "6 convictions", or "no convictions" for a character carrying none. */
   convictions: string;

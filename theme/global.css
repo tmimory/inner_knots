@@ -13,6 +13,7 @@
     --color-popover: 250 243 224;
     --color-popover-foreground: 42 31 20;
     --color-muted: 228 213 175;
+    --color-selection: 215 196 155;
     --color-muted-foreground: 78 62 41;
     --color-subtle-foreground: 122 103 72;
     --color-primary: 139 46 31;
@@ -23,6 +24,7 @@
     --color-accent-foreground: 42 31 20;
     --color-destructive: 110 27 20;
     --color-destructive-foreground: 245 235 210;
+    --color-success: 69 96 52;
     --color-border: 201 182 140;
     --color-input: 253 248 235;
     --color-ring: 168 134 43;
@@ -30,10 +32,15 @@
     --color-track2: 162 97 31;
 
     /* typography */
-    --font-display: "Cinzel_600SemiBold", Cinzel, Georgia, 'Times New Roman', serif;
-    --font-body: "CormorantGaramond_400Regular", 'Cormorant Garamond', Garamond, Georgia, serif;
-    --font-body-medium: "CormorantGaramond_500Medium", 'Cormorant Garamond', Garamond, Georgia, serif;
-    --font-greek: "EBGaramond_400Regular_Italic", 'EB Garamond', Garamond, Georgia, serif;
+    --font-display: Cinzel_600SemiBold, Cinzel, Georgia, 'Times New Roman', serif;
+    --font-display-bold: Cinzel_700Bold, Cinzel, Georgia, 'Times New Roman', serif;
+    --font-body: CormorantGaramond_400Regular, 'Cormorant Garamond', Garamond, Georgia, serif;
+    --font-body-medium: CormorantGaramond_500Medium, 'Cormorant Garamond', Garamond, Georgia, serif;
+    --font-body-semi-bold: CormorantGaramond_600SemiBold, 'Cormorant Garamond', Garamond, Georgia, serif;
+    --font-body-bold: CormorantGaramond_700Bold, 'Cormorant Garamond', Garamond, Georgia, serif;
+    --font-body-italic: CormorantGaramond_400Regular_Italic, 'Cormorant Garamond', Garamond, Georgia, serif;
+    --font-greek: EBGaramond_400Regular_Italic, 'EB Garamond', Garamond, Georgia, serif;
+    --font-greek-bold: EBGaramond_600SemiBold_Italic, 'EB Garamond', Garamond, Georgia, serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     /* easing */
     --easing-standard: cubic-bezier(0.65, 0, 0.35, 1);
@@ -134,6 +141,7 @@
     --color-popover: 37 32 25;
     --color-popover-foreground: 232 220 192;
     --color-muted: 50 43 33;
+    --color-selection: 59 51 39;
     --color-muted-foreground: 194 179 147;
     --color-subtle-foreground: 148 136 113;
     --color-primary: 210 112 90;
@@ -144,6 +152,7 @@
     --color-accent-foreground: 20 17 13;
     --color-destructive: 226 114 91;
     --color-destructive-foreground: 20 17 13;
+    --color-success: 143 174 110;
     --color-border: 68 59 44;
     --color-input: 44 38 29;
     --color-ring: 212 172 74;
@@ -161,6 +170,7 @@
       --color-popover: 37 32 25;
       --color-popover-foreground: 232 220 192;
       --color-muted: 50 43 33;
+      --color-selection: 59 51 39;
       --color-muted-foreground: 194 179 147;
       --color-subtle-foreground: 148 136 113;
       --color-primary: 210 112 90;
@@ -171,6 +181,7 @@
       --color-accent-foreground: 20 17 13;
       --color-destructive: 226 114 91;
       --color-destructive-foreground: 20 17 13;
+      --color-success: 143 174 110;
       --color-border: 68 59 44;
       --color-input: 44 38 29;
       --color-ring: 212 172 74;

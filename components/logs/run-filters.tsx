@@ -11,6 +11,7 @@ import {
 } from "@/components/ui";
 import { characterDisplayName, type Character } from "@/lib/domain/character";
 import { RUN_STATUSES, type PuzzleId, type RunStatus } from "@/lib/domain/run";
+import { cn } from "@/lib/utils";
 
 import { PUZZLE_LABELS, PUZZLE_OPTIONS } from "./labels";
 
@@ -53,7 +54,14 @@ function Choice({ label, value, options, placeholder, onChange }: ChoiceProps) {
       value={current}
       onValueChange={(option) => onChange(option?.value === ANY ? undefined : option?.value)}
     >
-      <SelectTrigger accessibilityLabel={label}>
+      {/* A facet that is doing something looks different from one that is not:
+          the selection tan, a step deeper than the field's own fill. Four
+          identical boxes gave the reader no way to see, without reading all four,
+          that the ledger in front of them had been narrowed. */}
+      <SelectTrigger
+        accessibilityLabel={label}
+        className={cn(selected !== undefined && "border-transparent bg-selection")}
+      >
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>

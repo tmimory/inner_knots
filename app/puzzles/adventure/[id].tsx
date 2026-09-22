@@ -4,7 +4,7 @@ import { Pressable, View } from "react-native";
 
 import { AdventureBuilder } from "@/components/flow";
 import { NodeEditor, PanelHeading, splitIssues } from "@/components/puzzles/adventure";
-import { PageHeader, Screen } from "@/components/shell";
+import { PageHeader, Screen, SplitPane } from "@/components/shell";
 import { Button, Field, Input, Text, Textarea } from "@/components/ui";
 import { useAdventure } from "@/lib/client/use-adventures";
 import {
@@ -131,10 +131,11 @@ export default function AdventureBuilderScreen() {
       </View>
 
       <View className="flex-row flex-wrap items-center gap-sm">
-        {/* One secondary and two tertiaries: the outline says "this is the thing
-            you came here to do", and the leading plus says what it does before
-            the word does. Auto-layout and Validate are the same height, bare. */}
-        <Button variant="outline" size="sm" onPress={addBeside}>
+        {/* Three verbs in one voice. An outlined "+ Add node" beside two bare ones
+            made the toolbar read as a control and two afterthoughts; the tools of
+            a workshop are the same size and the same weight, and the one filled
+            button on the row is Run. */}
+        <Button variant="ghost" size="sm" onPress={addBeside}>
           <Text>+ Add node</Text>
         </Button>
         <Button
@@ -151,15 +152,16 @@ export default function AdventureBuilderScreen() {
           <Text>{showIssues ? "Hide problems" : "Validate"}</Text>
         </Button>
 
-        {/* What the draft's state is: a marginal note on the same line as the
-            text buttons, with a check so it reads as a state rather than as a
-            fourth thing to press. Floating twenty pixels off Run, it did. */}
-        <Text variant="meta" className="text-xs">
+        <View className="flex-1" />
+
+        {/* What the draft's state is: a marginal note at the far end of the row,
+            beside the button it is about, with a check so it reads as a state
+            rather than as a fourth thing to press. Set among the three verbs at
+            the left, it read as a fourth verb. */}
+        <Text variant="meta">
           {saveGlyph}
           {saveState}
         </Text>
-
-        <View className="flex-1" />
 
         {dirty || saving ? (
           <Button variant="outline" size="sm" disabled={saving} onPress={() => void save()}>
@@ -221,11 +223,14 @@ export default function AdventureBuilderScreen() {
       {/*
         Canvas and inspector are two columns of one spread, not a canvas with a
         card parked beside it: the inspector keeps no border of its own, and the
-        hairline between them runs the height of the row, so the two share a
-        bottom edge whichever of them is taller.
+        hairline between them is drawn on the column, so it runs the full depth of
+        the canvas and the workspace reads as one instrument rather than as a
+        drawing next to a form that stopped early.
       */}
-      <View className="flex-1 gap-lg wide:flex-row wide:items-stretch wide:gap-xl">
-        <View className="flex-1">
+      <SplitPane
+        railWidth="inspector"
+        railRule="column"
+        main={
           <AdventureBuilder
             adventure={draft}
             onChange={setDraft}
@@ -233,53 +238,54 @@ export default function AdventureBuilderScreen() {
             onSelectNode={setSelectedNodeId}
             fitSignal={fitSignal}
           />
-        </View>
+        }
+        rail={
+          <View className="gap-lg">
+            {/*
+              The panel says what it is about rather than what it is: "Adventure"
+              while nothing is picked, and the card's own question once one is. A
+              heading reading "Details" over fields that change underneath it made
+              the reader work out which object they were editing.
+            */}
+            <PanelHeading>{selected ? panelHeading(selected) : "Adventure"}</PanelHeading>
 
-        <View className="w-full gap-lg wide:w-inspector wide:border-l-hairline wide:border-border wide:pl-xl">
-          {/*
-            The panel says what it is about rather than what it is: "Adventure"
-            while nothing is picked, and the card's own question once one is. A
-            heading reading "Details" over fields that change underneath it made
-            the reader work out which object they were editing.
-          */}
-          <PanelHeading>{selected ? panelHeading(selected) : "Adventure"}</PanelHeading>
-
-          {selected ? (
-            <NodeEditor
-              adventure={draft}
-              node={selected}
-              onChange={setDraft}
-              onRemoved={() => setSelectedNodeId(null)}
-            />
-          ) : (
-            <>
-              <Field label="Title">
-                <Input
-                  maxLength={ADVENTURE_LIMITS.name}
-                  accessibilityLabel="Adventure name"
-                  value={draft.name}
-                  onChangeText={(name) => setDraft({ ...draft, name })}
-                />
-              </Field>
-              <Field label="Briefing">
-                <Textarea
-                  rows={5}
-                  maxLength={ADVENTURE_LIMITS.briefing}
-                  accessibilityLabel="Briefing"
-                  placeholder="Read to every character before every node."
-                  value={draft.briefing}
-                  onChangeText={(briefing) => setDraft({ ...draft, briefing })}
-                />
-              </Field>
-              {/* The one helper line on the screen, and it is this panel's empty
-                  state — what to do to fill it — not a footnote under a counter. */}
-              <Text variant="muted">
-                Select a card to write it; drag an option&apos;s handle onto another card.
-              </Text>
-            </>
-          )}
-        </View>
-      </View>
+            {selected ? (
+              <NodeEditor
+                adventure={draft}
+                node={selected}
+                onChange={setDraft}
+                onRemoved={() => setSelectedNodeId(null)}
+              />
+            ) : (
+              <>
+                <Field label="Title">
+                  <Input
+                    maxLength={ADVENTURE_LIMITS.name}
+                    accessibilityLabel="Adventure name"
+                    value={draft.name}
+                    onChangeText={(name) => setDraft({ ...draft, name })}
+                  />
+                </Field>
+                <Field label="Briefing">
+                  <Textarea
+                    rows={5}
+                    maxLength={ADVENTURE_LIMITS.briefing}
+                    accessibilityLabel="Briefing"
+                    placeholder="Read to every character before every node."
+                    value={draft.briefing}
+                    onChangeText={(briefing) => setDraft({ ...draft, briefing })}
+                  />
+                </Field>
+                {/* The one helper line on the screen, and it is this panel's empty
+                    state — what to do to fill it — not a footnote under a counter. */}
+                <Text variant="muted">
+                  Select a card to write it; drag an option&apos;s handle onto another card.
+                </Text>
+              </>
+            )}
+          </View>
+        }
+      />
     </View>
   );
 }

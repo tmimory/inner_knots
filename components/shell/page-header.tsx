@@ -40,11 +40,13 @@ export type PageHeaderProps = {
 /**
  * Title block at the top of every screen.
  *
- * The `right` slot sits on the title row rather than below it, and is centred on
- * the title's own line box: a 40px button hung from the title's baseline reads as
- * having slipped, while one centred on the word it belongs to reads as part of
- * the same line. There is no rule under the header any more: the first section
- * draws its own, and two hairlines a few pixels apart read as a mistake.
+ * The `right` slot sits beside the whole title block rather than on the title's
+ * line alone, and is centred against both lines of it. Aligned to the title only,
+ * a 40px button sat a clear step above the optical centre of a two-line block and
+ * read as having drifted up off the subtitle; centred on the block it reads as
+ * belonging to the heading as a whole. There is no rule under the header any
+ * more: the first section draws its own, and two hairlines a few pixels apart
+ * read as a mistake.
  */
 export function PageHeader({
   title,
@@ -54,14 +56,20 @@ export function PageHeader({
   className,
 }: PageHeaderProps) {
   return (
-    <View className={cn("gap-xs", widthClasses(width), className)}>
-      <View className="gap-md wide:flex-row wide:items-center wide:justify-between">
-        <Text variant="h1" className="wide:flex-1">
-          {title}
-        </Text>
-        {right ? <View className="flex-row flex-wrap items-center gap-sm">{right}</View> : null}
+    <View
+      className={cn(
+        "gap-md wide:flex-row wide:items-center wide:justify-between",
+        widthClasses(width),
+        className,
+      )}
+    >
+      <View className="gap-xs wide:flex-1">
+        <Text variant="h1">{title}</Text>
+        {subtitle ? <Text variant="greek">{subtitle}</Text> : null}
       </View>
-      {subtitle ? <Text variant="greek">{subtitle}</Text> : null}
+      {right ? (
+        <View className="flex-row flex-wrap items-center gap-sm">{right}</View>
+      ) : null}
     </View>
   );
 }

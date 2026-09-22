@@ -42,8 +42,8 @@ import {
 export type AdventureFlowNode = Node<DecisionNodeData, typeof DECISION_NODE>;
 /**
  * One option, as React Flow draws it. `pathOptions` is carried on the type because
- * every edge here is a smooth step and each one is bent differently, so that a
- * bundle arriving at one card reads as several lines rather than one.
+ * every edge here is a smooth step and each one is bent differently, so that the
+ * bundle leaving one card reads as several lines rather than one.
  */
 export type AdventureFlowEdge = Edge<AdventureEdgeData> & {
   pathOptions?: SmoothStepPathOptions;
@@ -89,13 +89,21 @@ export function decorationFromSummary(
   };
 }
 
-/** How many edges arrive at each node: the size of every bundle. */
-function incomingBundles(adventure: Adventure, known: ReadonlySet<string>): Map<string, number> {
+/**
+ * How many edges leave each node: the size of every bundle, counted at the fork.
+ *
+ * Lanes used to be handed out by target, which left the three options of one card
+ * — "The stranger", "The donor", "Split the dose" — sharing a single trunk across
+ * the rank whenever they led to different places, because each was the only edge
+ * arriving where it went. A fork is a property of the card the edges leave, so
+ * that is what the bundle is counted over.
+ */
+function outgoingBundles(adventure: Adventure, known: ReadonlySet<string>): Map<string, number> {
   const counts = new Map<string, number>();
   for (const node of adventure.nodes) {
     for (const option of node.options) {
       if (option.nextNodeId === null || !known.has(option.nextNodeId)) continue;
-      counts.set(option.nextNodeId, (counts.get(option.nextNodeId) ?? 0) + 1);
+      counts.set(node.id, (counts.get(node.id) ?? 0) + 1);
     }
   }
   return counts;
@@ -156,9 +164,9 @@ export function toFlowEdges(
   const known = new Set(adventure.nodes.map((node) => node.id));
   const edges: AdventureFlowEdge[] = [];
 
-  // Every card's single input handle is a corridor several edges may share, so
-  // each edge is told its place in that bundle before it is drawn.
-  const bundles = incomingBundles(adventure, known);
+  // Every fork is a corridor its own edges would otherwise share, so each edge is
+  // told its place in the bundle leaving its card before it is drawn.
+  const bundles = outgoingBundles(adventure, known);
   const placed = new Map<string, number>();
 
   for (const node of adventure.nodes) {
@@ -166,9 +174,8 @@ export function toFlowEdges(
       if (option.nextNodeId === null || !known.has(option.nextNodeId)) continue;
 
       const id = edgeId(node.id, option.id);
-      const target = option.nextNodeId;
-      const index = placed.get(target) ?? 0;
-      placed.set(target, index + 1);
+      const index = placed.get(node.id) ?? 0;
+      placed.set(node.id, index + 1);
       const hits = decoration?.optionHits[node.id]?.[option.id] ?? 0;
       const onPath = decoration?.pathEdgeIds.has(id) ?? false;
       const tone = {
@@ -183,7 +190,7 @@ export function toFlowEdges(
         target: option.nextNodeId,
         targetHandle: NODE_TARGET_HANDLE,
         type: "smoothstep",
-        pathOptions: edgePathOptions(theme, index, bundles.get(target) ?? 1),
+        pathOptions: edgePathOptions(theme, index, bundles.get(node.id) ?? 1),
         // An edge leaves from the row of the option it stands for, so repeating
         // that option's name on the edge says nothing the picture has not said —
         // and on a forked graph the plaques land on top of the cards. What the

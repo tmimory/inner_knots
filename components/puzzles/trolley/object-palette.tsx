@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { LayoutChangeEvent, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 
 import { Badge, Button, Input, Text } from "@/components/ui";
 import { familyOf, type TrolleyObject } from "@/lib/puzzles/trolley/catalogue";
@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { useTheme } from "@/theme";
 
 import { DraggableObject, type DragPoint } from "./draggable-object";
-import { PALETTE, paletteBudget, paletteCellWidth, paletteColumns, type TrackId } from "./geometry";
+import { PALETTE, type TrackId } from "./geometry";
 
 export type ObjectPaletteProps = {
   /** The merged catalogue: custom objects first, then the built-ins. */
@@ -160,12 +160,15 @@ function interleaveFamilies(items: readonly TrolleyObject[]): TrolleyObject[] {
  * Everything that can go on a track, searchable.
  *
  * The built-in catalogue runs to several hundred entries, so the search box and
- * the filters are what make it usable; the grid itself opens at two rows and
- * grows two at a time. Two rows is deliberate — the board above is the thing the
- * screen is about, and a wall of four hundred tiles was answering a question
- * nobody had asked yet. The tiles are laid into equal columns rather than wrapped
- * like words: a ragged paragraph of names is a paragraph, and a catalogue is a
- * list of things you scan down.
+ * the filters are what make it usable; the flow opens at eighteen chips and grows
+ * eighteen at a time. It is deliberately short — the board above is the thing the
+ * screen is about, and a wall of four hundred chips was answering a question
+ * nobody had asked yet.
+ *
+ * The chips are the ones that stand on the rails, wrapping left-aligned from the
+ * same spine as everything else on the page. The old equal-column grid was a
+ * centred table of bare words under a left-aligned board: one gesture, two
+ * vocabularies, and a catalogue that looked nothing like the thing it filled.
  */
 export function ObjectPalette({
   items,
@@ -185,10 +188,9 @@ export function ObjectPalette({
   const [query, setQuery] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [menuFor, setMenuFor] = useState<string | null>(null);
-  const [width, setWidth] = useState(0);
   const [moreTags, setMoreTags] = useState(false);
-  /** How many rows of tiles the flow is clipped to; "Show more" lets out two more. */
-  const [rows, setRows] = useState<number>(PALETTE.visibleRows);
+  /** How many chips the flow is clipped to; "Show more" lets out another page. */
+  const [shown, setShown] = useState<number>(PALETTE.pageSize);
 
   const hasCustom = useMemo(() => items.some((item) => item.tags.includes(CUSTOM_TAG)), [items]);
 
@@ -203,10 +205,7 @@ export function ObjectPalette({
   }, [filtered]);
 
   const filtering = tags.length > 0 || query.trim() !== "";
-  const columns = paletteColumns(width);
-  const cell = paletteCellWidth(width, columns, theme.spacing.xs);
-  const budget = paletteBudget(columns, rows);
-  const visible = useMemo(() => ordered.slice(0, budget), [budget, ordered]);
+  const visible = useMemo(() => ordered.slice(0, shown), [ordered, shown]);
   const more = filtered.length - visible.length;
 
   // A tag hidden behind "More" cannot be the one that is on: the moment one is
@@ -218,14 +217,10 @@ export function ObjectPalette({
   }, [menuFor, onArmedChange]);
 
   const toggleTag = useCallback((tag: string) => {
-    setRows(PALETTE.visibleRows);
+    setShown(PALETTE.pageSize);
     setTags((current) =>
       current.includes(tag) ? current.filter((entry) => entry !== tag) : [...current, tag],
     );
-  }, []);
-
-  const measure = useCallback((event: LayoutChangeEvent) => {
-    setWidth(Math.round(event.nativeEvent.layout.width));
   }, []);
 
   const place = useCallback(
@@ -238,12 +233,12 @@ export function ObjectPalette({
 
   return (
     <View className={cn("gap-md", className)}>
-      <View className="flex-row flex-wrap items-center gap-sm">
+      <View className="flex-row flex-wrap items-center gap-lg">
         <Input
           className="min-w-menu flex-1"
           value={query}
           onChangeText={(text) => {
-            setRows(PALETTE.visibleRows);
+            setShown(PALETTE.pageSize);
             setQuery(text);
           }}
           placeholder="Search the catalogue"
@@ -251,26 +246,35 @@ export function ObjectPalette({
           autoCorrect={false}
           accessibilityLabel="Search objects"
         />
-        {/* Two ways to fill the board, none of them the screen's action. */}
-        <Button variant="ghost" onPress={onRandomize}>
-          <Text>Randomize</Text>
-        </Button>
-        <Button variant="ghost" onPress={onCreate}>
-          <Text>New object</Text>
-        </Button>
         {/*
-          Emptying the board is not a third way of filling it: a rule and a step of
-          air stand between it and the two above, so the thing that takes the
-          tracks away is never the word next to the thing that fills them.
+          Every text action on this screen is one link in one colour — "View
+          prompt" and "Show more" were red while these two were near-black, which
+          made four identical-looking words into two unrelated kinds of thing.
         */}
-        <View className="h-lg w-hairline bg-border" />
-        <Button variant="destructive" onPress={onClear}>
+        <View className="flex-row flex-wrap items-center gap-lg">
+          <Button variant="link" size="sm" onPress={onRandomize}>
+            <Text>Randomize</Text>
+          </Button>
+          <Button variant="link" size="sm" onPress={onCreate}>
+            <Text>New object</Text>
+          </Button>
+        </View>
+        {/*
+          Emptying the board is not a third way of filling it, so it stands a full
+          step of air away from the two that do — air rather than a rule, which was
+          one more edge on a row that already had a field on it.
+        */}
+        <Button variant="destructive" size="sm" className="ml-sm" onPress={onClear}>
           <Text>Clear tracks</Text>
         </Button>
       </View>
 
-      {/* Four families, six common tags, and the rest a word away. */}
-      <View className="flex-row flex-wrap items-center gap-xs">
+      {/*
+        Four families, six common tags, and the rest a word away. Pulled left by a
+        chip's own padding so the first token's word starts on the page's spine
+        rather than eight pixels inside it.
+      */}
+      <View className="-ml-sm flex-row flex-wrap items-center gap-xs">
         {PRIMARY_TAGS.map((tag) => (
           <TagToggle
             key={tag}
@@ -299,7 +303,7 @@ export function ObjectPalette({
         {/* The last chip in the row, in the row's own voice rather than a red link. */}
         {showRest ? null : (
           <TagChip
-            label="More"
+            label="more"
             selected={false}
             role="button"
             accessibilityLabel="Show the rest of the filters"
@@ -308,7 +312,12 @@ export function ObjectPalette({
         )}
       </View>
 
-      <View onLayout={measure} className="flex-row flex-wrap items-start gap-xs">
+      {/*
+        A left-aligned flow of the very chips that stand on the rails, wrapping
+        from the spine like words. Nothing is centred and no cell is equalised:
+        the catalogue is the board's own vocabulary waiting to be picked up.
+      */}
+      <View className="flex-row flex-wrap items-start gap-sm">
         {visible.length === 0 ? (
           <Text variant="muted">Nothing matches. Try fewer words, or fewer filters.</Text>
         ) : (
@@ -316,7 +325,6 @@ export function ObjectPalette({
             <DraggableObject
               key={entry.id}
               item={entry}
-              width={cell}
               onDragStart={onDragStart}
               onDragMove={onDragMove}
               onDrop={(point) => onDropItem(entry, point)}
@@ -357,23 +365,23 @@ export function ObjectPalette({
       </View>
 
       <View className="flex-row flex-wrap items-center gap-md">
-        <Text variant="muted">
+        <Text variant="meta">
           {loading
             ? "Reading your objects…"
             : `Showing ${visible.length} of ${filtered.length}${filtering ? ` matching objects, from ${items.length}` : " objects"}`}
         </Text>
         {more > 0 ? (
-          <Button variant="link" size="sm" onPress={() => setRows(rows + PALETTE.visibleRows)}>
+          <Button variant="link" size="sm" onPress={() => setShown(shown + PALETTE.pageSize)}>
             <Text>Show more</Text>
           </Button>
         ) : null}
         <View className="flex-1" />
         {filtering ? (
           <Button
-            variant="ghost"
+            variant="link"
             size="sm"
             onPress={() => {
-              setRows(PALETTE.visibleRows);
+              setShown(PALETTE.pageSize);
               setQuery("");
               setTags([]);
             }}

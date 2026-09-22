@@ -1,10 +1,11 @@
 /** Barrel for the logs screens. Import from `@/components/logs`. */
 export { ConfigView, type ConfigViewProps } from "./config-view";
+export { CopyId, type CopyIdProps } from "./copy-id";
 export { DecisionView } from "./decision-view";
 export { ExportButton, runBundle, type ExportButtonProps } from "./export-button";
 export { Field, FieldCode, FieldText, LabelText, STAT_MIN_WIDTH } from "./field";
 export { JsonTree, type JsonTreeProps } from "./json-tree";
-export { PUZZLE_LABELS, PUZZLE_OPTIONS } from "./labels";
+export { PUZZLE_LABELS, PUZZLE_OPTIONS, VARIANT_LABELS, variantLabel } from "./labels";
 export { LogList } from "./log-list";
 export { MessageBlock, type MessageBlockProps } from "./message-block";
 export {

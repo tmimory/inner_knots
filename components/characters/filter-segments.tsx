@@ -26,10 +26,11 @@ export type FilterSegmentsProps<T extends string> = {
  * lit: a filter whose resting state looks like three unchosen buttons is a filter
  * nobody can read. A facet with nothing to choose between draws nothing at all.
  *
- * The facet's name is an eyebrow outside the track, in the small-caps voice the
- * app gives labels. Inside the control's own padding it read as a fifth option
- * that happened to be unselectable; outside and in the label voice it names the
- * thing the segments choose between.
+ * The facet's name is an eyebrow outside the track, in the quiet metadata voice.
+ * Inside the control's own padding it read as a fifth option that happened to be
+ * unselectable; set in the small-caps display face it read as a heading over a
+ * five-row list. At metadata weight it is what it is: the word that says what the
+ * segments beside it choose between.
  *
  * The track carries the search field's own hairline and height, so the toolbar
  * reads as one row of chrome at one border weight rather than a saturated field
@@ -46,9 +47,7 @@ export function FilterSegments<T extends string>({
 
   return (
     <View className={cn("flex-row items-center gap-sm", className)}>
-      <Text variant="muted" className="font-display text-xs">
-        {label}
-      </Text>
+      <Text variant="meta">{label}</Text>
       <Segmented
         size="sm"
         className="h-control-md border-hairline border-border"

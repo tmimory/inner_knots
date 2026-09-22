@@ -105,7 +105,9 @@ export function NodeEditor({ adventure, node, onChange, onRemoved }: NodeEditorP
 
       <View className="flex-row items-center justify-between gap-md">
         <PanelHeading>Options</PanelHeading>
-        <Text variant="muted">{`${node.options.length} / ${ADVENTURE_LIMITS.maxOptions}`}</Text>
+        {/* A count, not a caption with an opinion: metadata size in the metadata
+            ink, so it sits beside the heading rather than under it. */}
+        <Text variant="meta">{`${node.options.length} / ${ADVENTURE_LIMITS.maxOptions}`}</Text>
       </View>
 
       {node.options.length === 0 ? (

@@ -35,8 +35,10 @@ export function ColorPicker({ value, onChange, className }: ColorPickerProps) {
         <View
           // A hairline on every swatch, not only the dark ones: without it the
           // pale beige and the unbleached vellum simply vanish into the page and
-          // the plate reads as twenty-three pigments with two holes in it.
-          className="h-lg w-lg rounded-full border-hairline border-foreground/subtle"
+          // the plate reads as twenty-three pigments with two holes in it. In the
+          // page's own rule colour, not in ink: twenty-five dark circles made the
+          // pigment box the heaviest object on a form whose title it sits under.
+          className="h-lg w-lg rounded-full border-hairline border-border"
           style={{ backgroundColor: pigment.hex }}
         />
       )}

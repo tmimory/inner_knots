@@ -7,41 +7,69 @@ import { Text } from "@/components/ui/text";
 import { cn } from "@/lib/utils";
 
 /**
- * Shared row chrome, so a leaf link and the group toggle cannot drift apart.
+ * Shared row chrome, so every destination in the rail is drawn the same.
  *
  * Every row carries a 2px left border, transparent until the row is the page you
  * are on. That keeps one text axis in every state — a bar that appears only when
  * selected would shove the label two pixels sideways — and gives the current page
  * a mark strong enough to find at a glance, which the tan fill alone was not.
  *
- * The bar sits on the rail's own left edge for parents and children alike, so the
- * marks stack on one line however deep the row is.
+ * Rows under a group are no longer indented past it: a group is a label over a
+ * list, not a branch of a tree, so its entries stand on the rail's one text axis
+ * like every other destination and the active bar sits 12px from the word it
+ * marks instead of 25.
  */
-function rowClasses(selected: boolean, depth: 0 | 1, hoverable = true): string {
+function rowClasses(selected: boolean): string {
   return cn(
-    "flex-row items-center gap-sm rounded-sm border-l-thick py-xs pr-md transition-colors duration-fast",
-    // A child sits one step in from its parent: the indent is what says "under",
-    // and it is the only thing the group's chevron was pretending to say.
-    depth === 0 ? "pl-md" : "pl-xl",
+    "flex-row items-center gap-sm rounded-sm border-l-thick py-xs pl-md pr-md transition-colors duration-fast",
     selected ? "border-l-primary" : "border-l-transparent",
-    !selected && hoverable && "web:hover:bg-muted/subtle",
+    !selected && "web:hover:bg-muted/subtle",
   );
 }
 
 /**
- * The nav label. Top-level rows sit at body size; a child drops one step, so the
- * group reads as a list under a heading rather than four peers in a row.
+ * The nav label. Top-level rows sit at body size; a row inside a group drops one
+ * step, so the group reads as a list under its heading rather than four peers.
  *
- * A child is also set in the quiet ink until it is the page you are on. The rail
- * holds three puzzles and two pages: with every label at full strength the group
- * read as five equal shouts and the one that was lit had to fight them. Muted
- * children make the lit one the only dark word in its block.
+ * A grouped row is also set in the quiet ink until it is the page you are on. The
+ * rail holds three puzzles and two pages: with every label at full strength the
+ * group read as five equal shouts and the one that was lit had to fight them.
+ * Muted entries make the lit one the only dark word in its block.
  */
 function labelClasses(depth: 0 | 1, active: boolean): string {
   return cn(
     "font-display",
     depth === 0 ? "text-base" : "text-sm",
-    active ? "text-primary" : depth === 0 ? "text-foreground" : "text-muted-foreground",
+    active
+      ? "text-primary"
+      : depth === 0
+        ? "text-foreground"
+        : "text-muted-foreground",
+  );
+}
+
+/**
+ * The heading over a group of destinations — "Puzzles".
+ *
+ * It is not a row: no bar, no hover, no active state, nothing to press. Drawn at
+ * caption size in the quiet ink with the display face's small capitals opened up,
+ * it reads as a label on the list beneath it. At a destination's own size and
+ * weight it was indistinguishable from the three links under it, and every
+ * reviewer tried to click it.
+ *
+ * The left padding matches a row's bar plus its indent, so the label's first
+ * letter lands on the same axis as every nav word in the rail.
+ */
+function GroupLabel({ label }: { label: string }) {
+  return (
+    <View className="border-l-thick border-l-transparent pb-xxs pl-md pt-sm">
+      <Text
+        accessibilityRole="header"
+        className="font-display text-xs tracking-widest text-subtle-foreground"
+      >
+        {label}
+      </Text>
+    </View>
   );
 }
 
@@ -74,7 +102,7 @@ function MenuLink({
         role="link"
         aria-current={active ? "page" : undefined}
         onPress={onNavigate}
-        className={rowClasses(active, depth)}
+        className={rowClasses(active)}
       >
         <Text className={labelClasses(depth, active)}>{item.label}</Text>
       </Pressable>
@@ -102,10 +130,20 @@ export function LeftMenu({ onNavigate }: { onNavigate?: () => void }) {
         divider rather than floating above it.
       */}
       <Wordmark className="border-l-thick border-l-transparent pl-md pt-xs" />
-      <ScrollView contentContainerClassName="gap-xxs" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerClassName="gap-xxs"
+        showsVerticalScrollIndicator={false}
+      >
         {navItems.map((item) => {
           if (item.kind === "leaf") {
-            return <MenuLink key={item.label} item={item} depth={0} onNavigate={onNavigate} />;
+            return (
+              <MenuLink
+                key={item.label}
+                item={item}
+                depth={0}
+                onNavigate={onNavigate}
+              />
+            );
           }
 
           // A group is a heading with its list under it, always open and never
@@ -115,11 +153,14 @@ export function LeftMenu({ onNavigate }: { onNavigate?: () => void }) {
           // would ever want less of.
           return (
             <View key={item.label} className="gap-xxs">
-              <View className={rowClasses(false, 0, false)} accessibilityRole="header">
-                <Text className={cn(labelClasses(0, false), "flex-1")}>{item.label}</Text>
-              </View>
+              <GroupLabel label={item.label} />
               {item.children.map((child) => (
-                <MenuLink key={child.label} item={child} depth={1} onNavigate={onNavigate} />
+                <MenuLink
+                  key={child.label}
+                  item={child}
+                  depth={1}
+                  onNavigate={onNavigate}
+                />
               ))}
             </View>
           );

@@ -3,12 +3,11 @@ import { View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 
-import { Text } from "@/components/ui";
 import type { TrolleyObject } from "@/lib/puzzles/trolley/catalogue";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/theme";
 
-import { PALETTE } from "./geometry";
+import { ObjectChip } from "./object-chip";
 
 /** How far the pointer must travel before this is a drag rather than a tap. */
 const DRAG_THRESHOLD = 6;
@@ -27,8 +26,6 @@ export type DraggableObjectProps = {
   onTap: () => void;
   /** Rendered under the tile when its little "add to…" menu is open. */
   menu?: React.ReactNode;
-  /** The grid column this tile fills, in px. Every cell in a row gets the same. */
-  width?: number;
   disabled?: boolean;
 };
 
@@ -46,7 +43,6 @@ export function DraggableObject({
   onDrop,
   onTap,
   menu,
-  width,
   disabled = false,
 }: DraggableObjectProps) {
   const theme = useTheme();
@@ -125,35 +121,19 @@ export function DraggableObject({
           accessibilityLabel={`${item.label}. Drag onto a track, or activate to choose one.`}
           accessibilityHint={item.prompt}
         >
-          <View
-            style={{ height: PALETTE.tileHeight, width }}
+          {/*
+            The same chip it will be once it is standing on a rail: the tile you
+            pick up and the tile you put down are one object, so the gesture never
+            changes what it is holding halfway through.
+          */}
+          <ObjectChip
+            item={item}
             className={cn(
-              // Borderless at rest: a border is what a tile earns by standing on a
-              // track. The hover ring is drawn on a transparent border already in
-              // the box, so picking a tile out does not nudge the one beside it.
-              "justify-center rounded-sm border-hairline border-transparent bg-transparent px-xs",
-              "transition-colors duration-fast web:hover:border-border web:hover:bg-muted",
-              dragging && "border-thick border-ring bg-card shadow-ink-lifted",
+              "transition-colors duration-fast web:hover:bg-muted",
+              dragging && "border-thick border-ring shadow-ink-lifted",
               disabled && "opacity-disabled",
             )}
-          >
-            {/*
-              Two lines of label, reserved whether the name needs them or not, so
-              every cell of a row is the same height rather than the grid rocking
-              up and down. A name too long for two lines is clipped here and read
-              whole by a screen reader, from the label on the tile itself.
-            */}
-            <View style={{ height: PALETTE.labelHeight }} className="w-full justify-center">
-              <Text
-                variant="meta"
-                className="text-center"
-                numberOfLines={2}
-                ellipsizeMode="tail"
-              >
-                {item.label}
-              </Text>
-            </View>
-          </View>
+          />
         </Animated.View>
       </GestureDetector>
       {menu}

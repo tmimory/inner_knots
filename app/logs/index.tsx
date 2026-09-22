@@ -86,14 +86,12 @@ export default function LogsScreen() {
         <RunFiltersBar filters={filters} characters={characters} onChange={setFilters} />
       ) : null}
 
-      {/* The count rides the day's own rule, right-aligned to the column the rows
-          end at, instead of floating in the corner above the page title. */}
-      {groups.map((group, index) => (
+      {/* No count on the rule: the subtitle already says how many runs the ledger
+          is showing, and saying it twice on one screen — once in Greek, once in
+          the margin of the first day — is the page arguing with itself. */}
+      {groups.map((group) => (
         <View key={group.key} className="gap-sm">
-          <SectionHeading
-            title={group.label}
-            right={index === 0 ? <Text variant="meta">{pluralize(shown.length, "run")}</Text> : undefined}
-          />
+          <SectionHeading title={group.label} />
           <View className="border-t-hairline border-border">
             {group.runs.map((run) => (
               <RunRow key={run.id} run={run} characters={characters} />

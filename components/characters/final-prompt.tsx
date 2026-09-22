@@ -10,6 +10,16 @@ import { cn } from "@/lib/utils";
 /** Long enough that typing a sentence is one request, short enough to feel live. */
 const DEBOUNCE_MS = 300;
 
+/**
+ * Where the puzzle itself lands in what is sent.
+ *
+ * Drawn in the same mono block as the composed prompt, because a character that
+ * steers nothing still sends something: without the slot, "Raw" turned the panel
+ * into a sentence about an absence, which is the one state the rail is least able
+ * to show.
+ */
+const PUZZLE_SLOT = "< the puzzle >";
+
 /** How long the copy link says it worked before going back to offering it. */
 const COPIED_MS = 1600;
 
@@ -78,16 +88,22 @@ export type FinalPromptProps = {
  * What the model will actually be told before it hears the puzzle. Read-only on
  * purpose: the prompt is derived from the fields above it, never edited here.
  *
- * It reads as marginalia: a hairline rule down its left edge and the composed
- * prompt set in the mono voice beside it. The tinted, bordered panel it used to
- * wear was a second frame inside a column that is already set apart by sitting in
- * the margin, and the rule ties its heading to the sections it comments on.
+ * It reads as marginalia: the rail's hairline down its left edge — passed in by
+ * the page that places it, so the rule ends where this panel ends — and the
+ * composed prompt set in the mono voice beside it. The tinted, bordered panel it
+ * used to wear was a second frame inside a column that is already set apart by
+ * sitting in the margin.
  *
- * A character that sends no system prompt says so here rather than drawing
- * nothing: the rail is the one place on the page that answers "what does this
- * setting do", the answer for "Raw" is "nothing", and a column that empties
- * itself when a segment is pressed leaves a third of the page blank and makes the
- * form jump sideways on the next press.
+ * Whatever the mode, the panel renders what will actually be sent — never a
+ * sentence about it. A character that steers nothing still sends the puzzle, so
+ * "Raw" draws the puzzle's own slot in the same mono block the composed prompt
+ * would fill, with one line under it saying what is missing. A column that
+ * empties itself when a segment is pressed leaves a third of the page blank and
+ * makes the form jump sideways on the next press.
+ *
+ * Mono at the caption size rather than the body's: a fixed-width face in a 360px
+ * rail sets about forty characters to the line at 14px, which breaks a composed
+ * prompt into a ragged stack; a step down buys the measure the block needs.
  */
 export function FinalPrompt({ steering, className }: FinalPromptProps) {
   const state = useSteeringPreview(steering);
@@ -102,7 +118,7 @@ export function FinalPrompt({ steering, className }: FinalPromptProps) {
   const prompt = state.status === "ready" ? state.prompt : null;
 
   return (
-    <View className={cn("gap-md border-l-hairline border-border pl-xl", className)}>
+    <View className={cn("gap-md", className)}>
       {/*
         The one thing you do with a composed prompt other than read it, on the
         heading's own line: paste it into the provider's console and ask the same
@@ -129,11 +145,16 @@ export function FinalPrompt({ steering, className }: FinalPromptProps) {
           {state.message}
         </Text>
       ) : prompt !== null ? (
-        <Text selectable variant="code">
+        <Text selectable variant="code" className="text-xs">
           {prompt}
         </Text>
       ) : state.status === "ready" ? (
-        <Text variant="muted">Nothing goes ahead of the puzzle: the model answers as itself.</Text>
+        <>
+          <Text selectable variant="code" className="text-xs text-subtle-foreground">
+            {PUZZLE_SLOT}
+          </Text>
+          <Text variant="meta">No system prompt. The puzzle is sent as the only message.</Text>
+        </>
       ) : null}
     </View>
   );

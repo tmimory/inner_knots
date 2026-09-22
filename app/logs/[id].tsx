@@ -1,21 +1,29 @@
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 
 import {
   ConfigView,
+  CopyId,
   ExportButton,
-  FieldCode,
+  Field,
   LogList,
-  STAT_MIN_WIDTH,
   PUZZLE_LABELS,
   SpanDetail,
   SpanTree,
   StatusMark,
   SummaryView,
+  nameOf,
+  rosterOf,
+  shortRunId,
   spanDepths,
+  variantLabel,
 } from "@/components/logs";
-import { Screen, SplitPane } from "@/components/shell";
+import { PageHeader, Screen, SplitPane } from "@/components/shell";
+// Reached past the barrel deliberately: this is the one screen that draws its own
+// header wrapper, and the reading column has to be the *same* recipe `Screen` and
+// `PageHeader` use, not a second copy of the same three classes.
+import { widthClasses } from "@/components/shell/page-header";
 import {
   Button,
   EmptyState,
@@ -37,11 +45,46 @@ import {
   useObjectIndex,
   useRunDetail,
 } from "@/lib/client/use-runs";
+import type { Character } from "@/lib/domain/character";
+import type { Run } from "@/lib/domain/run";
 import { errorMessage } from "@/lib/errors";
-import { formatDateTime, formatElapsed } from "@/lib/format";
+import { formatElapsed, formatStamp } from "@/lib/format";
+import { cn } from "@/lib/utils";
+
+/**
+ * The reading column this page is set in.
+ *
+ * The page is a header with a breadcrumb over it, which `Screen` does not draw, so
+ * the column goes on the wrapper instead — and the header, the metadata row, the
+ * tabs and every panel under them then end on one right edge. They used not to:
+ * the status and Export cluster sat at the window's edge, three hundred pixels
+ * past the content it belonged to, and the page read as two.
+ */
+const READING_COLUMN = widthClasses("reading");
+
+/** One labelled value in the run's metadata row, sharing the row evenly. */
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <Field label={label} className="min-w-field flex-1">
+      <Text variant="data">{value}</Text>
+    </Field>
+  );
+}
+
+/** The framing a run was put under, where the puzzle has one. */
+function configVariant(config: Run["config"]): string | undefined {
+  return config.puzzle === "adventure" ? undefined : variantLabel(config.variant);
+}
+
+/** Who answered, in the order the run seated them. */
+function rosterNames(config: Run["config"], characters: ReadonlyMap<string, Character>): string {
+  const names = rosterOf(config).map((seat) => nameOf(seat.characterId, characters));
+  return [...new Set(names)].join(" · ");
+}
 
 export default function RunDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const runId = typeof params.id === "string" ? params.id : "";
   const { toast } = useToast();
 
@@ -73,7 +116,7 @@ export default function RunDetailScreen() {
 
   if (!run) {
     return (
-      <Screen title="Run" subtitle="ὑπόμνημα — one run, in full">
+      <Screen width="reading" title="Run" subtitle="ὑπόμνημα — one run, in full">
         <EmptyState
           title={loading ? "Reading the run…" : "No such run"}
           body={loading ? undefined : (error ?? `No run is recorded under "${runId}".`)}
@@ -83,44 +126,61 @@ export default function RunDetailScreen() {
     );
   }
 
+  const active = isRunActive(run);
+  const variant = configVariant(run.config);
+
   return (
-    <Screen
-      title={PUZZLE_LABELS[run.puzzle]}
-      subtitle="ὑπόμνημα — one run, in full"
-      right={
-        <>
-          <StatusMark status={run.status} />
-          {isRunActive(run) ? (
-            <Button variant="destructive" size="sm" onPress={() => void cancel()}>
-              <Text>Cancel</Text>
-            </Button>
+    <View className={cn(READING_COLUMN, "gap-2xl")}>
+      <View className="gap-xs">
+        {/* Where this run sits, not a thing to do with it — so it leads the title,
+            the way the builder's does, rather than joining the row of actions. */}
+        <Pressable role="link" className="self-start" onPress={() => router.push("/logs")}>
+          <Text variant="meta" className="transition-colors duration-fast web:hover:text-primary">
+            ← Logs
+          </Text>
+        </Pressable>
+        {/*
+          The page is named after the run it is: the puzzle, and the eight
+          characters that tell this run from the other six the same puzzle ran
+          today. Titled "Trolley problem" alone it was indistinguishable from the
+          puzzle's own screen and from every other run in the ledger.
+        */}
+        <PageHeader
+          title={`${PUZZLE_LABELS[run.puzzle]} · ${shortRunId(run.id).trim()}`}
+          subtitle="ὑπόμνημα — one run, in full"
+          right={
+            <>
+              <StatusMark status={run.status} />
+              {active ? (
+                <Button variant="destructive" size="sm" onPress={() => void cancel()}>
+                  <Text>Cancel</Text>
+                </Button>
+              ) : null}
+              <CopyId value={run.id} />
+              <ExportButton run={run} spans={spans} logs={logs} />
+            </>
+          }
+        />
+      </View>
+
+      <View className="gap-lg">
+        {/*
+          Four facts about the run, on four even columns: when it started, how long
+          it took, what framing it was put under and who answered. Progress is not
+          among them once a run has settled — "7 / 7" beside a state that already
+          says the run is done is the same fact twice — so it joins the row only
+          while there is still something to be part-way through.
+        */}
+        <View className="flex-row flex-wrap gap-lg">
+          <Stat label="Started" value={formatStamp(run.startedAt)} />
+          <Stat label="Duration" value={formatElapsed(run.startedAt, run.finishedAt)} />
+          {variant ? <Stat label="Variant" value={variant} /> : null}
+          <Stat label="Roster" value={rosterNames(run.config, characters)} />
+          {active ? (
+            <Stat label="Progress" value={`${run.progress.done} / ${run.progress.total}`} />
           ) : null}
-          <ExportButton run={run} spans={spans} logs={logs} />
-        </>
-      }
-    >
-      <View className="max-w-reading gap-lg">
-        <View className="flex-row flex-wrap items-center gap-xl">
-          {/* The id is what this page is, so it leads the stat row rather than
-              standing in for the Greek subtitle every other screen carries. */}
-          <FieldCode label="Run" value={run.id} className={STAT_MIN_WIDTH} />
-          <FieldCode
-            label="Started"
-            value={formatDateTime(run.startedAt)}
-            className={STAT_MIN_WIDTH}
-          />
-          <FieldCode
-            label="Duration"
-            value={formatElapsed(run.startedAt, run.finishedAt)}
-            className={STAT_MIN_WIDTH}
-          />
-          <FieldCode
-            label="Progress"
-            value={`${run.progress.done} / ${run.progress.total}`}
-            className={STAT_MIN_WIDTH}
-          />
         </View>
-        {isRunActive(run) ? (
+        {active ? (
           <Progress
             value={run.progress.done}
             max={Math.max(1, run.progress.total)}
@@ -154,16 +214,15 @@ export default function RunDetailScreen() {
           </TabsTrigger>
         </TabsList>
 
-        {/* Capped at the reading measure so the summary's numerals and the labels
-            above them end on one edge: a table whose right column ran to the
-            window while the fields above it stopped at 500px read as two pages. */}
+        {/* One rhythm and it is held: the air within a section is two thirds of
+            the air between two of them. */}
         <TabsContent value="overview">
-          <View className="max-w-reading gap-xl">
+          <View className="gap-2xl">
             <View className="gap-lg">
               <SectionHeading title="Configuration" />
               <ConfigView config={run.config} objects={objects} adventureName={adventureName} />
             </View>
-            <View className="gap-lg border-t-hairline border-border pt-md">
+            <View className="gap-lg border-t-hairline border-border pt-xl">
               <SectionHeading title="Summary" />
               <SummaryView run={run} characters={characters} />
             </View>
@@ -175,6 +234,7 @@ export default function RunDetailScreen() {
               a rule. Two bordered panels side by side read as two documents. */}
           <SplitPane
             railWidth="inspector"
+            railRule="content"
             main={
               <SpanTree
                 spans={spans}
@@ -199,6 +259,6 @@ export default function RunDetailScreen() {
           <LogList logs={logs} />
         </TabsContent>
       </Tabs>
-    </Screen>
+    </View>
   );
 }

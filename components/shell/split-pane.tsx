@@ -38,11 +38,27 @@ export type SplitPaneProps = {
   stretch?: boolean;
   /** Where the divider is drawn. Defaults to `column`. */
   railRule?: RailRule;
+  /**
+   * Pin the rail while the main column scrolls past it (web only).
+   *
+   * It goes on the same box as the rule, never on a wrapper around it: a sticky
+   * element travels inside its own parent, so a rail that was ruled on a wrapper
+   * and stuck on a box inside it had nowhere to go and simply froze at the top of
+   * the page. With `railRule="content"` the column around it is what gives it the
+   * run, which is why `stretch` is forced on while it is set.
+   */
+  railSticky?: boolean;
   className?: string;
 };
 
 /** The hairline and the gutter it hangs in, wherever it is being drawn. */
 const RULE = "wide:border-l-hairline wide:border-border wide:pl-xl";
+
+/**
+ * What pins the rail: `top-xl` is the content pane's own top padding, so a pinned
+ * rail sits exactly where it started rather than sliding under the page title.
+ */
+const STICKY = "web:sticky web:top-xl";
 
 const RAIL_WIDTHS: Record<RailWidth, string> = {
   inspector: "wide:w-inspector",
@@ -60,6 +76,10 @@ const RAIL_WIDTHS: Record<RailWidth, string> = {
  * It is one column on a narrow viewport, stacked in the reading order the wide
  * layout puts them in, with no rule: a vertical hairline between two things that
  * are no longer side by side is a line across the page.
+ *
+ * `railRule="content"` with `railSticky` is the combination two screens had
+ * written out by hand: the rail follows you down a long form, and its hairline
+ * stops where its own content does rather than ruling off the page beneath it.
  */
 export function SplitPane({
   main,
@@ -67,15 +87,19 @@ export function SplitPane({
   railWidth = "inspector",
   stretch = true,
   railRule = "column",
+  railSticky = false,
   className,
 }: SplitPaneProps) {
   const onColumn = railRule === "column";
+  // A rail ruled on its content sticks inside the column around it, so that column
+  // has to be as tall as the page for the rail to have anywhere to travel.
+  const stretched = stretch || (railSticky && !onColumn);
 
   return (
     <View
       className={cn(
         "gap-xl wide:flex-row",
-        stretch ? "wide:items-stretch" : "wide:items-start",
+        stretched ? "wide:items-stretch" : "wide:items-start",
         className,
       )}
     >
@@ -83,9 +107,24 @@ export function SplitPane({
           instead of pushing the rail off the right edge. */}
       <View className="min-w-0 flex-1 gap-2xl">{main}</View>
       {/* Width, border and gutter all sit on one box or the other, never split
-          between them, so the rail's content lands on the same axis either way. */}
-      <View className={cn(RAIL_WIDTHS[railWidth], onColumn && `gap-2xl ${RULE}`)}>
-        {onColumn ? rail : <View className={cn("gap-2xl", RULE)}>{rail}</View>}
+          between them, so the rail's content lands on the same axis either way.
+          Whichever box carries the rule is the box that sticks: when the rule is
+          on the column, the column must also stop being stretched, or a sticky
+          element as tall as the page has no run to make. */}
+      <View
+        className={cn(
+          RAIL_WIDTHS[railWidth],
+          onColumn &&
+            cn("gap-2xl", RULE, railSticky && `${STICKY} wide:self-start`),
+        )}
+      >
+        {onColumn ? (
+          rail
+        ) : (
+          <View className={cn("gap-2xl", RULE, railSticky && STICKY)}>
+            {rail}
+          </View>
+        )}
       </View>
     </View>
   );

@@ -23,27 +23,34 @@ import { spacing } from "@/theme/tokens";
 
 /** The one place the size of a decision card and the gaps around it are decided. */
 export const ADVENTURE_LAYOUT = {
-  /** Width of a decision card, in px. */
-  nodeWidth: 260,
+  /**
+   * Width of a decision card, in px.
+   *
+   * Twenty pixels wider than it was, because the card is now set one type step up
+   * throughout: the whole graph has to fit the canvas, so what makes a card
+   * legible is the size it is *drawn* at, not the zoom it is read at.
+   */
+  nodeWidth: 280,
   /**
    * What a card takes up before its first option row: badges, context, decision.
    *
-   * The setup clamps to three lines rather than two — two cut a sentence in half
-   * on nearly every card — so the header is one metadata line taller than it was.
+   * Three clamped lines of setup, then the question at two lines of the step above
+   * it, plus the card's own padding. The setup clamps to three rather than two
+   * because two cut a sentence in half on nearly every card.
    */
-  nodeHeaderHeight: 164,
+  nodeHeaderHeight: 178,
   /** Added per option row. */
-  nodeOptionHeight: 30,
+  nodeOptionHeight: 34,
   /**
    * Gap between one rank of nodes and the next, across the flow.
    *
-   * Two cards and the gap between them have to fit the canvas at something close
-   * to 1:1 — a graph fitted at 0.8 sets a 14px option row at 11px, which is a
-   * caption, not a line you read. So the gap is only as wide as an edge needs to
-   * bend and, where a node forks, to carry the option's name on the straight run
-   * in the middle of the bend.
+   * The whole tree has to fit the canvas — a cropped third card is not a graph —
+   * and the canvas is only as wide as the page has left beside the inspector. So
+   * the gap is exactly as wide as an edge needs to leave a card, take its own
+   * lane and turn back in: every pixel beyond that is a pixel off the zoom the
+   * cards are read at.
    */
-  rankGap: spacing["4xl"] * 2,
+  rankGap: spacing["4xl"] + spacing["2xl"],
   /** Gap between siblings within a rank. */
   nodeGap: spacing["4xl"],
   /** Room kept for an edge label between siblings. */

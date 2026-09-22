@@ -16,10 +16,16 @@ export const Tabs = TabsPrimitive.Root;
  * new page, not the next line — which is the `mb-2xl` every tabbed screen used to
  * add for itself and get slightly wrong.
  */
-export function TabsList({ className, ...props }: ComponentProps<typeof TabsPrimitive.List>) {
+export function TabsList({
+  className,
+  ...props
+}: ComponentProps<typeof TabsPrimitive.List>) {
   return (
     <TabsPrimitive.List
-      className={cn("mb-2xl flex-row flex-wrap items-end gap-xl self-start", className)}
+      className={cn(
+        "mb-2xl flex-row flex-wrap items-end gap-xl self-start",
+        className,
+      )}
       {...props}
     />
   );
@@ -39,18 +45,36 @@ export type TabsTriggerProps = ComponentProps<typeof TabsPrimitive.Trigger> & {
  * One tab.
  *
  * Active is a 2px rule in the rubric red directly under the label, with the label
- * in the same red; inactive is the quiet ink and a transparent rule of the same
- * weight, so nothing shifts when the choice moves. The state comes from the root
- * context rather than a `data-state` variant, because the label's colour lives on
- * a child `Text` that cannot see its parent's attributes.
+ * in the same red and the medium cut of the body serif; inactive is the quiet ink
+ * and a transparent rule of the same weight, so nothing shifts when the choice
+ * moves. The state comes from the root context rather than a `data-state`
+ * variant, because the label's colour lives on a child `Text` that cannot see its
+ * parent's attributes.
+ *
+ * The label is set in the body serif rather than the display face: the display
+ * face small-caps every lowercase letter, so "Spans" and "Decisions" arrived as
+ * two more rows of capitals competing with the page title, where a tab is a
+ * sentence-case word you choose. The count beside it is the same serif at the
+ * caption size in the secondary ink — the word leads, the number answers.
  */
-export function TabsTrigger({ className, value, count, children, ...props }: TabsTriggerProps) {
+export function TabsTrigger({
+  className,
+  value,
+  count,
+  children,
+  ...props
+}: TabsTriggerProps) {
   const { value: active } = TabsPrimitive.useRootContext();
   const selected = active === value;
 
   return (
     <TextClassContext
-      value={cn("font-display text-base", selected ? "text-primary" : "text-muted-foreground")}
+      value={cn(
+        "text-base",
+        selected
+          ? "font-bodyMedium text-primary"
+          : "font-body text-muted-foreground",
+      )}
     >
       <TabsPrimitive.Trigger
         value={value}
@@ -63,7 +87,7 @@ export function TabsTrigger({ className, value, count, children, ...props }: Tab
       >
         {children as ReactNode}
         {count === undefined ? null : (
-          <Text variant="data" className="text-xs text-subtle-foreground">
+          <Text variant="data" className="text-xs text-muted-foreground">
             {count}
           </Text>
         )}
@@ -77,5 +101,11 @@ export function TabsContent({
   value,
   ...props
 }: ComponentProps<typeof TabsPrimitive.Content>) {
-  return <TabsPrimitive.Content value={value} className={cn("gap-md", className)} {...props} />;
+  return (
+    <TabsPrimitive.Content
+      value={value}
+      className={cn("gap-md", className)}
+      {...props}
+    />
+  );
 }

@@ -11,30 +11,18 @@ import { ADVENTURE_LAYOUT } from "@/lib/puzzles/adventure/layout";
 import type { Theme } from "@/theme";
 
 /**
- * The smallest zoom at which a decision card is still a card.
- *
- * Derived rather than picked. A card is set in two sizes — the question one step
- * up, its setup and options at body size — so the smallest type on the canvas is
- * the body step, and the floor is whatever keeps that at or above the caption
- * step, the smallest size the rest of the app is allowed to use. Scaled below it,
- * the cards stop being read and start being recognised, which is a diagram of an
- * adventure rather than the adventure.
- */
-export function zoomFloor(theme: Theme): number {
-  return theme.fontSizes.xs / theme.fontSizes.base;
-}
-
-/**
  * How far one edge's bend is pushed off the shared corridor.
  *
- * Five options landing on one card's single input handle draw five identical
- * right-angled runs on top of each other, and what looks like one edge is five.
- * Giving each edge in a bundle its own step-out distance and its own bend
- * position spreads those runs laterally, so the count of lines into a card is the
- * count of ways into it.
+ * Three options leaving one card draw three right-angled runs across the same
+ * gap, and where they share a vertical segment what looks like one edge is three.
+ * So each edge in the bundle *leaving a card* gets its own step-out distance and
+ * its own bend position — lanes assigned by source rather than by target, because
+ * that is where a fork actually happens: "The stranger", "The donor" and "Split
+ * the dose" leave one card within ninety pixels of each other and used to share a
+ * trunk all the way across the rank.
  *
- * `index` is the edge's place in the bundle arriving at one node; `size` is how
- * many there are. A lone edge gets the plain middle bend.
+ * `index` is the edge's place in the bundle leaving one node; `size` is how many
+ * there are. A lone edge gets the plain middle bend.
  */
 export function edgePathOptions(
   theme: Theme,
@@ -44,8 +32,9 @@ export function edgePathOptions(
   const middle = (size - 1) / 2;
   const rank = index - middle;
   return {
-    // The straight run out of a handle before the first corner.
-    offset: theme.spacing.lg + index * theme.spacing.sm,
+    // The straight run out of a handle before the first corner: one step longer
+    // per lane, so the corners themselves are staggered too.
+    offset: theme.spacing.md + index * theme.spacing.sm,
     borderRadius: theme.radii.sm,
     // Where along the gap the vertical run sits, 0 at the source and 1 at the
     // target. Spread around the midpoint, and never so far out that a bend
@@ -55,7 +44,7 @@ export function edgePathOptions(
 }
 
 /** How the bends of a bundle of edges are spread around the midpoint of the gap. */
-const EDGE_STEP = { center: 0.5, spread: 0.11, min: 0.2, max: 0.8 } as const;
+const EDGE_STEP = { center: 0.5, spread: 0.18, min: 0.18, max: 0.82 } as const;
 
 function clampStep(value: number): number {
   return Math.min(EDGE_STEP.max, Math.max(EDGE_STEP.min, value));
@@ -66,11 +55,10 @@ export type EdgeTone = { share?: number; onPath?: boolean };
 
 /** Style for a node card, given its state on the canvas. */
 export type NodeTone = {
+  /** The card the author is writing: the one thing the coloured bar means. */
   selected?: boolean;
   onPath?: boolean;
   unvisited?: boolean;
-  /** The node a walk begins at, which wears a rubric bar instead of a kicker. */
-  isStart?: boolean;
 };
 
 function clampShare(share: number | undefined): number {
@@ -114,10 +102,10 @@ export function edgeLabelBackgroundStyle(theme: Theme): Record<string, string | 
 /**
  * The outline and fill of a decision card.
  *
- * The start of the adventure is said with the card's own left edge — a rubric bar
- * in the theme's oxblood — rather than with a kicker above the context. A label
- * costs the card a third type size in its top 60px; an edge costs it nothing and
- * is legible at the zoom a fitted graph is actually read at.
+ * The coloured left edge belongs to the card the author has selected, and to
+ * nothing else. It used to mark the start of the adventure, which is the same
+ * mark the active page wears in the menu — so on the canvas the opening card
+ * looked permanently selected. The start says so in its own header instead.
  */
 export function nodeCardStyle(theme: Theme, tone: NodeTone): Record<string, string | number> {
   const borderColor = tone.selected
@@ -136,11 +124,12 @@ export function nodeCardStyle(theme: Theme, tone: NodeTone): Record<string, stri
     // Surfaces take the 8px step; only controls (buttons, chips) go tighter.
     borderRadius: theme.radii.md,
     opacity: tone.unvisited ? theme.opacities.disabled : 1,
-    // Written after the uniform border so it wins: one edge in another colour.
-    ...(tone.isStart
+    // Written after the uniform border so it wins: one edge in another colour,
+    // and only on the card that is being written.
+    ...(tone.selected
       ? {
-          borderLeftWidth: theme.spacing.xxs,
-          borderLeftColor: theme.colors.primary,
+          borderLeftWidth: theme.spacing.xs,
+          borderLeftColor: theme.colors.ring,
         }
       : {}),
   };

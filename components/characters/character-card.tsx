@@ -24,13 +24,15 @@ export type CharacterCardProps = {
  *
  * The row runs edge to edge of the column it sits in: the face starts on the
  * page's own left axis and the chevron ends on the hairline's right edge, under
- * the header's button. Inset by a step, both marks floated a few pixels inside
- * the rule that was supposed to measure them.
+ * the header's button.
  *
- * The three lines are one column, left-aligned on one axis: name, two lines of
- * the sentence, then the facts. Hung at the row's right edge instead, the facts
- * began at a different x on every row — three ragged starts that the eye reads
- * as three columns that failed to line up.
+ * Three lines on the left, two columns on the right. The left block is prose —
+ * the name, one line of the sentence, and the model it runs — and the right is
+ * tabulated: the steering mode as a small-caps token and how many convictions it
+ * carries, each in a fixed-width cell aligned to the row's right edge, so the
+ * same fact sits at the same x on every row and the roster can be read down a
+ * column instead of re-parsed line by line. The bio is clamped to one line for
+ * the same reason: rows of one height are a table, rows of two are a stack.
  */
 export function CharacterCard({ character, className }: CharacterCardProps) {
   const meta = characterMetaParts(character);
@@ -51,29 +53,38 @@ export function CharacterCard({ character, className }: CharacterCardProps) {
           <Text className="font-body text-lg text-foreground" numberOfLines={1}>
             {characterTitle(character)}
           </Text>
-          {/*
-            Two lines of the bio and then the ellipsis: one line cut a sentence
-            off mid-clause on every row with anything to say, and an unclamped
-            paragraph made the roster a wall. Clamped by the renderer rather than
-            by a `slice` in the label, so the break lands between words.
-          */}
-          <Text variant="meta" numberOfLines={2}>
+          <Text variant="meta" numberOfLines={1}>
             {characterBlurb(character)}
           </Text>
           {/*
-            One line, four slots, always in this order: the model in the mono
-            voice as the thing you scan down the column for, the provider and the
-            count around it in the quiet ink, and the steering mode as a small-caps
-            token so it cannot be misread as another part of the model's name.
+            What the row runs on, as one quiet line: the model id in the mono
+            voice — the thing you scan the column for — and who serves it in the
+            serif beside it, one step quieter. Set in the body ink it was the
+            heaviest mark in the row, so the machine that answers outweighed the
+            character doing the answering.
           */}
           <Text variant="subtle" numberOfLines={1}>
-            <Text className="font-mono text-xs text-foreground">{meta.model}</Text>
-            {` · ${meta.provider} · `}
-            <Text className="font-display text-xs text-subtle-foreground">{meta.mode}</Text>
-            {` · ${meta.convictions}`}
+            <Text className="font-mono text-xs text-muted-foreground">{meta.model}</Text>
+            {` · ${meta.provider}`}
           </Text>
         </View>
-        <Chevron direction="right" />
+        {/*
+          The tabulated half, held to the height of the name's own line so the
+          columns and the chevron read against the row's title rather than
+          floating at the centre of a three-line block.
+        */}
+        <View className="h-control-sm flex-row items-center gap-lg self-start">
+          <Text
+            className="w-4xl text-right font-display text-xs text-subtle-foreground"
+            numberOfLines={1}
+          >
+            {meta.mode}
+          </Text>
+          <Text variant="meta" className="w-seat tabular text-right" numberOfLines={1}>
+            {meta.convictions}
+          </Text>
+          <Chevron direction="right" />
+        </View>
       </Pressable>
     </Link>
   );

@@ -6,6 +6,7 @@ import { PromptView } from "@/components/puzzles/prompt-view";
 import { RosterBar } from "@/components/puzzles/roster-bar";
 import { RunProgress } from "@/components/puzzles/run-progress";
 import { Section } from "@/components/puzzles/section";
+import { Subsection } from "@/components/puzzles/subsection";
 import {
   ObjectCreator,
   ObjectPalette,
@@ -230,23 +231,25 @@ export default function TrolleyScreen() {
   return (
     <Screen title="Trolley Problems" subtitle="ἁμαξοστοιχία · the lever and the lesser evil">
       {/*
-        No heading over the faces: five medallions with a name under each are the
-        only thing on the page that could be called a roster, and a small-caps
-        word above them was a label on a picture of itself. The rule stays, so the
-        cast is still a step of the page rather than something loose under the
-        title.
+        The roster wears the quiet group heading the rest of the page's blocks
+        wear: unlabelled, it was the one band on the screen with nothing naming
+        it, which read as chrome above the content rather than the first step of
+        it. Not a full section heading — five medallions with a name under each do
+        not need a rule and a display-size title to be understood.
       */}
-      <View className="gap-lg border-t-hairline border-border pt-xl">
-        <RosterBar
-          value={board.roster}
-          onChange={(roster) => patch({ roster })}
-          characters={characters}
-          max={RUN_LIMITS.maxRoster}
-          min={0}
-          showRuns
-          // Five circles with two faces in them already say "two of five".
-          showCount={false}
-        />
+      <View className="border-t-hairline border-border pt-xl">
+        <Subsection title="Characters">
+          <RosterBar
+            value={board.roster}
+            onChange={(roster) => patch({ roster })}
+            characters={characters}
+            max={RUN_LIMITS.maxRoster}
+            min={0}
+            showRuns
+            // Five circles with two faces in them already say "two of five".
+            showCount={false}
+          />
+        </Subsection>
       </View>
 
       <Section
@@ -315,7 +318,9 @@ export default function TrolleyScreen() {
           missing instead of counting decisions.
         */}
         <View className="flex-row flex-wrap items-center justify-end gap-lg border-t-hairline border-border pt-lg">
-          <Text variant="muted" className="flex-1">
+          {/* Body size: the line that says what the button will do is prose, not
+              a caption under it. */}
+          <Text className="flex-1 text-muted-foreground">
             {blocked ??
               `${pluralize(total, "decision")} across ${pluralize(
                 board.roster.length,

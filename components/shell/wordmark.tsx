@@ -21,7 +21,14 @@ export function Wordmark({ className }: { className?: string }) {
       <Text variant="h2" className="tracking-wide text-foreground">
         inner knots
       </Text>
-      <View className="h-hairline w-full bg-accent" />
+      {/*
+        A solid hairline, drawn in the same tan the app rules everything else with.
+        The gilt version was a one-pixel band of a colour close in value to the
+        parchment, and at a rail's width it read as a rule that faded out to the
+        right rather than as a line. `self-stretch` keeps the full width without
+        depending on a parent's cross-axis sizing.
+      */}
+      <View className="h-hairline w-full self-stretch bg-border" />
       <Text variant="greek" className="text-sm">
         δεσμοὶ τῆς ψυχῆς · knots of the soul
       </Text>

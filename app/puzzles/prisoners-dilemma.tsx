@@ -8,13 +8,16 @@ import {
   PayoffMatrix,
   PendingAnswers,
   PrisonersDilemmaResults,
-  Subsection,
 } from "@/components/puzzles/prisoners-dilemma";
 import { PromptView, type PromptPanel } from "@/components/puzzles/prompt-view";
 import { RosterBar } from "@/components/puzzles/roster-bar";
 import { RunProgress } from "@/components/puzzles/run-progress";
 import { Section } from "@/components/puzzles/section";
-import { VariantSelect, type VariantOption } from "@/components/puzzles/variant-select";
+import { Subsection } from "@/components/puzzles/subsection";
+import {
+  VariantSelect,
+  type VariantOption,
+} from "@/components/puzzles/variant-select";
 import { Screen } from "@/components/shell";
 import { Button, Label, Text, Textarea } from "@/components/ui";
 import { previewPrisonersDilemmaPrompt } from "@/lib/client/prompts";
@@ -23,7 +26,11 @@ import { usePersistedState } from "@/lib/client/use-persisted-state";
 import { usePromptPreview } from "@/lib/client/use-prompt-preview";
 import { useRun, useRunStarter } from "@/lib/client/use-run";
 import type { Character } from "@/lib/domain/character";
-import { DEFAULT_CRIME, RUN_LIMITS, type PrisonersDilemmaVariant } from "@/lib/domain/run";
+import {
+  DEFAULT_CRIME,
+  RUN_LIMITS,
+  type PrisonersDilemmaVariant,
+} from "@/lib/domain/run";
 import type { PrisonersDilemmaSummary } from "@/lib/domain/summary";
 import { pluralize } from "@/lib/format";
 import {
@@ -51,12 +58,14 @@ const VARIANTS: readonly VariantOption<PrisonersDilemmaVariant>[] = [
   {
     id: "thought-experiment",
     label: "Thought experiment",
-    description: "A structure of incentives, stated as one. Nobody has been arrested.",
+    description:
+      "A structure of incentives, stated as one. Nobody has been arrested.",
   },
   {
     id: "interrogation",
     label: "Interrogation room",
-    description: "A bolted table, coffee gone cold, and a folder nobody has opened yet.",
+    description:
+      "A bolted table, coffee gone cold, and a folder nobody has opened yet.",
   },
 ];
 
@@ -72,7 +81,8 @@ const LENGTHS: readonly VariantOption<Length>[] = [
   {
     id: "iterated",
     label: "Iterated",
-    description: "The same partner, round after round, each told afterwards what the other chose.",
+    description:
+      "The same partner, round after round, each told afterwards what the other chose.",
   },
 ];
 
@@ -109,7 +119,8 @@ export default function PrisonersDilemmaScreen() {
   const names = useMemo(() => playerNames(players), [players]);
 
   const patch = useCallback(
-    (changes: Partial<PrisonersDilemmaSetup>) => setSetup({ ...setup, ...changes }),
+    (changes: Partial<PrisonersDilemmaSetup>) =>
+      setSetup({ ...setup, ...changes }),
     [setup, setSetup],
   );
 
@@ -127,7 +138,11 @@ export default function PrisonersDilemmaScreen() {
       return {
         label: `${PLAYER_LABELS[index]} · ${names[side]}`,
         accessory: character ? (
-          <Avatar shape={character.avatar.shape} color={character.avatar.color} size="sm" />
+          <Avatar
+            shape={character.avatar.shape}
+            color={character.avatar.color}
+            size="sm"
+          />
         ) : undefined,
         system: preview[side].system,
         user: preview[side].user,
@@ -137,7 +152,10 @@ export default function PrisonersDilemmaScreen() {
   });
 
   /** True once a round has actually come back; before that there is nothing to show. */
-  const decided = dilemma?.games.some((game) => game.rounds.length > 0) ?? false;
+  const decided =
+    dilemma?.games.some((game) => game.rounds.length > 0) ?? false;
+  /** True once a run has been asked for: the table has something to be waiting for. */
+  const started = starter.runId !== null;
 
   const iterations = iterationsOf(setup);
   const blocked = blockedReason(setup);
@@ -146,7 +164,11 @@ export default function PrisonersDilemmaScreen() {
   async function startRun() {
     const seats = playersOf(setup);
     if (blocked !== null || seats === undefined) return;
-    await starter.start({ puzzle: "prisoners-dilemma", ...puzzleConfig(setup), ...seats });
+    await starter.start({
+      puzzle: "prisoners-dilemma",
+      ...puzzleConfig(setup),
+      ...seats,
+    });
   }
 
   return (
@@ -158,72 +180,104 @@ export default function PrisonersDilemmaScreen() {
         Configuration on the left, the run and its results on the right: the
         payoffs are what you change and the outcomes are what you change them
         for, and on a wide screen there is no reason to put a scroll between them.
-      */}
-      <View className="gap-xl pb-xl wide:flex-row wide:items-start">
-        <View className="flex-1 gap-3xl">
-          {/* What the puzzle is: who plays it, and how it is put to them. */}
-          <Section title="Setup" className="gap-2xl">
-            <Subsection title="Players">
-              <RosterBar
-                value={setup.roster}
-                onChange={(roster) => patch({ roster })}
-                characters={characters}
-                max={PLAYER_COUNT}
-                min={0}
-                showRuns={false}
-                showCount={false}
-                labels={PLAYER_LABELS}
-                fixedSlots={PLAYER_COUNT}
-                allowDuplicates
-              />
 
+        Laid out here rather than through `SplitPane`, and for one reason: the
+        rail has to be sticky AND its hairline has to stop where its contents do.
+        `SplitPane`'s `railRule="content"` draws the rule on a wrapper of its own
+        and hands the caller a box inside it, and a sticky element cannot travel
+        past the box it sits in — so the rule ends correctly and the rail stops
+        moving. Both properties live on one box here: the stretched column gives
+        the sticky element its run, and the rule is drawn on the content that
+        sticks, so it ends where the rail ends.
+      */}
+      <View className="gap-xl pb-xl wide:flex-row wide:items-stretch">
+        <View className="min-w-0 flex-1">
+          <View className="gap-xl">
+            {/* What the puzzle is: who plays it, and how it is put to them. */}
+            <Section title="Setup">
               {/*
+              One band of air between groups, on its own box rather than on the
+              section's: a `gap-*` passed down to `FormSection` loses to the one
+              already on it, since tailwind-merge does not know this project's
+              named spacing scale.
+            */}
+              <View className="gap-3xl">
+                <Subsection title="Players">
+                  <RosterBar
+                    value={setup.roster}
+                    onChange={(roster) => patch({ roster })}
+                    characters={characters}
+                    max={PLAYER_COUNT}
+                    min={0}
+                    showRuns={false}
+                    showCount={false}
+                    labels={PLAYER_LABELS}
+                    fixedSlots={PLAYER_COUNT}
+                    allowDuplicates
+                  />
+
+                  {/*
                 Whether they know each other is a fact about the two of them, not
                 a chapter of its own: it belongs under the seats it describes.
               */}
-              <LabeledToggle
-                label="Tell each who the other one is"
-                checked={setup.relationshipsEnabled}
-                onCheckedChange={(relationshipsEnabled) => patch({ relationshipsEnabled })}
-              />
-              {setup.relationshipsEnabled ? (
-                <View className="gap-lg">
-                  {(["a", "b"] as const).map((side, index) => (
-                    <View key={side} className="gap-xs">
-                      <Label>{`${PLAYER_LABELS[index]} is told…`}</Label>
-                      <Textarea
-                        rows={2}
-                        maxLength={RUN_LIMITS.relationship}
-                        value={side === "a" ? setup.relationshipA : setup.relationshipB}
-                        onChangeText={(text) =>
-                          patch(side === "a" ? { relationshipA: text } : { relationshipB: text })
-                        }
-                        placeholder={
-                          side === "a"
-                            ? "You are your opponent's father."
-                            : "You are your opponent's son."
-                        }
-                        accessibilityLabel={`What ${PLAYER_LABELS[index]} is told about the other player`}
-                      />
+                  <LabeledToggle
+                    label="Tell each who the other one is"
+                    checked={setup.relationshipsEnabled}
+                    onCheckedChange={(relationshipsEnabled) =>
+                      patch({ relationshipsEnabled })
+                    }
+                  />
+                  {setup.relationshipsEnabled ? (
+                    <View className="gap-lg">
+                      {(["a", "b"] as const).map((side, index) => (
+                        // One sentence does not want seven hundred pixels: the pair
+                        // is capped at the measure a line of prose is read at, and
+                        // the label sits the screen's own step above its field.
+                        <View key={side} className="max-w-canvas gap-md">
+                          <Label>{`${PLAYER_LABELS[index]} is told…`}</Label>
+                          <Textarea
+                            rows={2}
+                            maxLength={RUN_LIMITS.relationship}
+                            value={
+                              side === "a"
+                                ? setup.relationshipA
+                                : setup.relationshipB
+                            }
+                            onChangeText={(text) =>
+                              patch(
+                                side === "a"
+                                  ? { relationshipA: text }
+                                  : { relationshipB: text },
+                              )
+                            }
+                            placeholder={
+                              side === "a"
+                                ? "You are your opponent's father."
+                                : "You are your opponent's son."
+                            }
+                            accessibilityLabel={`What ${PLAYER_LABELS[index]} is told about the other player`}
+                          />
+                        </View>
+                      ))}
                     </View>
-                  ))}
-                </View>
-              ) : null}
-            </Subsection>
+                  ) : null}
+                </Subsection>
 
-            <Subsection title="Framing">
-              <VariantSelect
-                value={setup.variant}
-                onChange={(variant) => patch({ variant })}
-                options={VARIANTS}
-              />
-            </Subsection>
-          </Section>
+                <Subsection title="Framing">
+                  <VariantSelect
+                    value={setup.variant}
+                    onChange={(variant) => patch({ variant })}
+                    options={VARIANTS}
+                  />
+                </Subsection>
+              </View>
+            </Section>
 
-          {/* What the puzzle's rules are: the charge, the bargain, the length. */}
-          <Section title="Rules" className="gap-2xl">
-            <Subsection title="Charge">
-              {/*
+            {/* What the puzzle's rules are: the charge, the bargain, the length. */}
+            <Section title="Rules">
+              <View className="gap-3xl">
+                <View className="gap-md">
+                  {/*
                 Locked, the charge is prose on the page rather than a field that
                 has been switched off: grey text in a sunken box reads as broken
                 twice over — an input nobody may type in, holding what looks like
@@ -232,124 +286,124 @@ export default function PrisonersDilemmaScreen() {
                 end of a heading row, three hundred pixels from the thing it acts
                 on and indistinguishable from the links that open dialogs.
               */}
-              {setup.crimeUnlocked ? (
-                <>
-                  <Textarea
-                    rows={3}
-                    maxLength={RUN_LIMITS.crime}
-                    // A character counter on a field nobody is typing in is a
-                    // number with nothing to say; it arrives with the cursor.
-                    showCount
-                    autoFocus
-                    value={setup.crime}
-                    onChangeText={(crime) => patch({ crime })}
-                    accessibilityLabel="The charge"
-                  />
-                  <View className="flex-row justify-end gap-md">
-                    {setup.crime !== DEFAULT_CRIME ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onPress={() => patch({ crime: DEFAULT_CRIME })}
-                      >
-                        <Text>Reset to default</Text>
-                      </Button>
-                    ) : null}
-                    <Button
-                      variant="link"
-                      size="sm"
-                      onPress={() => patch({ crimeUnlocked: false })}
+                  {setup.crimeUnlocked ? (
+                    <>
+                      <Textarea
+                        rows={3}
+                        maxLength={RUN_LIMITS.crime}
+                        // A character counter on a field nobody is typing in is a
+                        // number with nothing to say; it arrives with the cursor.
+                        showCount
+                        autoFocus
+                        value={setup.crime}
+                        onChangeText={(crime) => patch({ crime })}
+                        accessibilityLabel="The charge"
+                      />
+                      <View className="flex-row justify-end gap-md">
+                        {setup.crime !== DEFAULT_CRIME ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onPress={() => patch({ crime: DEFAULT_CRIME })}
+                          >
+                            <Text>Reset to default</Text>
+                          </Button>
+                        ) : null}
+                        <Button
+                          variant="link"
+                          size="sm"
+                          onPress={() => patch({ crimeUnlocked: false })}
+                        >
+                          <Text>Done</Text>
+                        </Button>
+                      </View>
+                    </>
+                  ) : (
+                    <Pressable
+                      role="button"
+                      accessibilityLabel={`The charge: ${setup.crime}. Activate to edit it.`}
+                      onPress={() => patch({ crimeUnlocked: true })}
+                      className="self-start"
                     >
-                      <Text>Done</Text>
-                    </Button>
-                  </View>
-                </>
-              ) : (
-                <Pressable
-                  role="button"
-                  accessibilityLabel={`The charge: ${setup.crime}. Activate to edit it.`}
-                  onPress={() => patch({ crimeUnlocked: true })}
-                  className="self-start"
-                >
-                  <Text className="web:hover:underline">{setup.crime}</Text>
-                </Pressable>
-              )}
-            </Subsection>
+                      <Text className="font-bodyItalic text-muted-foreground web:hover:underline">
+                        {setup.crime}
+                      </Text>
+                    </Pressable>
+                  )}
+                </View>
 
-            <Subsection title="Payoffs">
-              {/* `patch` widens cleanly: every key of the matrix is a key of the setup. */}
-              <PayoffMatrix value={setup} onChange={patch} names={names} />
-            </Subsection>
+                <Subsection title="Payoffs">
+                  {/* `patch` widens cleanly: every key of the matrix is a key of the setup. */}
+                  <PayoffMatrix value={setup} onChange={patch} names={names} />
+                </Subsection>
 
-            <Subsection title="Game length">
-              <VariantSelect
-                value={setup.iterated ? "iterated" : "single"}
-                onChange={(length) =>
-                  patch(
-                    length === "iterated"
-                      ? { iterated: true }
-                      : // A single game is one game: leaving a hidden count at
-                        // seven would run seven of them without saying so.
-                        { iterated: false, runs: RUN_LIMITS.minRuns },
-                  )
-                }
-                options={LENGTHS}
-                label="Game length"
-              />
+                <Subsection title="Game length">
+                  <VariantSelect
+                    value={setup.iterated ? "iterated" : "single"}
+                    onChange={(length) =>
+                      patch(
+                        length === "iterated"
+                          ? { iterated: true }
+                          : // A single game is one game: leaving a hidden count at
+                            // seven would run seven of them without saying so.
+                            { iterated: false, runs: RUN_LIMITS.minRuns },
+                      )
+                    }
+                    options={LENGTHS}
+                    label="Game length"
+                  />
 
-              {/*
+                  {/*
                 How long and how many are both questions the iterated game asks
                 and the single one answers for itself, so they arrive together
                 with it rather than sitting under "Single" doing nothing.
               */}
-              {/*
+                  {/*
                 Two counts, one idiom: a slider for the rounds and a stepper for
                 the games made two unrelated controls out of the same question,
                 and a slider is a poor way to say "three". Each label keeps its
                 own control immediately beside it rather than across a column of
                 air, so the pair reads as one line of arithmetic.
               */}
-              {setup.iterated ? (
-                <View className="flex-row flex-wrap items-center gap-xl">
-                  <View className="flex-row items-center gap-md">
-                    <Label>Rounds per game</Label>
-                    <CountStepper
-                      value={setup.rounds}
-                      onChange={(rounds) => patch({ rounds })}
-                      min={MIN_ITERATED_ROUNDS}
-                      max={RUN_LIMITS.maxIterations}
-                      label="Rounds per game"
-                    />
-                  </View>
+                  {setup.iterated ? (
+                    <View className="flex-row flex-wrap items-center gap-3xl">
+                      <View className="flex-row items-center gap-md">
+                        <Label>Rounds per game</Label>
+                        <CountStepper
+                          value={setup.rounds}
+                          onChange={(rounds) => patch({ rounds })}
+                          min={MIN_ITERATED_ROUNDS}
+                          max={RUN_LIMITS.maxIterations}
+                          label="Rounds per game"
+                        />
+                      </View>
 
-                  <View className="flex-row items-center gap-md">
-                    <Label>Games</Label>
-                    <CountStepper
-                      value={setup.runs}
-                      onChange={(runs) => patch({ runs })}
-                      min={RUN_LIMITS.minRuns}
-                      max={RUN_LIMITS.maxRuns}
-                      label="Games"
-                    />
-                  </View>
-                </View>
-              ) : null}
-            </Subsection>
-          </Section>
+                      <View className="flex-row items-center gap-md">
+                        <Label>Games</Label>
+                        <CountStepper
+                          value={setup.runs}
+                          onChange={(runs) => patch({ runs })}
+                          min={RUN_LIMITS.minRuns}
+                          max={RUN_LIMITS.maxRuns}
+                          label="Games"
+                        />
+                      </View>
+                    </View>
+                  ) : null}
+                </Subsection>
+              </View>
+            </Section>
+          </View>
         </View>
 
         {/*
-          The rail stretches to the height of the setup column so its contents can
-          stick: on the web the run controls stay in view however far down the
-          payoff matrix you are. A hairline down its inside edge is what makes it
-          a rail rather than a column of text that happens to sit on the right,
-          and its heading takes the same rule-and-air as "Setup" so the two
-          columns start on one line. The rule is drawn on the contents rather than
-          on the full-height column: a line that runs a thousand pixels past the
-          last thing in the rail is a divider between a page and nothing.
+          The rail carries the run: the button, what it will cost, the words it
+          will send, and — once there is a run — the answers as they come in. It
+          sticks on the web so the button stays in view however far down the
+          payoff matrix you are.
         */}
         <View className="w-full wide:w-inspector wide:self-stretch">
-          <View className="gap-xl wide:border-l-hairline wide:border-border wide:pl-xl web:sticky web:top-xl">
+          <View className="gap-2xl wide:border-l-hairline wide:border-border wide:pl-xl web:sticky web:top-xl">
             <Section title="Run">
               {/*
                 The screen's one filled button, what stops it directly underneath,
@@ -361,7 +415,9 @@ export default function PrisonersDilemmaScreen() {
                   disabled={blocked !== null || starter.starting}
                   onPress={() => void startRun()}
                 >
-                  <Text>{starter.starting ? "Starting…" : "Put them in the rooms"}</Text>
+                  <Text>
+                    {starter.starting ? "Starting…" : "Put them in the rooms"}
+                  </Text>
                 </Button>
                 <Text variant="muted">
                   {blocked ??
@@ -370,22 +426,37 @@ export default function PrisonersDilemmaScreen() {
                       "round",
                     )} × 2 players.`}
                 </Text>
-                <Button variant="link" size="sm" onPress={() => void prompt.show()}>
+                <Button
+                  variant="link"
+                  size="sm"
+                  onPress={() => void prompt.show()}
+                >
                   <Text>View prompt</Text>
                 </Button>
               </View>
 
               <RunProgress run={run ?? null} />
               {starter.error ? (
-                <Text className="text-destructive">{starter.error.message}</Text>
+                <Text className="text-destructive">
+                  {starter.error.message}
+                </Text>
               ) : null}
 
               {/*
-                Until a round exists there is nothing to head: a second heading
-                with a rule and a paragraph under it is the emptiness twice over.
-                The two rows that are waiting say it instead.
+                Before a run there is nothing for a table to be waiting for: two
+                named rows with an em dash at the end of each is a promise the
+                screen has not been asked to keep yet, and it sat there, unmoving,
+                every time the page was opened. One line says the same thing and
+                takes it back the moment the run starts, when the same two rows
+                become a table with something to report.
               */}
-              {decided ? null : <PendingAnswers players={players} />}
+              {decided ? null : started ? (
+                <PendingAnswers players={players} />
+              ) : (
+                <Text variant="muted">
+                  Choices appear here once the run starts.
+                </Text>
+              )}
             </Section>
 
             {decided ? (

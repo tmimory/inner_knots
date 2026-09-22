@@ -1,10 +1,20 @@
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 
-import { Badge, Button, Progress, Text } from "@/components/ui";
+import {
+  Badge,
+  Button,
+  Progress,
+  Text,
+  type BadgeVariant,
+} from "@/components/ui";
 import { cancelRun } from "@/lib/client/runs";
 import { describeApiError } from "@/lib/client/errors";
-import { isTerminalRunStatus, type Run, type RunStatus } from "@/lib/domain/run";
+import {
+  isTerminalRunStatus,
+  type Run,
+  type RunStatus,
+} from "@/lib/domain/run";
 import { formatElapsed } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { durations } from "@/theme";
@@ -12,13 +22,20 @@ import { durations } from "@/theme";
 /** How often the elapsed clock redraws while a run is going. */
 const TICK_MS = durations.slow * 3;
 
-type BadgeVariant = "muted" | "accent" | "secondary" | "destructive" | "outline";
-
-/** How each status reads at a glance. */
-const STATUS_BADGES: Record<RunStatus, { variant: BadgeVariant; label: string }> = {
+/**
+ * How each status reads at a glance.
+ *
+ * Finished takes the moss `success` ink rather than the verdigris `secondary`: a
+ * status is not a brand tone, and the teal read as one more colour in the palette
+ * instead of as "this one went well".
+ */
+const STATUS_BADGES: Record<
+  RunStatus,
+  { variant: BadgeVariant; label: string }
+> = {
   queued: { variant: "muted", label: "queued" },
   running: { variant: "accent", label: "running" },
-  finished: { variant: "secondary", label: "finished" },
+  finished: { variant: "success", label: "finished" },
   failed: { variant: "destructive", label: "failed" },
   cancelled: { variant: "outline", label: "cancelled" },
 };
@@ -36,7 +53,8 @@ export type RunProgressProps = {
 
 /** A clock that only ticks while it is being watched. */
 function useElapsed(run: Run | null | undefined): string {
-  const running = run !== undefined && run !== null && !isTerminalRunStatus(run.status);
+  const running =
+    run !== undefined && run !== null && !isTerminalRunStatus(run.status);
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -95,13 +113,18 @@ export function RunProgress({ run, idleMessage, className }: RunProgressProps) {
         <Badge variant={badge.variant}>
           <Text>{badge.label}</Text>
         </Badge>
-        <Text variant="small" className="font-mono">
+        <Text variant="data" className="text-sm">
           {`${done} / ${total}`}
         </Text>
         <Text variant="muted">{elapsed}</Text>
         <View className="flex-1" />
         {running ? (
-          <Button variant="outline" size="sm" disabled={cancelling} onPress={() => void cancel()}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={cancelling}
+            onPress={() => void cancel()}
+          >
             <Text>{cancelling ? "Cancelling…" : "Cancel"}</Text>
           </Button>
         ) : null}
@@ -110,7 +133,9 @@ export function RunProgress({ run, idleMessage, className }: RunProgressProps) {
       <Progress
         value={done}
         max={Math.max(1, total)}
-        indicatorClassName={run.status === "failed" ? "bg-destructive" : "bg-primary"}
+        indicatorClassName={
+          run.status === "failed" ? "bg-destructive" : "bg-primary"
+        }
         accessibilityLabel={`${done} of ${total} decisions`}
       />
 

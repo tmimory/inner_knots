@@ -21,18 +21,15 @@ import {
   ReactFlowProvider,
   useNodesInitialized,
   useReactFlow,
-  useStore,
 } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, type CSSProperties } from "react";
 import { View } from "react-native";
 
-import type { Adventure } from "@/lib/domain/adventure";
-import { ADVENTURE_LAYOUT, adventureNodeHeight } from "@/lib/puzzles/adventure/layout";
 import { useTheme } from "@/theme";
 
 import { useFlowChromeStyle } from "./chrome-style.web";
 import { adventureNodeTypes } from "./decision-node.web";
-import { canvasStyle, miniMapStyle, zoomFloor } from "./flow-style";
+import { canvasStyle, miniMapStyle } from "./flow-style";
 import type { AdventureCanvasProps } from "./types";
 import {
   decorationFromSummary,
@@ -48,24 +45,20 @@ const ZOOM = { min: 0.15, max: 2 } as const;
  * How the whole graph is framed when the canvas opens, and every time the reader
  * asks for a fit.
  *
- * `padding` is the share of the viewport left empty on each side, so the graph
- * lands on about three quarters of the canvas in each direction — enough air to
- * read as a framed drawing, not so much that the cards become thumbnails.
- * `maxZoom` of 1 is the more important half: a fitted graph is the graph as it is
- * actually read, and a card blown up past its own type sizes reads as a mistake.
- */
-const FIT = { padding: 0.12, maxZoom: 1 } as const;
-
-/**
- * The smallest zoom the canvas will settle at.
+ * `padding` is the margin left round the tree, as a share of its own size: a tenth
+ * is enough for the drawing to sit in the canvas rather than against its edges,
+ * and no more, because every pixel of margin is a pixel off the zoom the cards are
+ * read at. `maxZoom` of 1 is the other half: a card blown up past its own type
+ * sizes reads as a mistake.
  *
- * A fit is only worth having while what it fits is still readable. The smallest
- * type on a card is the metadata size, so the floor is whatever keeps that at or
- * above the type floor of the app — below it the cards stop being cards and the
- * graph becomes a diagram of itself. When the whole graph will not fit at that
- * zoom, the canvas frames the start of the adventure instead and lets the reader
- * pan: a legible corner of the tree beats an illegible whole of it.
+ * There is no floor. The canvas used to refuse to zoom out past the point where a
+ * card's smallest line hit the app's type floor, and then re-frame on the opening
+ * card — which is how a three-card tree came to be drawn with its third card cut
+ * off by the inspector while the grid above and below it stood empty. A graph you
+ * cannot see all of is not a graph, so the whole tree is fitted, and legibility is
+ * bought where it is actually paid for: in the size the cards are drawn at.
  */
+const FIT = { padding: 0.1, maxZoom: 1 } as const;
 
 /**
  * How many cards a graph needs before the mini-map earns its corner. Below this
@@ -74,33 +67,10 @@ const FIT = { padding: 0.12, maxZoom: 1 } as const;
  */
 const MINIMAP_FROM_NODES = 6;
 
-/** How close to the floor a fitted zoom counts as having hit it. */
-const CLAMPED = 0.001;
-
-/** The rectangle the cards occupy, in graph coordinates. */
-function graphBounds(
-  adventure: Adventure,
-): { left: number; top: number; width: number; height: number } | undefined {
-  if (adventure.nodes.length === 0) return undefined;
-
-  const left = Math.min(...adventure.nodes.map((node) => node.position.x));
-  const right = Math.max(
-    ...adventure.nodes.map((node) => node.position.x + ADVENTURE_LAYOUT.nodeWidth),
-  );
-  const top = Math.min(...adventure.nodes.map((node) => node.position.y));
-  const bottom = Math.max(
-    ...adventure.nodes.map((node) => node.position.y + adventureNodeHeight(node)),
-  );
-
-  return { left, top, width: Math.max(1, right - left), height: Math.max(1, bottom - top) };
-}
-
 function Canvas(props: AdventureCanvasProps) {
   const theme = useTheme();
-  const { fitView, getZoom, setViewport } = useReactFlow();
+  const { fitView } = useReactFlow();
   const nodesReady = useNodesInitialized();
-  const paneHeight = useStore((state) => state.height);
-  const floor = zoomFloor(theme);
 
   // React Flow's own chrome is CSS, not props: this puts the themed sheet in.
   useFlowChromeStyle(theme);
@@ -123,37 +93,16 @@ function Canvas(props: AdventureCanvasProps) {
   });
 
   /**
-   * Frames the graph, and refuses to go below the floor to do it.
+   * Frames the whole graph, centred, at whatever zoom that takes.
    *
-   * `fitView` is asked for the whole tree with `minZoom`, so a graph that fits
-   * legibly simply fits. When it does not, the fit comes back clamped at the
-   * floor and centred on the middle of the tree, which for a left-to-right
-   * adventure is the middle of nowhere: the first card is half off one edge and
-   * the last half off the other. So the canvas re-frames it the way the graph is
-   * read — the opening card against the left margin, the tree centred on the
-   * height, and the branches running off the right edge for the reader to follow.
+   * One call and no second guess: `fitView` centres the tree's own bounding box in
+   * the pane, which is the framing a drawing wants, and `minZoom` lets it go as
+   * far out as the canvas allows rather than stopping half way and leaving the
+   * last branch outside the frame.
    */
-  const { adventure } = props;
   const frame = useCallback(async () => {
-    const duration = theme.durations.normal;
-    await fitView({ ...FIT, minZoom: floor, duration });
-
-    // "Did the fit come back clamped?", asked of a float: the fit and the floor
-    // are computed by different arithmetic and land a rounding apart.
-    if (getZoom() - floor > CLAMPED) return;
-    const bounds = graphBounds(adventure);
-    if (bounds === undefined) return;
-
-    const margin = theme.spacing["2xl"];
-    await setViewport(
-      {
-        zoom: floor,
-        x: margin - bounds.left * floor,
-        y: Math.max(margin, (paneHeight - bounds.height * floor) / 2) - bounds.top * floor,
-      },
-      { duration },
-    );
-  }, [adventure, fitView, floor, getZoom, paneHeight, setViewport, theme]);
+    await fitView({ ...FIT, minZoom: ZOOM.min, duration: theme.durations.normal });
+  }, [fitView, theme]);
 
   // The opening frame, once React Flow has measured the cards: before that a fit
   // is computed against zero-sized nodes and lands wherever.

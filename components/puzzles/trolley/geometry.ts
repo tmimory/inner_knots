@@ -86,50 +86,18 @@ export const TROLLEY = {
 } as const;
 
 /**
- * The catalogue grid, in px.
+ * The catalogue, as a count rather than a grid.
  *
- * The tiles are text, laid into a fixed grid of equal columns: tiles that sized
- * to their own labels wrapped into a ragged paragraph of words, and the glyph
- * above each one repeated four drawings across a row without telling the eye
- * anything the word had not already said. A glyph is what an object earns by
- * standing on a track; in the catalogue a name is the whole of it.
+ * The tiles used to be laid into a fixed grid of equal columns, which made the
+ * catalogue a centred table of bare words sitting under a left-aligned board —
+ * two different objects for one gesture. They are the same chips that stand on a
+ * rail now, wrapping from the spine like words, so what the palette measures is
+ * how many of them it shows, not how wide a cell is.
  */
 export const PALETTE = {
-  /** One cell: two lines of label and the air around them. */
-  tileHeight: 44,
-  /**
-   * The label's own box: two lines of the caption step, reserved whether the
-   * label needs one line or two, so every cell in a row is the same height.
-   */
-  labelHeight: 36,
-  /** How many columns the grid is cut into where there is room for them all. */
-  columns: 9,
-  /** Narrower than this a column stops holding a word, so the grid drops one. */
-  minColumnWidth: 88,
-  /** How many rows of tiles the palette shows before "Show more" is pressed. */
-  visibleRows: 2,
+  /** How many chips the palette offers before "Show more" is pressed. */
+  pageSize: 18,
 } as const;
-
-/** How many equal columns fit across `width`, never more than the grid's own. */
-export function paletteColumns(width: number): number {
-  if (width <= 0) return PALETTE.columns;
-  const fits = Math.floor(width / PALETTE.minColumnWidth);
-  return Math.max(2, Math.min(PALETTE.columns, fits));
-}
-
-/**
- * The width of one cell in a `columns`-wide grid `width` across, with `gap`
- * between neighbours. Returned in px so every cell is drawn to the same measure
- * rather than to its own label.
- */
-export function paletteCellWidth(width: number, columns: number, gap: number): number {
-  return Math.max(PALETTE.minColumnWidth, (width - gap * (columns - 1)) / columns);
-}
-
-/** How many tiles fill `rows` rows of a `columns`-wide grid. */
-export function paletteBudget(columns: number, rows: number): number {
-  return Math.max(1, columns) * Math.max(1, rows);
-}
 
 export type TrackId = 1 | 2;
 

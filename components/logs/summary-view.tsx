@@ -133,6 +133,15 @@ function withoutEmptyColumns(
   };
 }
 
+/**
+ * What is said in place of the columns a provider did not fill.
+ *
+ * Every column that can be dropped is a mean weight, so one sentence covers all
+ * of them, and it says what was missing rather than naming the symbols the table
+ * would have used for it.
+ */
+const OMITTED_NOTE = "Mean scores per track were not reported by this provider.";
+
 /** A label column and a set of right-aligned numeric columns. */
 function Table({ headers, rows }: { headers: string[]; rows: TableRow[] }) {
   const table = withoutEmptyColumns(headers, rows);
@@ -158,9 +167,11 @@ function Table({ headers, rows }: { headers: string[]; rows: TableRow[] }) {
           ))}
         </View>
       ))}
-      {table.omitted.length > 0 ? (
-        <Text variant="meta">{`${table.omitted.join(" and ")}: not reported by this run's provider.`}</Text>
-      ) : null}
+      {/* What is missing, in a sentence rather than in the column headers it was
+          missing from. "μ T1 and μ T2: not reported by this run's provider" asked
+          the reader to remember what two Greek abbreviations stood for in a table
+          that no longer showed either of them. */}
+      {table.omitted.length > 0 ? <Text variant="meta">{OMITTED_NOTE}</Text> : null}
     </View>
   );
 }

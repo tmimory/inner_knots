@@ -1,7 +1,11 @@
 import { Pressable, View } from "react-native";
 
 import { Text } from "@/components/ui/text";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 export type SegmentedOption<T extends string> = {
@@ -27,11 +31,13 @@ export type SegmentedProps<T extends string> = {
  * screen than a select, and every alternative visible at once, which is what the
  * output-mode, steering-mode and filter choices want.
  *
- * The chosen segment wears the app's one selection language — a tan `muted` fill
+ * The chosen segment wears the app's one selection language — the `selection` tan
  * and the label in the rubric red — the same treatment a selected {@link Badge}
- * and a chosen variant row take. Fill and border together were two marks for one
- * state, and the red hairline made a filter read as an error; the fill alone says
- * "on" and lets the page's primary button stay the loudest thing on screen.
+ * takes. Fill and border together were two marks for one state, and the red
+ * hairline made a filter read as an error; the fill alone says "on" and lets the
+ * page's primary button stay the loudest thing on screen. The fill is a step
+ * deeper than `muted` on purpose: the track is the cream field fill every input on
+ * the same line uses, and at `muted` the lit segment was too close to it to find.
  *
  * A disabled segment stays hoverable on purpose — the tooltip explaining why it
  * cannot be chosen is the whole point of still drawing it.
@@ -72,7 +78,9 @@ export function Segmented<T extends string>({
             className={cn(
               "items-center justify-center rounded-sm transition-colors duration-fast",
               size === "sm" ? "h-control-sm px-md" : "h-control-sm px-lg",
-              selected ? "bg-muted" : "bg-transparent web:hover:bg-card",
+              selected
+                ? "bg-selection"
+                : "bg-transparent web:hover:bg-muted/subtle",
               blocked && "opacity-disabled",
             )}
           >

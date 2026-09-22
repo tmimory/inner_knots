@@ -3,14 +3,7 @@ import { Pressable, View } from "react-native";
 
 import { CharacterForm, characterTitle, LockGlyph } from "@/components/characters";
 import { PageHeader, Screen } from "@/components/shell";
-import {
-  Button,
-  Text,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  useToast,
-} from "@/components/ui";
+import { Button, Text, Tooltip, TooltipContent, TooltipTrigger, useToast } from "@/components/ui";
 import { useCharacters } from "@/lib/client/use-characters";
 import type { CharacterInput } from "@/lib/domain";
 
@@ -30,7 +23,14 @@ function IdentifierSlug({ id }: { id: string }) {
       <Text className="font-mono text-sm text-muted-foreground">{id}</Text>
       <Tooltip delayDuration={0}>
         <TooltipTrigger asChild>
-          <Pressable accessibilityLabel="Why the identifier cannot be changed" className="p-xxs">
+          {/*
+            Held back to the weight of a mark rather than a control: at full ink a
+            padlock beside a line of text reads as a button that will unlock it.
+          */}
+          <Pressable
+            accessibilityLabel="Why the identifier cannot be changed"
+            className="p-xxs opacity-subtle"
+          >
             <LockGlyph />
           </Pressable>
         </TooltipTrigger>

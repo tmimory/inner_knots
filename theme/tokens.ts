@@ -42,6 +42,15 @@ export type ThemeColors = {
   popoverForeground: string;
   /** Recessed surfaces and disabled fills. */
   muted: string;
+  /**
+   * The app's one "this is chosen" fill: a tan one step deeper than `muted`.
+   *
+   * A selected segment, a turned-on chip and a picked variant all take it. It has
+   * to be visibly darker than the surface it sits in — at `muted` on a cream track
+   * the lit segment read as the same tan as the track and three reviewers could
+   * not tell which one was on — while staying quieter than the primary button.
+   */
+  selection: string;
   /** Secondary ink: descriptions, metadata, captions. */
   mutedForeground: string;
   /** Tertiary ink: placeholders, marginalia, the quietest line on a screen. */
@@ -58,6 +67,16 @@ export type ThemeColors = {
   /** Oxblood: destructive actions. */
   destructive: string;
   destructiveForeground: string;
+  /**
+   * Moss: a run that finished, a check that passed.
+   *
+   * Status needs its own ink. The verdigris `secondary` was standing in for it,
+   * and a teal dot beside an amber one read as two unrelated brand colours rather
+   * than as "done" and "stopped"; moss is the parchment family's own green, warm
+   * enough to sit on the page and far enough from the rubric red to be read at
+   * dot size. Amber (`accent`) carries failed and cancelled.
+   */
+  success: string;
   /** Hairlines and rules. */
   border: string;
   /** Form field fills. */
@@ -79,6 +98,7 @@ const scroll: ThemeColors = {
   popover: "#FAF3E0",
   popoverForeground: "#2A1F14",
   muted: "#E4D5AF",
+  selection: "#D7C49B",
   mutedForeground: "#4E3E29",
   subtleForeground: "#7A6748",
   primary: "#8B2E1F",
@@ -89,6 +109,7 @@ const scroll: ThemeColors = {
   accentForeground: "#2A1F14",
   destructive: "#6E1B14",
   destructiveForeground: "#F5EBD2",
+  success: "#456034",
   border: "#C9B68C",
   input: "#FDF8EB",
   ring: "#A8862B",
@@ -105,6 +126,7 @@ const nightScroll: ThemeColors = {
   popover: "#252019",
   popoverForeground: "#E8DCC0",
   muted: "#322B21",
+  selection: "#3B3327",
   mutedForeground: "#C2B393",
   subtleForeground: "#948871",
   primary: "#D2705A",
@@ -115,6 +137,7 @@ const nightScroll: ThemeColors = {
   accentForeground: "#14110D",
   destructive: "#E2725B",
   destructiveForeground: "#14110D",
+  success: "#8FAE6E",
   border: "#443B2C",
   input: "#2C261D",
   ring: "#D4AC4A",
@@ -122,7 +145,10 @@ const nightScroll: ThemeColors = {
   track2: "#D9A059",
 };
 
-export const themeColors: Record<ThemeName, ThemeColors> = { scroll, nightScroll };
+export const themeColors: Record<ThemeName, ThemeColors> = {
+  scroll,
+  nightScroll,
+};
 
 /** Which theme each color scheme resolves to. */
 export const schemeThemes = {
@@ -155,14 +181,28 @@ export const fonts = {
   mono: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
 } as const;
 
-/** Web-only fallback stacks appended after the loaded family name. */
-export const fontFallbacks = {
+/**
+ * Web-only fallback stacks appended after the loaded family name.
+ *
+ * There is one entry per {@link fonts} key, and the type below makes that a
+ * compile error rather than a rendering one: the CSS generator walks this record
+ * to emit `--font-*` and the Tailwind `fontFamily` map, so a family with no
+ * fallback stack used to get no `font-*` class at all. `font-bodySemiBold` then
+ * fell through to the browser's default sans, and half the weights the app asks
+ * for — every bold row title, every italic aside — silently stopped being serif.
+ */
+export const fontFallbacks: Record<keyof typeof fonts, string> = {
   display: "Cinzel, Georgia, 'Times New Roman', serif",
+  displayBold: "Cinzel, Georgia, 'Times New Roman', serif",
   body: "'Cormorant Garamond', Garamond, Georgia, serif",
   bodyMedium: "'Cormorant Garamond', Garamond, Georgia, serif",
+  bodySemiBold: "'Cormorant Garamond', Garamond, Georgia, serif",
+  bodyBold: "'Cormorant Garamond', Garamond, Georgia, serif",
+  bodyItalic: "'Cormorant Garamond', Garamond, Georgia, serif",
   greek: "'EB Garamond', Garamond, Georgia, serif",
+  greekBold: "'EB Garamond', Garamond, Georgia, serif",
   mono: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
-} as const;
+};
 
 /** Spacing scale, in px. Components use the named steps (`p-md`, `gap-lg`). */
 export const spacing = {
@@ -364,7 +404,12 @@ export const lineHeights = {
  * The Tailwind sizing scale: spacing steps, control heights and hairline widths all
  * answer `h-*` / `w-*` / `p-*`, so they share one namespace.
  */
-export const sizes = { ...spacing, ...controlSizes, ...avatarSizes, ...borderWidths } as const;
+export const sizes = {
+  ...spacing,
+  ...controlSizes,
+  ...avatarSizes,
+  ...borderWidths,
+} as const;
 
 export type TokenGroup = {
   /** CSS variable prefix: `--<prefix>-<key>`. */

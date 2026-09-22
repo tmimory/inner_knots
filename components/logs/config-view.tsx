@@ -7,15 +7,24 @@ import type { ObjectEntry } from "@/lib/client/use-runs";
 
 import { Field, FieldText } from "./field";
 
-/** One thing on a track: its glyph and the label the catalogue gives it. */
+/**
+ * One thing on a track: its glyph and the label the catalogue gives it.
+ *
+ * No fill and no border. What is on a track is a fact about a run that has
+ * already happened, and a bordered, tinted box beside a real button is a control
+ * that does nothing when you press it — the reader finds that out by pressing it.
+ * So the track reads as what it is: a list, in the page's own ink, with the
+ * glyphs that name its members.
+ *
+ * Every glyph keeps the same square, whatever it draws: a cow fills its box and a
+ * framed painting does not, so unboxed they set the row at three different
+ * heights and the widest-stroked one read as picked out.
+ */
 function TrackItem({ id, objects }: { id: string; objects: ReadonlyMap<string, ObjectEntry> }) {
   const entry = objects.get(id);
   return (
-    <View className="flex-row items-center gap-xs rounded-md border-hairline border-border bg-muted px-sm py-xxs">
-      {/* Every glyph in the same square, whatever it draws: a cow fills its box
-          and a framed painting does not, so unboxed they set the chips at three
-          different heights and the widest-stroked one read as selected. */}
-      <View className="h-xl w-xl items-center justify-center">
+    <View className="flex-row items-center gap-xs">
+      <View className="h-lg w-lg items-center justify-center">
         <ObjectGlyph icon={entry?.icon ?? "question"} />
       </View>
       <Text variant="small">{entry?.label ?? id}</Text>
@@ -37,9 +46,12 @@ function Track({
       {ids.length === 0 ? (
         <Text variant="small">nothing at all</Text>
       ) : (
-        <View className="flex-row flex-wrap items-center gap-xs">
+        <View className="flex-row flex-wrap items-center gap-sm">
           {ids.map((id, index) => (
-            <TrackItem key={`${id}-${index}`} id={id} objects={objects} />
+            <View key={`${id}-${index}`} className="flex-row items-center gap-sm">
+              {index === 0 ? null : <Text variant="muted">·</Text>}
+              <TrackItem id={id} objects={objects} />
+            </View>
           ))}
         </View>
       )}
@@ -105,9 +117,10 @@ export type ConfigViewProps = {
 export function ConfigView({ config, objects, adventureName }: ConfigViewProps) {
   return (
     <View className="gap-lg">
+      {/* The framing is said once, in the run's own metadata row above this
+          block, so it is not said again here. */}
       {config.puzzle === "trolley" ? (
         <>
-          <FieldText label="Variant" value={config.variant} />
           <Track label="Track 1" ids={config.track1} objects={objects} />
           <Track label="Track 2" ids={config.track2} objects={objects} />
         </>
@@ -116,7 +129,6 @@ export function ConfigView({ config, objects, adventureName }: ConfigViewProps) 
       {config.puzzle === "prisoners-dilemma" ? (
         <>
           <View className="flex-row flex-wrap gap-xl">
-            <FieldText label="Variant" value={config.variant} />
             <FieldText label="Games" value={String(config.runs)} />
             <FieldText label="Rounds per game" value={String(config.iterations)} />
             <FieldText

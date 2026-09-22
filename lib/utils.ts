@@ -1,7 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { extendTailwindMerge } from "tailwind-merge";
 
-import { borderWidths, layout } from "@/theme/tokens";
+import { borderWidths, layout, sizes } from "@/theme/tokens";
 
 /**
  * The theme's border widths are named (`hairline`, `thick`) rather than numeric, so
@@ -17,9 +17,65 @@ const BORDER_WIDTHS = Object.keys(borderWidths);
  */
 const LAYOUT_MEASURES = Object.keys(layout);
 
+/**
+ * And the sizing scale itself — the spacing steps, the control heights, the avatar
+ * diameters and the hairline widths that all answer `p-*` / `gap-*` / `h-*`.
+ *
+ * This is the one that bit hardest. Stock tailwind-merge only knows numeric spacing,
+ * so `gap-3xl` and `gap-lg` looked like two unrelated classes: a screen passing
+ * `className="gap-3xl"` into a component that already sets `gap-lg` kept both, and
+ * the generated stylesheet's own order decided the winner — the override silently
+ * did nothing and two screens wrote their layout by hand to get around it. The same
+ * fault swallowed `h-control-sm` next to a Button's `h-control-icon`.
+ */
+const SIZING_STEPS = Object.keys(sizes);
+
+/**
+ * The utilities that draw from the sizing scale, as `<class prefix>: <group id>`.
+ *
+ * Every entry's group id is its own prefix, which is how tailwind-merge names these
+ * groups, so the table is the prefix list and the extension is generated from it
+ * rather than written out twenty times.
+ */
+const SIZING_PREFIXES = [
+  "gap",
+  "gap-x",
+  "gap-y",
+  "p",
+  "px",
+  "py",
+  "pt",
+  "pr",
+  "pb",
+  "pl",
+  "m",
+  "mx",
+  "my",
+  "mt",
+  "mr",
+  "mb",
+  "ml",
+  "space-x",
+  "space-y",
+  "inset",
+  "inset-x",
+  "inset-y",
+  "top",
+  "right",
+  "bottom",
+  "left",
+  "size",
+  "h",
+] as const;
+
+const sizingGroups = Object.fromEntries(
+  SIZING_PREFIXES.map((prefix) => [prefix, [{ [prefix]: SIZING_STEPS }]]),
+);
+
 const twMerge = extendTailwindMerge({
   extend: {
     classGroups: {
+      ...sizingGroups,
       "border-w": [{ border: BORDER_WIDTHS }],
       "border-w-x": [{ "border-x": BORDER_WIDTHS }],
       "border-w-y": [{ "border-y": BORDER_WIDTHS }],
@@ -32,7 +88,9 @@ const twMerge = extendTailwindMerge({
       // focus ring in the app came out at the stock width.
       "ring-w": [{ ring: BORDER_WIDTHS }],
       "outline-w": [{ outline: BORDER_WIDTHS }],
-      w: [{ w: LAYOUT_MEASURES }],
+      // A width can be either a sizing step (`w-lg`, `w-avatar-md`) or one of the
+      // layout measures; the min/max widths are generated from the measures alone.
+      w: [{ w: [...SIZING_STEPS, ...LAYOUT_MEASURES] }],
       "max-w": [{ "max-w": LAYOUT_MEASURES }],
       "min-w": [{ "min-w": LAYOUT_MEASURES }],
     },

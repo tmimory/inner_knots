@@ -84,11 +84,13 @@ export default function CharactersScreen() {
       ) : null}
 
       {characters.length > 0 ? (
-        // Search, facet and count are one toolbar: the segmented track carries the
-        // search box's hairline and height, so the row reads as one strip of chrome
-        // at one border weight rather than a saturated field beside a faint box.
+        // Two clusters, one line: what you type on the left at a fixed measure, and
+        // the one facet you cannot type pushed to the column's right edge. Stretched
+        // to fill the row, the search field grew to 420px and left the segments
+        // crammed against it with nothing in between; parked at the card measure,
+        // the gap between the two is the toolbar's own structure.
         <View className="flex-row flex-wrap items-center gap-lg">
-          <View className="min-w-popover flex-1">
+          <View className="w-card">
             <Input
               className="pl-2xl"
               value={search}
@@ -104,38 +106,44 @@ export default function CharactersScreen() {
               <SearchGlyph />
             </View>
           </View>
-          <FilterSegments
-            label="Steering"
-            value={steering}
-            onChange={setSteering}
-            options={steeringOptions}
-          />
           {narrowed ? (
             <Button variant="quiet-link" onPress={clearFilters}>
               <Text>Clear</Text>
             </Button>
           ) : null}
-          {/*
-            How long the roster is, at the end of the row that narrows it — always,
-            so the line does not appear and vanish as you type, and in the lining
-            figures the app counts in. Inside the search field it was a number
-            sitting on top of the text you were typing.
-          */}
-          <Text variant="meta" className="tabular">
-            {narrowed
-              ? `${visible.length} of ${characters.length}`
-              : pluralize(characters.length, "character")}
-          </Text>
+          <FilterSegments
+            className="ml-auto"
+            label="Steering"
+            value={steering}
+            onChange={setSteering}
+            options={steeringOptions}
+          />
         </View>
       ) : null}
 
       {visible.length > 0 ? (
         // A ruled page, not a stack of panels: the list opens on a hairline and
-        // every row closes with one.
-        <View className="border-t-hairline border-border">
-          {visible.map((character) => (
-            <CharacterCard key={character.id} character={character} />
-          ))}
+        // every row closes with one — and the last of those rules is what the
+        // count is written under.
+        <View>
+          <View className="border-t-hairline border-border">
+            {visible.map((character) => (
+              <CharacterCard key={character.id} character={character} />
+            ))}
+          </View>
+          {/*
+            How long the roster is, under the list it measures rather than in the
+            row that narrows it: a count is the sum of what you have just read, not
+            a control. In the lining figures the app counts in, and at the list's
+            right edge where a total belongs.
+          */}
+          <View className="items-end pt-sm">
+            <Text variant="meta" className="tabular">
+              {narrowed
+                ? `${visible.length} of ${pluralize(characters.length, "character")}`
+                : pluralize(characters.length, "character")}
+            </Text>
+          </View>
         </View>
       ) : loading ? null : narrowed ? (
         <EmptyState
