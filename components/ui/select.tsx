@@ -74,7 +74,9 @@ export function SelectItem({
         label={label}
         value={value}
         className={cn(
-          "h-control-sm flex-row items-center justify-between rounded-sm px-md",
+          // On web the item is a plain div, not a View, so it needs display:flex spelled out
+          // or the row direction never applies and the indicator drops below the text.
+          "flex h-control-sm flex-row items-center justify-between rounded-sm px-md",
           "active:bg-muted web:hover:bg-muted",
           className,
         )}
