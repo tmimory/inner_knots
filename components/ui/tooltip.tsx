@@ -2,6 +2,7 @@ import * as TooltipPrimitive from "@rn-primitives/tooltip";
 import type { ComponentProps } from "react";
 
 import { overlayStyle, type PortalledProps } from "@/components/ui/overlay";
+import { POPOVER_SURFACE_CLASSES } from "@/components/ui/surface";
 import { TextClassContext } from "@/components/ui/text";
 import { cn } from "@/lib/utils";
 import { spacing } from "@/theme";
@@ -23,7 +24,8 @@ export function TooltipContent({
           <TooltipPrimitive.Content
             sideOffset={sideOffset}
             className={cn(
-              "z-tooltip max-w-menu rounded-md border-hairline border-border bg-popover px-md py-sm shadow-ink-raised",
+              POPOVER_SURFACE_CLASSES,
+              "z-tooltip max-w-menu rounded-md px-md py-sm shadow-ink-raised",
               className,
             )}
             {...props}

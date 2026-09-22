@@ -3,6 +3,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { View } from "react-native";
 
 import { Chevron } from "@/components/ui/chevron";
+import { POPOVER_SURFACE_CLASSES } from "@/components/ui/surface";
 import { overlayStyle, type PortalledProps } from "@/components/ui/overlay";
 import { TextClassContext } from "@/components/ui/text";
 import { cn } from "@/lib/utils";
@@ -50,7 +51,8 @@ export function SelectContent({
       <SelectPrimitive.Overlay style={overlayStyle}>
         <SelectPrimitive.Content
           className={cn(
-            "z-overlay min-w-popover rounded-md border-hairline border-border bg-popover p-xxs shadow-ink-lifted",
+            POPOVER_SURFACE_CLASSES,
+            "z-overlay min-w-popover rounded-md p-xxs shadow-ink-lifted",
             className,
           )}
           {...props}

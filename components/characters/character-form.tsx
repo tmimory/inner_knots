@@ -6,6 +6,7 @@ import { SplitPane } from "@/components/shell";
 import {
   Button,
   ConfirmDialog,
+  FieldCounter,
   Input,
   Segmented,
   Select,
@@ -18,7 +19,6 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  shouldShowCounter,
   useToast,
   type SegmentedOption,
 } from "@/components/ui";
@@ -63,34 +63,6 @@ const NO_EFFORT = "default";
 function sentenceCase(text: string | null): string | null {
   if (text === null || text === "") return text;
   return text.charAt(0).toUpperCase() + text.slice(1);
-}
-
-/**
- * How full a capped field is, for the end of its label row — once the number is
- * worth knowing.
- *
- * A limit nobody is near is not information: eight counters reading "0 / 500" and
- * "3 / 10" down a form are eight small numbers competing with the labels they sit
- * beside, for a constraint that has not come up. It appears while the field is
- * being edited, and stays visible from four fifths of the way to the cap, which is
- * where the limit stops being trivia and starts being a warning.
- *
- * On the label row rather than under the control: a counter hung below a field is
- * the smallest type on the page, alone on a line of its own, and it pushes the
- * next label down by a row it did not need. Set in lining, fixed-width figures so
- * the number neither drops below the line nor shifts as it counts.
- */
-function Counter({
-  value,
-  max,
-  focused = false,
-}: {
-  value: number;
-  max: number;
-  focused?: boolean;
-}) {
-  if (!shouldShowCounter(value, max, focused)) return null;
-  return <Text variant="subtle" className="tabular">{`${value} / ${max}`}</Text>;
 }
 
 type Draft = {
@@ -180,7 +152,6 @@ export function CharacterForm({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [idConflict, setIdConflict] = useState<string | null>(null);
-  const [bioFocused, setBioFocused] = useState(false);
 
   const providers = useProviders();
 
@@ -406,7 +377,7 @@ export function CharacterForm({
           */}
             {editing ? null : (
               <Field label="Identifier" error={idError}>
-                <View className="flex-row items-center gap-sm">
+                <View className="flex-row items-start gap-sm">
                   {/*
                   An empty field is not a mistake until it has been left empty:
                   the complaint waits for the cursor to leave, or for the form to
@@ -415,6 +386,7 @@ export function CharacterForm({
                 */}
                   <Input
                     className="max-w-inspector flex-1"
+                    maxLength={CHARACTER_LIMITS.id}
                     value={draft.id}
                     autoCapitalize="none"
                     autoCorrect={false}
@@ -680,23 +652,11 @@ export function CharacterForm({
             </View>
 
             {steering.mode === "raw" ? null : (
-              <Field
-                label="You are…"
-                action={
-                  <Counter
-                    value={(steering.bio ?? "").length}
-                    max={CHARACTER_LIMITS.bio}
-                    focused={bioFocused}
-                  />
-                }
-              >
+              <Field label="You are…">
                 <Textarea
                   value={steering.bio ?? ""}
                   onChangeText={(bio) => patchSteering({ bio })}
-                  onFocus={() => setBioFocused(true)}
-                  onBlur={() => setBioFocused(false)}
                   maxLength={CHARACTER_LIMITS.bio}
-                  showCount={false}
                   rows={3}
                   placeholder="a Cynic philosopher who lives in a barrel and distrusts every institution."
                 />
@@ -708,7 +668,7 @@ export function CharacterForm({
                 <Field
                   label="Principles"
                   action={
-                    <Counter
+                    <FieldCounter
                       value={steering.principles.length}
                       max={CHARACTER_LIMITS.maxPrinciples}
                     />
@@ -727,7 +687,7 @@ export function CharacterForm({
                 <Field
                   label="Values"
                   action={
-                    <Counter value={steering.values.length} max={CHARACTER_LIMITS.maxValues} />
+                    <FieldCounter value={steering.values.length} max={CHARACTER_LIMITS.maxValues} />
                   }
                 >
                   <ConvictionList

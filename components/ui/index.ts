@@ -48,6 +48,13 @@ export {
   type FormSectionProps,
   type SectionHeadingProps,
 } from "./field";
+export {
+  CountedField,
+  FieldCounter,
+  type CountedFieldProps,
+  type FieldCounterProps,
+} from "./text-field";
+export { POPOVER_SURFACE_CLASSES } from "./surface";
 export { Input, type InputProps } from "./input";
 export { Label, type LabelProps } from "./label";
 export { overlayStyle, type PortalledProps } from "./overlay";
@@ -74,7 +81,7 @@ export { Slider, type SliderProps } from "./slider";
 export { Switch, type SwitchProps } from "./switch";
 export { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs";
 export { Text, TextClassContext, textVariants, type TextProps } from "./text";
-export { COUNTER_REVEAL, shouldShowCounter, Textarea, type TextareaProps } from "./textarea";
+export { Textarea, type TextareaProps } from "./textarea";
 export {
   ToastProvider,
   useToast,

@@ -1,7 +1,16 @@
 import { useState } from "react";
 import { View } from "react-native";
 
-import { Button, ConfirmDialog, Field, Input, Separator, Text, Textarea } from "@/components/ui";
+import {
+  Button,
+  ConfirmDialog,
+  Field,
+  FieldCounter,
+  Input,
+  Separator,
+  Text,
+  Textarea,
+} from "@/components/ui";
 import { ADVENTURE_LIMITS, type Adventure, type AdventureNode } from "@/lib/domain/adventure";
 import {
   addOption,
@@ -107,7 +116,7 @@ export function NodeEditor({ adventure, node, onChange, onRemoved }: NodeEditorP
         <PanelHeading>Options</PanelHeading>
         {/* A count, not a caption with an opinion: metadata size in the metadata
             ink, so it sits beside the heading rather than under it. */}
-        <Text variant="meta">{`${node.options.length} / ${ADVENTURE_LIMITS.maxOptions}`}</Text>
+        <FieldCounter value={node.options.length} max={ADVENTURE_LIMITS.maxOptions} />
       </View>
 
       {node.options.length === 0 ? (
@@ -118,10 +127,12 @@ export function NodeEditor({ adventure, node, onChange, onRemoved }: NodeEditorP
 
       {node.options.map((option, index) => (
         <View key={option.id} className="gap-sm border-t-hairline border-border pt-md">
-          <View className="flex-row items-center gap-sm">
-            <Text variant="muted" className="font-mono text-xs">
-              {index + 1}
-            </Text>
+          <View className="flex-row items-start gap-sm">
+            <View className="h-control-md justify-center">
+              <Text variant="muted" className="font-mono text-xs">
+                {index + 1}
+              </Text>
+            </View>
             <Input
               className="flex-1"
               maxLength={ADVENTURE_LIMITS.optionLabel}

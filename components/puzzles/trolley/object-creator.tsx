@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   Field,
+  FieldCounter,
   Input,
   Separator,
   Text,
@@ -54,7 +55,7 @@ const EMPTY: Draft = { id: "", label: "", prompt: "", icon: DEFAULT_ICON, tags: 
 function parseTags(text: string): string[] {
   const tags = text
     .split(",")
-    .map((tag) => slugify(tag))
+    .map((tag) => slugify(tag).slice(0, TROLLEY_OBJECT_LIMITS.tag))
     .filter((tag) => tag !== "");
   return [...new Set(tags)].slice(0, MAX_TAGS);
 }
@@ -284,7 +285,10 @@ export function ObjectCreator({
               />
             </Field>
 
-            <Field label="Tags">
+            <Field
+              label="Tags"
+              action={<FieldCounter value={tags.length} max={MAX_TAGS} />}
+            >
               <Input
                 value={draft.tags}
                 autoCapitalize="none"
