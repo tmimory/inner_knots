@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useCallback, useState } from "react";
-import { LayoutChangeEvent, ScrollView, View } from "react-native";
+import { LayoutChangeEvent, Pressable, ScrollView, View } from "react-native";
 import Svg, { Circle, G, Path } from "react-native-svg";
 
 import { Text } from "@/components/ui";
@@ -16,12 +16,15 @@ import {
   laneTop,
   railEnd,
   railY,
+  showsNames,
+  slotWidth,
+  slotX,
   slotsLeft,
   straightRail,
   tieXs,
   type TrackId,
 } from "./geometry";
-import { ObjectChip } from "./object-chip";
+import { EmptySlot, TrackObject, TrackObjectPopover } from "./track-object";
 import type { DropZoneBinding, UseDropZones } from "./use-drop-zones";
 
 /** The two tracks, as drop-zone ids. */
@@ -37,6 +40,9 @@ export function trackOf(zone: TrackZoneId): TrackId {
 export function zoneOf(track: TrackId): TrackZoneId {
   return track === 1 ? "track1" : "track2";
 }
+
+/** Which figure's popover is open, if any. */
+type OpenSlot = { track: TrackId; index: number };
 
 /**
  * The two rails' hues.
@@ -180,9 +186,15 @@ function Rails({ width, theme }: { width: number; theme: Theme }) {
 /**
  * The band a track's objects stand in, and the drop target they arrive through.
  *
- * The band is a fixed row of `max` slots rather than a wrapping bag of chips, so
+ * The band is a fixed row of `max` equal slots rather than a wrapping bag of
+ * chips: a thing on a track occupies a place, every place is the same size, and
  * an empty track still shows how many things it will take and where each one will
- * stand — the capacity is drawn rather than written under the board.
+ * stand — the capacity is drawn rather than written under the board. The places
+ * take their width straight from `slotWidth`, so the same arithmetic that lays
+ * them out is the one the popover is anchored by.
+ *
+ * The band covers the rail and the line of names either side of it, so the drop
+ * zone is the whole visible track rather than a strip above it.
  */
 function Lane({
   track,
@@ -191,8 +203,10 @@ function Lane({
   hovered,
   max,
   showSlots,
+  showNames,
+  openIndex,
+  onToggle,
   zone: { attach, onLayout },
-  onRemove,
 }: {
   track: TrackId;
   items: readonly TrolleyObject[];
@@ -201,8 +215,12 @@ function Lane({
   max: number;
   /** Draw the empty places. Only while a tile is looking for somewhere to go. */
   showSlots: boolean;
+  /** The board is wide enough that a name is worth the line it costs. */
+  showNames: boolean;
+  /** Which of this track's places has its popover open. */
+  openIndex: number | null;
+  onToggle: (index: number) => void;
   zone: DropZoneBinding;
-  onRemove: (id: string, index: number) => void;
 }) {
   const left = laneLeft(track);
   return (
@@ -221,31 +239,45 @@ function Lane({
         paddingRight: BOARD.terminus,
       }}
       className={cn(
-        "flex-row items-end gap-xs rounded-sm border-hairline border-dashed py-xs transition-colors duration-fast",
-        hovered ? "border-thick border-ring bg-muted" : "border-transparent",
+        // An edge rather than a fill: a tinted band would cover the very rails the
+        // track is made of.
+        "flex-row items-stretch rounded-sm border-hairline border-dashed transition-colors duration-fast",
+        hovered ? "border-thick border-ring" : "border-transparent",
       )}
     >
       {/*
-        What is standing here sizes to its own name — a five-wide grid made "Your
-        Dog" two thirds empty box — and what is not yet standing here shares out
-        whatever is left. A chip therefore never moves when the empty places
-        appear under a dragged tile.
+        The places are sized from `slotWidth` rather than shared out by `flex-1`,
+        so the width a slot has and the width the popover is anchored against are
+        one calculation instead of two that have to be kept saying the same thing.
       */}
-      {items.map((item, index) => (
-        <ObjectChip key={index} item={item} onRemove={() => onRemove(item.id, index)} />
-      ))}
-      {showSlots
-        ? Array.from({ length: Math.max(0, max - items.length) }, (_, index) => (
-            // The empty place: an outline standing where an object would stand.
-            // It only appears while a tile is in the air, so at rest the board is
-            // a drawing of two tracks rather than ten dashed boxes over one.
-            <View
-              key={`slot-${index}`}
-              style={{ height: BOARD.slotHeight }}
-              className="flex-1 rounded-sm border-hairline border-dashed border-border"
-            />
-          ))
-        : null}
+      {Array.from({ length: max }, (_, index) => {
+        const item = items[index];
+        return (
+          <View
+            key={index}
+            style={{
+              width: slotWidth(width, max),
+              marginLeft: index === 0 ? 0 : BOARD.slotGap,
+            }}
+          >
+            {item ? (
+              <TrackObject
+                item={item}
+                track={track}
+                index={index}
+                showName={showNames}
+                open={openIndex === index}
+                onPress={() => onToggle(index)}
+              />
+            ) : showSlots ? (
+              // The empty place: an outline standing where an object would stand.
+              // It only appears while a tile is in the air, so at rest the board
+              // is a drawing of two tracks rather than ten dashed boxes over one.
+              <EmptySlot track={track} />
+            ) : null}
+          </View>
+        );
+      })}
     </View>
   );
 }
@@ -275,9 +307,13 @@ export type TrackBoardProps = {
  * The board: two tracks, a junction, and whatever has been put in the way.
  *
  * The rails are one SVG sized to the measured width, and the lanes are ordinary
- * views laid over it — so a chip is a real, pressable, wrapping element rather
- * than something drawn into the picture, while the picture underneath stays a
- * single coherent drawing.
+ * views laid over it — so a figure standing on a rail is a real, pressable
+ * element rather than something drawn into the picture, while the picture
+ * underneath stays a single coherent drawing.
+ *
+ * One popover at a time, held here rather than in the figure that opened it: it
+ * has to be laid out against the board's own box to clear the other track, and
+ * only the board knows that two figures cannot both be talking.
  */
 export function TrackBoard({
   track1,
@@ -294,6 +330,7 @@ export function TrackBoard({
   const [width, setWidth] = useState<number>(BOARD.minWidth);
   /** The pointer is over the board, which is the other way to ask where things go. */
   const [pointerOver, setPointerOver] = useState(false);
+  const [open, setOpen] = useState<OpenSlot | null>(null);
   const showSlots = arming || pointerOver || hovered !== null;
 
   const measure = useCallback((event: LayoutChangeEvent) => {
@@ -307,6 +344,16 @@ export function TrackBoard({
     { track: 1, items: track1 },
     { track: 2, items: track2 },
   ];
+
+  const showNames = showsNames(width, max);
+  /** The object the open popover belongs to; a removal underneath it closes it. */
+  const openItem = open ? (open.track === 1 ? track1 : track2)[open.index] : undefined;
+
+  const toggle = useCallback((track: TrackId, index: number) => {
+    setOpen((current) =>
+      current && current.track === track && current.index === index ? null : { track, index },
+    );
+  }, []);
 
   return (
     <View
@@ -352,14 +399,61 @@ export function TrackBoard({
               hovered={hovered === track}
               max={max}
               showSlots={showSlots}
+              showNames={showNames}
+              openIndex={open?.track === track ? open.index : null}
+              onToggle={(index) => toggle(track, index)}
               zone={zones.bind(zoneOf(track))}
-              onRemove={(_id, index) => onRemove(track, index)}
             />
           ))}
+
+          {open && openItem ? (
+            <>
+              {/* Anywhere else on the board dismisses it. */}
+              <Pressable
+                role="button"
+                accessibilityLabel="Close"
+                onPress={() => setOpen(null)}
+                style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
+              />
+              <View style={{ position: "absolute", zIndex: theme.zIndex.menu, ...anchor(open, width, max) }}>
+                <TrackObjectPopover
+                  item={openItem}
+                  track={open.track}
+                  onRemove={() => {
+                    setOpen(null);
+                    onRemove(open.track, open.index);
+                  }}
+                />
+              </View>
+            </>
+          ) : null}
 
           {overlay?.(width)}
         </View>
       </ScrollView>
     </View>
   );
+}
+
+/**
+ * Where the popover hangs: in the gap between the two tracks, under the figure it
+ * belongs to on track 1 and over it on track 2, so it never covers a name.
+ *
+ * It is pinned by its right edge once its widest form would run past the buffer
+ * stop — the board clips at its own rounded border, and a popover cut in half by
+ * the panel edge is worse than one that opens leftwards.
+ */
+function anchor(
+  open: OpenSlot,
+  width: number,
+  max: number,
+): { left?: number; right?: number; top?: number; bottom?: number } {
+  const x = slotX(width, max, open.index);
+  const flipped = x + BOARD.popoverMaxWidth > railEnd(width);
+  return {
+    ...(flipped ? { right: Math.max(0, width - (x + slotWidth(width, max))) } : { left: x }),
+    ...(open.track === 1
+      ? { top: laneTop(1) + BOARD.laneHeight + BOARD.nameGap }
+      : { bottom: BOARD.height - laneTop(2) + BOARD.nameGap }),
+  };
 }

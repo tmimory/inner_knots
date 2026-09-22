@@ -6,6 +6,13 @@ export { ObjectGlyph, type ObjectGlyphProps } from "./object-glyph";
 export { ObjectPalette, type ObjectPaletteProps } from "./object-palette";
 export { TrolleyResults, type TrolleyResultsProps } from "./results";
 export {
+  EmptySlot,
+  TrackObject,
+  TrackObjectPopover,
+  type TrackObjectPopoverProps,
+  type TrackObjectProps,
+} from "./track-object";
+export {
   TRACK_ZONE_IDS,
   TrackBoard,
   trackOf,

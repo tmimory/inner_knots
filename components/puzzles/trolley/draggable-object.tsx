@@ -122,9 +122,9 @@ export function DraggableObject({
           accessibilityHint={item.prompt}
         >
           {/*
-            The same chip it will be once it is standing on a rail: the tile you
-            pick up and the tile you put down are one object, so the gesture never
-            changes what it is holding halfway through.
+            The catalogue's own tile, unchanged while it is in the air: the
+            gesture never swaps what it is holding halfway through. It becomes a
+            figure standing on the rail only once it has landed.
           */}
           <ObjectChip
             item={item}

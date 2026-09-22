@@ -5,52 +5,96 @@
  * pitch and the curve of the branch are one coherent drawing and would mean
  * nothing as theme tokens. They are gathered here, in viewport pixels, so the
  * board component itself holds no bare numbers and the whole drawing can be
- * retuned in one file. Colors, radii and type still come from the theme.
+ * retuned in one file. Colors, radii and type still come from the theme — and
+ * where the drawing has to agree with the theme (a glyph's edge length, a line of
+ * type, the step between two slots) the token is read here rather than copied.
  */
+import { iconSizes, layout, lineHeights, spacing } from "@/theme";
+
+/**
+ * A placed object stands *on* its rail, so the vertical structure of a track is
+ * three bands rather than one: the name, a hair of air, and the figure itself
+ * straddling the rail. Track 1 reads name-then-figure downwards and track 2
+ * figure-then-name, which is what puts every name outside the pair of rails.
+ */
+const GLYPH = iconSizes["icon-lg"];
+const NAME_HEIGHT = lineHeights.sm;
+const NAME_GAP = spacing.xs;
+const LANE_HEIGHT = GLYPH + NAME_GAP + NAME_HEIGHT;
+
+/**
+ * The two rail centre lines.
+ *
+ * Track 1 hangs low enough for its name band and for the run caption above it;
+ * track 2 sits far enough below that the two figure bands never touch and the
+ * branch still descends at a readable angle.
+ */
+const RAIL_1_Y = 96;
+const RAIL_2_Y = 228;
+
+/** Air under track 2's names, so the drawing ends rather than being cropped. */
+const FLOOR = spacing.md;
 
 /** Everything the board is drawn from, in px. */
 export const BOARD = {
   /** Total height of the drawing area. */
-  height: 236,
+  height: RAIL_2_Y + GLYPH / 2 + NAME_GAP + NAME_HEIGHT + FLOOR,
   /** Never narrower than this; below it the board scrolls horizontally. */
-  minWidth: 640,
+  minWidth: 720,
   /** Where the tracks part company. The trolley waits just to its left. */
   junctionX: 108,
   /** Horizontal run of the curve that drops track 2 away from the junction. */
-  branchRun: 84,
+  branchRun: 104,
   /** Centre line of each track's rail pair. */
-  rail1Y: 92,
-  rail2Y: 208,
+  rail1Y: RAIL_1_Y,
+  rail2Y: RAIL_2_Y,
   /** Half the distance between the two rails of one track. */
   railHalfGap: 5,
   /** Sleeper pitch and how far a sleeper sticks out past the rails. */
   tieSpacing: 22,
-  tieOverhang: 4,
-  /** The band above a rail that its objects stand in. */
-  laneHeight: 76,
-  /** Left padding inside a lane, so a chip never sits on the branch curve. */
-  laneInset: 12,
+  tieOverhang: spacing.xs,
+  /** The edge length of an object standing on a rail. */
+  glyphSize: GLYPH,
+  /** One line of the name written beside a figure, and the air before it. */
+  nameHeight: NAME_HEIGHT,
+  nameGap: NAME_GAP,
+  /** Figure plus name: the band one track's contents occupy. */
+  laneHeight: LANE_HEIGHT,
+  /** The step between two neighbouring slots. */
+  slotGap: spacing.sm,
+  /**
+   * The narrowest a slot may be and still carry a name.
+   *
+   * Below this a name is two or three truncated words — "Suitcase w…" over a
+   * figure — which says less than the drawing under it and costs a line of type
+   * on every slot. The value is a little over the widest a slot gets at
+   * `minWidth` (about 88px at five slots), so the board's own scroll floor is the
+   * narrow case and the names come back as soon as the panel has real room.
+   */
+  nameMinSlot: 132,
+  /** Left padding inside a lane, so a slot never sits on the branch curve. */
+  laneInset: spacing.md,
   /**
    * How far short of the board's right edge the rails stop. Without it the rails
    * run under the panel border and read as clipped rather than as ended.
    */
-  terminus: 24,
+  terminus: spacing.xl,
   /** Half the height of the buffer stop drawn across the rails at the terminus. */
-  terminusHalfHeight: 12,
+  terminusHalfHeight: spacing.md,
   /**
-   * One slot on a track: the box a single object stands in. It clears the
-   * theme's `icon-md` glyph with a hairline border either side, so the chip
-   * that stands in it is not clipped.
+   * The widest the popover anchored to a figure may grow. It matches the
+   * `max-w-menu` the popover is capped at in classes, so the board can tell
+   * before laying it out whether it would run off the right edge.
    */
-  slotHeight: 56,
+  popoverMaxWidth: layout.menu,
   /**
-   * How wide a placed chip may grow. It sizes to its own label — a five-column
-   * grid made "Your Dog" two thirds empty box — but a chip wide enough to read
-   * "Suitcase with $10,000 in It" whole would crowd the four beside it.
+   * How far left of the junction the trolley waits.
+   *
+   * It is bounded by the wagon's own half-width: at 92 the wagon was centred on
+   * x=16 and the six pixels in front of it fell outside the drawing, so the thing
+   * the whole screen is about sat at the edge with its nose cut off.
    */
-  chipMaxWidth: 200,
-  /** The approach rail the trolley rolls in along, left of the junction. */
-  approachRun: 92,
+  approachRun: 68,
   /**
    * The column left of the rails that carries the track names. It sits outside
    * the drawing, so a label never lands on a rail or on the lever.
@@ -58,6 +102,20 @@ export const BOARD = {
   gutter: 88,
   /** Half a gutter label's line box, for centring it on its rail. */
   labelHalfHeight: 10,
+  /**
+   * The palette tile's box: an `icon-md` glyph with a step of parchment above and
+   * below it, derived rather than picked so the tile still frames the glyph if
+   * either token moves.
+   */
+  chipHeight: iconSizes["icon-md"] + spacing.sm,
+  /**
+   * How far a palette tile may grow for its own name. It sizes to its label — an
+   * equal-column grid made "Your Dog" two thirds empty box — but a tile wide
+   * enough to read "Suitcase with $10,000 in It" whole would crowd the catalogue.
+   * A one-off cap on one component, so it stays a number here rather than
+   * becoming a layout token nothing else would use.
+   */
+  chipMaxWidth: 200,
 } as const;
 
 /** The trolley drawing, in its own coordinate box. */
@@ -94,9 +152,8 @@ export const TROLLEY = {
  *
  * The tiles used to be laid into a fixed grid of equal columns, which made the
  * catalogue a centred table of bare words sitting under a left-aligned board —
- * two different objects for one gesture. They are the same chips that stand on a
- * rail now, wrapping from the spine like words, so what the palette measures is
- * how many of them it shows, not how wide a cell is.
+ * two different objects for one gesture. They wrap from the spine like words, so
+ * what the palette measures is how many of them it shows, not how wide a cell is.
  */
 export const PALETTE = {
   /** How many chips the palette offers before "Show more" is pressed. */
@@ -110,12 +167,21 @@ export function railY(track: TrackId): number {
   return track === 1 ? BOARD.rail1Y : BOARD.rail2Y;
 }
 
-/** Where a track's objects stand: the band immediately above its rail. */
+/**
+ * The band a track's contents occupy: the figures straddling the rail plus the
+ * line of names, which is above the rail on track 1 and below it on track 2.
+ */
 export function laneTop(track: TrackId): number {
-  return railY(track) - BOARD.railHalfGap - BOARD.laneHeight;
+  const figureTop = railY(track) - BOARD.glyphSize / 2;
+  return track === 1 ? figureTop - BOARD.nameGap - BOARD.nameHeight : figureTop;
 }
 
-/** The leftmost x a chip may occupy, clear of the junction and the branch. */
+/** Where a figure's own box starts, measured from the top of its lane. */
+export function figureTopInLane(track: TrackId): number {
+  return track === 1 ? BOARD.nameGap + BOARD.nameHeight : 0;
+}
+
+/** The leftmost x a slot may occupy, clear of the junction and the branch. */
 export function laneLeft(track: TrackId): number {
   return (track === 1 ? BOARD.junctionX : BOARD.junctionX + BOARD.branchRun) + BOARD.laneInset;
 }
@@ -134,6 +200,34 @@ export function slotsLeft(): number {
 /** Where a rail stops: short of the board's right edge, at the buffer stop. */
 export function railEnd(width: number): number {
   return width - BOARD.terminus;
+}
+
+/**
+ * One slot's width, for a board `width` wide holding `max` of them.
+ *
+ * The slots are equal columns rather than boxes that size to their own names: a
+ * thing standing on a track occupies a place, and the places are the same size
+ * whether a place holds "Your Dog" or nothing at all.
+ *
+ * This is the only place that division is written down. The lane lays its places
+ * out from this number rather than sharing the row out with `flex-1`, so the
+ * width a slot has and the width the popover is anchored against cannot drift
+ * apart.
+ */
+export function slotWidth(width: number, max: number): number {
+  const places = Math.max(1, max);
+  const span = railEnd(width) - slotsLeft() - BOARD.slotGap * (places - 1);
+  return Math.max(0, span / places);
+}
+
+/** The left edge of slot `index`, in board coordinates. */
+export function slotX(width: number, max: number, index: number): number {
+  return slotsLeft() + index * (slotWidth(width, max) + BOARD.slotGap);
+}
+
+/** Whether a slot this wide has room for a name that is worth reading. */
+export function showsNames(width: number, max: number): boolean {
+  return slotWidth(width, max) >= BOARD.nameMinSlot;
 }
 
 /** `M x0 y H x1` for one rail of a pair. */

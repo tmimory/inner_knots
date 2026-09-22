@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
 
-import { Badge, Button, Input, Text } from "@/components/ui";
+import { Badge, Button, Input, POPOVER_SURFACE_CLASSES, Text } from "@/components/ui";
 import { familyOf, type TrolleyObject } from "@/lib/puzzles/trolley/catalogue";
 import { CUSTOM_TAG, TAG_GROUPS, TAG_GROUP_ORDER, filterCatalogue } from "@/lib/puzzles/trolley/search";
 import { cn } from "@/lib/utils";
@@ -338,7 +338,10 @@ export function ObjectPalette({
                       left: 0,
                       zIndex: theme.zIndex.menu,
                     }}
-                    className="mt-xxs w-avatar-xl gap-xxs rounded-sm border-hairline border-border bg-popover p-xxs shadow-ink-lifted"
+                    className={cn(
+                      POPOVER_SURFACE_CLASSES,
+                      "mt-xxs w-avatar-xl gap-xxs rounded-sm p-xxs shadow-ink-lifted",
+                    )}
                   >
                     <Button
                       size="sm"
