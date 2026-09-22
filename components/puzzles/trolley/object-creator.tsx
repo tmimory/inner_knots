@@ -86,7 +86,7 @@ function GlyphPicker({ value, onChange }: { value: string; onChange: (icon: stri
             accessibilityLabel={id}
             onPress={() => onChange(id)}
             className={cn(
-              "h-control-lg w-control-lg items-center justify-center rounded-md border-hairline transition-colors duration-fast",
+              "h-control-xl w-control-xl items-center justify-center rounded-md border-hairline transition-colors duration-fast",
               selected ? "border-thick border-ring bg-muted" : "border-border web:hover:bg-muted",
             )}
           >

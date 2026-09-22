@@ -42,7 +42,7 @@ export const BOARD = {
    * theme's `icon-md` glyph with a hairline border either side, so the chip
    * that stands in it is not clipped.
    */
-  slotHeight: 40,
+  slotHeight: 56,
   /**
    * How wide a placed chip may grow. It sizes to its own label — a five-column
    * grid made "Your Dog" two thirds empty box — but a chip wide enough to read

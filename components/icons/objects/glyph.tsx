@@ -1,8 +1,8 @@
 /**
  * The shared pen for the trolley object glyphs.
  *
- * Every glyph is a monochrome ink drawing in a 32×32 box, drawn 1:1 at the
- * theme's `icon-md` step and still legible at `icon-sm`. An
+ * Every glyph is a monochrome ink drawing in a 32×32 box, drawn at the theme's
+ * `icon-md` step and still legible at `icon-sm`. An
  * optional `tint` fills the one meaningful mass (an animal's body, a banknote, a
  * figure's clothes); without it the glyph fills with parchment and reads as line art.
  *

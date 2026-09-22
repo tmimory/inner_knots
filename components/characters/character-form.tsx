@@ -440,11 +440,10 @@ export function CharacterForm({
             )}
 
             {/*
-            One module, two flush bands: fifteen faces on one row and twenty-five
-            pigments on the row under it, both spanning the form's measure and
+            One module, two plates: fifteen faces on two rows and twenty-five
+            pigments on the row under them, both spanning the form's measure and
             sharing its left and right edges. Split into two fields a step apart,
-            each with its own ragged last row, they read as two unrelated grids
-            that happened to land near each other.
+            they read as two unrelated grids that happened to land near each other.
           */}
             <View className="gap-md">
               <Field label="Face">

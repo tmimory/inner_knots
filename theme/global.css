@@ -76,15 +76,16 @@
     --space-control-sm: 32px;
     --space-control-md: 40px;
     --space-control-lg: 48px;
+    --space-control-xl: 64px;
     --space-control-icon: 40px;
     --space-avatar-xs: 28px;
     --space-avatar-sm: 40px;
     --space-avatar-md: 48px;
     --space-avatar-lg: 80px;
     --space-avatar-xl: 112px;
-    --space-icon-sm: 24px;
-    --space-icon-md: 32px;
-    --space-icon-lg: 48px;
+    --space-icon-sm: 32px;
+    --space-icon-md: 48px;
+    --space-icon-lg: 64px;
     --space-hairline: 1px;
     --space-thick: 2px;
     /* layout */

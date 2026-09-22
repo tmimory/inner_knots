@@ -111,7 +111,7 @@ export default function AssetsScreen() {
           {OBJECT_ICON_IDS.map((id) => (
             <View
               key={id}
-              className="w-3xl items-center gap-xxs rounded-md border-hairline border-border bg-background p-xs"
+              className="w-4xl items-center gap-xxs rounded-md border-hairline border-border bg-background p-xs"
             >
               <ObjectGlyph icon={id} tint={iconTint} />
               <Text variant="muted" className="text-xs">

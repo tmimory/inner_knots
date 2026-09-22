@@ -9,15 +9,15 @@ import { Avatar } from "./avatar";
 import { AVATAR_SHAPES } from "./shapes";
 
 /**
- * Columns in the face plate: all fifteen faces, one row.
+ * Columns in the face plate: fifteen faces on two rows.
  *
- * A plate of choices should end where the fields above it end. Eight across left
- * a second row seven cells long with a hole where the last eight would have been,
- * and the eye reads that hole as a missing option. Fifteen across is one flush
- * band of faces spanning the form's own measure, and the identity block stops
- * outweighing everything under it.
+ * Fifteen across was one flush band spanning the form's measure, but the band
+ * only fit while a face was 40px: at the raised `avatar-md` a medallion and its
+ * selection ring measure 56px and the reading column divides into 53px cells,
+ * so the faces overlapped. Eight across gives every face its cell and its
+ * breathing room, at the cost of a short second row.
  */
-export const SHAPE_PICKER_COLUMNS = 15;
+export const SHAPE_PICKER_COLUMNS = 8;
 
 /** Columns in the pigment plate: all twenty-five swatches, one flush row. */
 export const COLOR_PICKER_COLUMNS = 25;
@@ -26,9 +26,10 @@ export const COLOR_PICKER_COLUMNS = 25;
  * The width of one cell, as a share of the plate.
  *
  * A percentage rather than a measured square: the plate then spans whatever
- * measure the form has, and both grids sit on the form's left and right edges
- * however wide the column gets. Each cell centres its medallion, so the pitch is
- * even even though the last row is short.
+ * measure the form has, and the pitch stays even however wide the column gets.
+ * Each cell hangs its medallion on its own left edge, so the first face and the
+ * first pigment sit on the form's spine under their labels rather than a half
+ * cell in from it, and the right side runs ragged like the short last row.
  */
 export function pickerColumnWidth(columns: number): `${number}%` {
   return `${100 / columns}%`;
@@ -91,7 +92,7 @@ export function PickerGrid<T>({
         return (
           <View
             key={keyOf(item)}
-            className="items-center"
+            className="items-start"
             style={{ width: pickerColumnWidth(columns) }}
           >
             <Tooltip delayDuration={0}>

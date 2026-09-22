@@ -297,6 +297,8 @@ export const controlSizes = {
   "control-sm": 32,
   "control-md": 40,
   "control-lg": 48,
+  /** A cell that frames an `icon-md` glyph with a step of parchment around it. */
+  "control-xl": 64,
   "control-icon": 40,
 } as const;
 
@@ -334,15 +336,15 @@ export const avatarSizes = {
  */
 export const iconSizes = {
   /** Beside a caption, or where a whole row of them must fit one line. */
-  "icon-sm": 24,
+  "icon-sm": 32,
   /**
    * The default: a chip on a track, a row in the catalogue, a track item in a
-   * run's log. This is the glyph stage drawn at 1:1, so every hairline the
-   * drawing has is a whole pixel.
+   * run's log. Half again the glyph stage: at 1:1 the cows and children on the
+   * trolley board were still the smallest marks on a large display.
    */
-  "icon-md": 32,
-  /** A glyph standing alone as an illustration; picker cells keep `icon-md` inside a `control-lg` target. */
-  "icon-lg": 48,
+  "icon-md": 48,
+  /** A glyph standing alone as an illustration. */
+  "icon-lg": 64,
 } as const;
 
 /** Layout measures, in px: the left menu column and the readable content width. */
