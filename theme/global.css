@@ -45,8 +45,8 @@
     /* easing */
     --easing-standard: cubic-bezier(0.65, 0, 0.35, 1);
     /* font-size */
-    --font-size-xs: 13px;
-    --font-size-sm: 14px;
+    --font-size-xs: 15px;
+    --font-size-sm: 16px;
     --font-size-base: 17px;
     --font-size-lg: 20px;
     --font-size-xl: 24px;
@@ -54,8 +54,8 @@
     --font-size-3xl: 31px;
     --font-size-4xl: 48px;
     /* line-height */
-    --line-height-xs: 18px;
-    --line-height-sm: 20px;
+    --line-height-xs: 20px;
+    --line-height-sm: 22px;
     --line-height-base: 26px;
     --line-height-lg: 28px;
     --line-height-xl: 32px;

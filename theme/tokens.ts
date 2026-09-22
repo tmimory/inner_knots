@@ -379,13 +379,15 @@ export const borderWidths = {
  *
  * `xs` is the floor: captions, micro-labels, table headers and the metadata line
  * all share it, so a screen has one size below the body rather than three. It is
- * 13 rather than 12 because the body serif is an old-style face with a small
- * x-height — a 12px Cormorant caption measures like a 10px sans one, which is
- * where every reviewer read the marginalia as unreadable.
+ * 15 rather than the usual 12 because the body serif is an old-style face whose
+ * x-height is about 40% of the em — a 13px Cormorant caption measures like a 10px
+ * sans one, and on a large display it read as marginalia nobody could make out.
+ * `sm` sits one step above it for the same reason; the mono stack shares both
+ * steps, so raw payloads and ids get the same floor.
  */
 export const fontSizes = {
-  xs: 13,
-  sm: 14,
+  xs: 15,
+  sm: 16,
   base: 17,
   lg: 20,
   xl: 24,
@@ -396,8 +398,8 @@ export const fontSizes = {
 
 /** Line heights, in px, paired with `fontSizes` by key. */
 export const lineHeights = {
-  xs: 18,
-  sm: 20,
+  xs: 20,
+  sm: 22,
   base: 26,
   lg: 28,
   xl: 32,
