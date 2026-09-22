@@ -1,8 +1,12 @@
 /**
  * Theme runtime.
  *
- * - `ThemeProvider` applies the active theme: a `dark` class on web, NativeWind
- *   `vars()` on native (both drive the same CSS variable names).
+ * - `ThemeProvider` resolves which of the two palettes is live and puts its tokens
+ *   in context. On web the variables themselves come from `theme/global.css`,
+ *   which answers a `dark` class *or* a dark system preference — so the provider
+ *   reads `prefers-color-scheme` to arrive at the same answer the stylesheet did,
+ *   rather than setting anything. On native it injects the variables with
+ *   NativeWind `vars()` on a root view. Both drive the same variable names.
  * - `useTheme()` returns the raw token object for the few places that must pass a
  *   color as a value rather than a class: SVG fills, React Flow styles, charts.
  *
