@@ -9,6 +9,10 @@
  * model's idea of randomness. `flip` is injectable so a test can run a loaded
  * coin.
  *
+ * The pot is kept here rather than left to the model: a face that pays money has
+ * an arithmetic answer, and the voice that set the terms would say the sum out
+ * loud. It belongs to the game, so every game starts from nothing.
+ *
  * Only the turn that ends a game advances the progress bar, because
  * `progress.total` counts games: a run of five games is five units of work
  * however many times each one flips.
@@ -25,6 +29,7 @@ import { mergePool, type Source } from "@/lib/engine/pool";
 import type { StPetersburgPlan } from "@/lib/engine/setup";
 import { characterIterationPath, type PuzzleRunner, type RunnerContext } from "@/lib/engine/types";
 
+import { isPriced, payoutFor } from "./payoff";
 import { buildStPetersburgPrompt, type TossRecord } from "./prompt";
 import {
   emptySummary,
@@ -50,6 +55,8 @@ export function createStPetersburgRunner(
   options: StPetersburgRunnerOptions = {},
 ): PuzzleRunner<StPetersburgEventData, StPetersburgSummary> {
   const toss = options.flip ?? fairCoin;
+  // A property of the coin, not of a game: whether there is a pot to keep at all.
+  const priced = isPriced(plan.config.faces);
 
   /**
    * Why this turn ends the game, or `undefined` when it does not. The order is
@@ -86,6 +93,8 @@ export function createStPetersburgRunner(
 
             const path = characterIterationPath(character.id, iteration);
             const history: TossRecord[] = [];
+            // The pot belongs to the game: every game starts from nothing.
+            let pot = 0;
 
             for (let flip = 1; flip <= plan.config.maxFlips; flip += 1) {
               if (ctx.signal.aborted) return;
@@ -113,6 +122,10 @@ export function createStPetersburgRunner(
               const choice = toChoice(outcome.record?.choice);
               // The coin is only ever tossed for a character that asked for it.
               const face = choice === "flip" ? toss() : undefined;
+              // What the toss was worth, before the pot moves: a forfeit is
+              // minus whatever is standing in it.
+              const won = face === undefined ? undefined : payoutFor(plan.config.faces[face].payoff, flip, pot);
+              pot += won ?? 0;
               const ending = endingFor(choice, face, flip);
 
               const data: StPetersburgEventData = {
@@ -120,6 +133,8 @@ export function createStPetersburgRunner(
                 iteration,
                 flip,
                 face,
+                won,
+                priced,
                 ending,
               };
 
@@ -147,7 +162,7 @@ export function createStPetersburgRunner(
                 return;
               }
 
-              if (face !== undefined) history.push({ flip, face });
+              if (face !== undefined) history.push({ flip, face, won });
             }
           });
         }

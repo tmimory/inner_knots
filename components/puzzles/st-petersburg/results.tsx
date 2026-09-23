@@ -8,7 +8,7 @@ import { Label, Text } from "@/components/ui";
 import type { Character } from "@/lib/domain/character";
 import type { RosterEntry } from "@/lib/domain/run";
 import type { StPetersburgCharacterTally, StPetersburgSummary } from "@/lib/domain/summary";
-import { UNKNOWN, countNote, pluralize } from "@/lib/format";
+import { UNKNOWN, countNote, formatMoney, pluralize } from "@/lib/format";
 import { showsFlipGrid } from "@/lib/puzzles/st-petersburg/ui-helpers";
 import { cn } from "@/lib/utils";
 
@@ -37,12 +37,16 @@ const EMPTY_TALLY: StPetersburgCharacterTally = {
  * they sit over a number; the sentence each one is short for is the accessible
  * name of its cell.
  */
-const ENDING_COLUMNS: readonly {
+type EndingColumn = {
   id: string;
   header: string;
   said: string;
   value: (tally: StPetersburgCharacterTally) => string;
-}[] = [
+  /** How wide the cell is; counts all read in the one narrow column. */
+  width?: string;
+};
+
+const ENDING_COLUMNS: readonly EndingColumn[] = [
   {
     id: "walked",
     header: "Walked",
@@ -76,6 +80,26 @@ const ENDING_COLUMNS: readonly {
   },
 ];
 
+/**
+ * What one game was worth on average, for a coin that pays money.
+ *
+ * Only drawn when the run is priced — over a coin paid in prose there is no
+ * pot to average, and a column of dashes says nothing the other five do not.
+ * Wider than the counts beside it: a stake that doubles turns four figures into
+ * seven within a few flips, and money that has been truncated is worse than
+ * money that takes a little more room.
+ */
+const MEAN_WINNINGS_COLUMN: EndingColumn = {
+  id: "winnings",
+  header: "μ won",
+  said: "mean winnings per game",
+  value: (tally) => (tally.meanWinnings === undefined ? UNKNOWN : formatMoney(tally.meanWinnings)),
+  width: "w-seat",
+};
+
+/** The default width of a figure column, when the column does not ask for its own. */
+const COLUMN_WIDTH = "w-4xl";
+
 export type StPetersburgResultsProps = {
   /** The summary as it stands; the engine rewrites it after every turn. */
   summary: StPetersburgSummary | undefined;
@@ -93,10 +117,12 @@ export type StPetersburgResultsProps = {
 function EndingRow({
   name,
   tally,
+  columns,
   accessory,
 }: {
   name: string;
   tally: StPetersburgCharacterTally;
+  columns: readonly EndingColumn[];
   accessory?: ReactNode;
 }) {
   return (
@@ -107,12 +133,12 @@ function EndingRow({
           {name}
         </Text>
       </View>
-      {ENDING_COLUMNS.map((column) => (
+      {columns.map((column) => (
         <Text
           key={column.id}
           variant="small"
           accessibilityLabel={`${name}, ${column.said}: ${column.value(tally)}`}
-          className="w-4xl tabular text-right"
+          className={cn("tabular text-right", column.width ?? COLUMN_WIDTH)}
           numberOfLines={1}
         >
           {column.value(tally)}
@@ -169,6 +195,18 @@ export function StPetersburgResults({
     [rows],
   );
 
+  /**
+   * The money column joins the table only once there is money to put in it: a
+   * coin paid in prose has no pot, and the engine leaves `meanWinnings` off.
+   */
+  const columns = useMemo(
+    (): readonly EndingColumn[] =>
+      rows.some((row) => row.tally.meanWinnings !== undefined)
+        ? [...ENDING_COLUMNS, MEAN_WINNINGS_COLUMN]
+        : ENDING_COLUMNS,
+    [rows],
+  );
+
   const games = summary?.games.length ?? 0;
   const flips = summary?.games.reduce((sum, game) => sum + game.flips.length, 0) ?? 0;
 
@@ -181,19 +219,19 @@ export function StPetersburgResults({
     <View className={cn("gap-lg", className)}>
       <Histogram series={SERIES} groups={groups} />
 
-      {/* How the games stopped. Five narrow columns of figures want a scroll of
-          their own on a phone rather than a name column squeezed to nothing. */}
+      {/* How the games stopped. A row of narrow figure columns wants a scroll of
+          its own on a phone rather than a name column squeezed to nothing. */}
       <View className="gap-sm">
         <Label>How the games ended</Label>
         <ScrollView horizontal showsHorizontalScrollIndicator contentContainerClassName="gap-xxs">
           <View className="gap-xxs">
             <View className="flex-row items-end gap-xxs">
               <View className="w-tally" />
-              {ENDING_COLUMNS.map((column) => (
+              {columns.map((column) => (
                 <Text
                   key={column.id}
                   variant="meta"
-                  className="w-4xl text-right"
+                  className={cn("text-right", column.width ?? COLUMN_WIDTH)}
                   numberOfLines={1}
                 >
                   {column.header}
@@ -205,6 +243,7 @@ export function StPetersburgResults({
                 key={row.id}
                 name={row.name}
                 tally={row.tally}
+                columns={columns}
                 accessory={row.accessory}
               />
             ))}
@@ -217,12 +256,17 @@ export function StPetersburgResults({
       {showsFlipGrid(games, maxFlips) ? (
         <View className="gap-sm">
           <Label>Flip by flip</Label>
-          <FlipGrid games={summary.games} maxFlips={maxFlips} characters={characters} />
+          <FlipGrid
+            games={summary.games}
+            maxFlips={maxFlips}
+            characters={characters}
+            order={rows.map((row) => row.id)}
+          />
         </View>
       ) : null}
 
       <ResultsFooter
-        note={`${pluralize(games, "game")} · ${pluralize(flips, "flip")} recorded`}
+        note={`${pluralize(games, "game")} · ${pluralize(flips, "turn")} recorded`}
         runId={runId}
       />
     </View>

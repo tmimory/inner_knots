@@ -11,12 +11,13 @@ import {
 
 const roster = { roster: [{ characterId: "zeno", runs: 2 }, { characterId: "hume", runs: 1 }] };
 
-type Turn = Partial<Pick<StPetersburgEventData, "face" | "ending">> & {
+type Turn = Partial<Pick<StPetersburgEventData, "face" | "won" | "priced" | "ending">> & {
   choice?: string;
   weights?: Record<string, number>;
   error?: string;
 };
 
+/** A turn of a priced coin unless the case says otherwise, which is the default coin. */
 function event(characterId: string, iteration: number, flip: number, turn: Turn): StPetersburgDecisionEvent {
   return {
     path: [{ key: characterId, name: "character", characterId }],
@@ -25,13 +26,22 @@ function event(characterId: string, iteration: number, flip: number, turn: Turn)
     endedAt: "2026-01-01T00:00:01.000Z",
     decision: turn.choice === undefined ? undefined : { choice: turn.choice, weights: turn.weights, latencyMs: 5 },
     error: turn.error,
-    data: { characterId, iteration, flip, face: turn.face, ending: turn.ending },
+    data: {
+      characterId,
+      iteration,
+      flip,
+      face: turn.face,
+      won: turn.won,
+      priced: turn.priced ?? true,
+      ending: turn.ending,
+    },
   };
 }
 
-const flipped = (face: "heads" | "tails", ending?: StPetersburgEnding): Turn => ({
+const flipped = (face: "heads" | "tails", ending?: StPetersburgEnding, won?: number): Turn => ({
   choice: "flip",
   face,
+  won,
   ending,
 });
 
@@ -102,6 +112,45 @@ describe("St. Petersburg summary", () => {
     // A game that walks away on its first turn tossed nothing at all.
     summary = reduce(summary, event("zeno", 2, 1, { choice: "walk", ending: "walked" }));
     expect(summary.perCharacter.zeno?.meanFlipsPerGame).toBe(1);
+  });
+
+  it("keeps the pot as the running sum of what each flip won", () => {
+    let summary = reduce(emptySummary(roster), event("zeno", 1, 1, flipped("heads", undefined, 2)));
+    expect(summary.games[0]?.flips[0]?.won).toBe(2);
+    expect(summary.games[0]?.winnings).toBe(2);
+
+    summary = reduce(summary, event("zeno", 1, 2, flipped("heads", undefined, 4)));
+    expect(summary.games[0]?.winnings).toBe(6);
+
+    // A forfeit is minus the whole pot, so the game ends holding nothing.
+    summary = reduce(summary, event("zeno", 1, 3, flipped("tails", "face", -6)));
+    expect(summary.games[0]?.flips[2]?.won).toBe(-6);
+    expect(summary.games[0]?.winnings).toBe(0);
+    expect(summary.perCharacter.zeno?.meanWinnings).toBe(0);
+  });
+
+  it("means the pots of finished games only", () => {
+    let summary = reduce(emptySummary(roster), event("hume", 1, 1, flipped("heads", undefined, 2)));
+    // Nothing has finished, so there is no mean to take.
+    expect(summary.perCharacter.hume?.meanWinnings).toBeUndefined();
+
+    summary = reduce(summary, event("hume", 1, 2, flipped("heads", "limit", 4)));
+    expect(summary.perCharacter.hume?.meanWinnings).toBe(6);
+
+    // A game walked away from on its first turn won nothing and pulls the mean down.
+    summary = reduce(summary, event("hume", 2, 1, { choice: "walk", ending: "walked" }));
+    expect(summary.perCharacter.hume?.meanWinnings).toBe(3);
+  });
+
+  it("keeps the pot out of a coin whose faces are only words", () => {
+    const summary = [
+      event("zeno", 1, 1, { ...flipped("heads"), priced: false }),
+      event("zeno", 1, 2, { ...flipped("tails", "face"), priced: false }),
+    ].reduce(reduce, emptySummary(roster));
+
+    expect(summary.games[0]?.flips.every((turn) => turn.won === undefined)).toBe(true);
+    expect(summary.games[0]?.winnings).toBe(0);
+    expect(summary.perCharacter.zeno?.meanWinnings).toBeUndefined();
   });
 
   it("records a turn that produced no answer, and ends its game as an error", () => {

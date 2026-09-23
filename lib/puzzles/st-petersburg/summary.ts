@@ -33,6 +33,14 @@ export type StPetersburgEventData = {
   flip: number;
   /** How the coin came down, when the character chose to flip it. */
   face?: CoinFace;
+  /**
+   * What the toss did to the pot, when the face it landed on is priced: the
+   * amount paid, or minus the whole pot for a forfeit. Absent for a walk, a
+   * failure, or a face whose payoff is prose.
+   */
+  won?: number;
+  /** Whether this coin has a pot at all — a property of the run, not the turn. */
+  priced: boolean;
   /** Set only on the turn that ends the game. */
   ending?: StPetersburgEnding;
 };
@@ -74,7 +82,7 @@ function place(
     (candidate) => candidate.characterId === data.characterId && candidate.iteration === data.iteration,
   );
   if (!game) {
-    game = { characterId: data.characterId, iteration: data.iteration, flips: [] };
+    game = { characterId: data.characterId, iteration: data.iteration, flips: [], winnings: 0 };
     next.push(game);
   }
 
@@ -85,6 +93,10 @@ function place(
   } else {
     game.flips[index] = turn;
   }
+
+  // The pot is recomputed from the turns rather than accumulated, so replaying
+  // the same event twice cannot pay it twice.
+  game.winnings = game.flips.reduce((sum, existing) => sum + (existing.won ?? 0), 0);
 
   if (data.ending !== undefined) game.ending = data.ending;
 
@@ -100,6 +112,7 @@ function tossesOf(game: StPetersburgGameSummary): StPetersburgFlipSummary[] {
 function tallyFor(
   games: readonly StPetersburgGameSummary[],
   characterId: string,
+  priced: boolean,
 ): StPetersburgCharacterTally {
   const mine = games.filter((game) => game.characterId === characterId);
   const turns = mine.flatMap((game) => game.flips);
@@ -112,6 +125,7 @@ function tallyFor(
   }
 
   const tossed = finished.reduce((sum, game) => sum + tossesOf(game).length, 0);
+  const pots = finished.reduce((sum, game) => sum + game.winnings, 0);
 
   return {
     ...counts,
@@ -121,6 +135,9 @@ function tallyFor(
     // Undefined rather than zero while no game has finished: a mean over nothing
     // is not a mean of zero, and the screens say "—" for it.
     meanFlipsPerGame: finished.length === 0 ? undefined : tossed / finished.length,
+    // A coin that pays only prose has no pot to average, so the column is left
+    // out of the tally rather than reported as zero.
+    meanWinnings: !priced || finished.length === 0 ? undefined : pots / finished.length,
   };
 }
 
@@ -133,6 +150,7 @@ export function reduce(
     flip: event.data.flip,
     choice: toChoice(event.decision?.choice),
     face: event.data.face,
+    won: event.data.won,
     weights: event.decision?.weights,
     confidence: event.decision?.confidence,
     latencyMs: event.decision?.latencyMs,
@@ -144,7 +162,7 @@ export function reduce(
     games,
     perCharacter: {
       ...summary.perCharacter,
-      [event.data.characterId]: tallyFor(games, event.data.characterId),
+      [event.data.characterId]: tallyFor(games, event.data.characterId, event.data.priced),
     },
   };
 }

@@ -6,7 +6,10 @@
  * only the list of faces the coin has already shown. The roster plays no part in
  * the prompt, so it is omitted from the body rather than ignored.
  *
- * Body: `{ config: { faces: { heads, tails }, maxFlips, decisionStyle? } }`
+ * Body: `{ config: { variant, faces: { heads, tails }, maxFlips, decisionStyle? } }`
+ * (`variant` may be left out; the domain schema reads a config without one as
+ * the encounter, which is how every config written before the framings existed
+ * still previews.)
  * Returns: `{ prompt: { user, options, question } }`
  */
 import { z } from "zod";
@@ -29,7 +32,7 @@ export const POST = handle(async (request: Request) => {
   const { config } = await readBody(request, bodySchema);
 
   const prompt = await buildStPetersburgPrompt({
-    config: { faces: config.faces, maxFlips: config.maxFlips },
+    config: { variant: config.variant, faces: config.faces, maxFlips: config.maxFlips },
     decisionStyle: config.decisionStyle,
     flip: 1,
     history: [],

@@ -60,11 +60,11 @@ function configVariant(config: Run["config"]): string | undefined {
   switch (config.puzzle) {
     case "trolley":
     case "prisoners-dilemma":
-      return variantLabel(config.variant);
-    // The adventure's framing is the graph it walks, and the coin's is the
-    // voice's own terms: neither has a framing to name here.
-    case "adventure":
     case "st-petersburg":
+      return variantLabel(config.variant);
+    // The adventure's framing is the graph it walks: there is no framing to name
+    // here that the configuration below does not already say.
+    case "adventure":
       return undefined;
   }
 }

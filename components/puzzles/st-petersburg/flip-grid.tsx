@@ -8,6 +8,7 @@ import type {
   StPetersburgFlipSummary,
   StPetersburgGameSummary,
 } from "@/lib/domain/summary";
+import { formatMoney } from "@/lib/format";
 import { FLIP_GRID_GAME_LIMIT } from "@/lib/puzzles/st-petersburg/ui-helpers";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +19,11 @@ export type FlipGridProps = {
   maxFlips: number;
   /** The roster's characters, for the name each row is labelled with. */
   characters: ReadonlyMap<string, Character>;
+  /**
+   * Character ids in the order their blocks of rows should appear — the roster's
+   * order. A character the list does not name comes after the ones it does.
+   */
+  order?: readonly string[];
   /** How many games to draw before deferring to the logs. */
   limit?: number;
   className?: string;
@@ -30,6 +36,21 @@ const ENDING_WORDS: Record<StPetersburgEnding, string> = {
   limit: "limit",
   error: "error",
 };
+
+/**
+ * How the row ends: the word, and the pot it ended on when the coin was priced.
+ *
+ * A game whose faces are all prose has no pot to name, and the engine records no
+ * `won` for one, so the row simply keeps its word. Nothing at all while the game
+ * is still being played — a running total under a game that may still double is
+ * a number that means the opposite of what it says.
+ */
+function endingNote(game: StPetersburgGameSummary): string {
+  if (game.ending === undefined) return "";
+  const word = ENDING_WORDS[game.ending];
+  const priced = game.flips.some((turn) => turn.won !== undefined);
+  return priced ? `${word} · ${formatMoney(game.winnings)}` : word;
+}
 
 /** What a turn looks like in a cell, and what a screen reader hears. */
 function describe(turn: StPetersburgFlipSummary): {
@@ -106,10 +127,22 @@ export function FlipGrid({
   games,
   maxFlips,
   characters,
+  order = [],
   limit = FLIP_GRID_GAME_LIMIT,
   className,
 }: FlipGridProps) {
-  const shown = games.slice(0, limit);
+  // The summary lists games in the order their first turn came back, which the
+  // pool makes arbitrary; the reader wants each character's games in a block,
+  // numbered upwards, so the rows follow the roster and then the game number.
+  const rank = new Map<string, number>(order.map((id, index) => [id, index]));
+  for (const game of games) {
+    if (!rank.has(game.characterId)) rank.set(game.characterId, rank.size);
+  }
+  const ordered = [...games].sort(
+    (a, b) =>
+      (rank.get(a.characterId) ?? 0) - (rank.get(b.characterId) ?? 0) || a.iteration - b.iteration,
+  );
+  const shown = ordered.slice(0, limit);
   const hidden = games.length - shown.length;
   const columns = Array.from({ length: Math.max(maxFlips, 1) }, (_, index) => index + 1);
 
@@ -163,11 +196,15 @@ export function FlipGrid({
                     <EmptyCell key={flip} />
                   );
                 })}
-                {/* The ending, quiet and at the right, where the row runs out.
-                    Nothing at all while the game is still being played. */}
-                <View className="w-4xl pl-xs">
+                {/* The ending, quiet and at the right, where the row runs out,
+                    and after it what the game was worth — the point of a coin
+                    that pays money is the number the row stopped at. Nothing at
+                    all while the game is still being played, and no pot at all
+                    when nothing on this row was priced. The column is a seat
+                    wide so "walked · $1,024" and "coin" start on one axis. */}
+                <View className="w-seat pl-xs">
                   <Text variant="meta" numberOfLines={1}>
-                    {game.ending ? ENDING_WORDS[game.ending] : ""}
+                    {endingNote(game)}
                   </Text>
                 </View>
               </View>
@@ -179,7 +216,7 @@ export function FlipGrid({
       <View className="flex-row flex-wrap items-center gap-md">
         <Text variant="muted">
           H heads · T tails · · walked away or no answer — the word at the right is how the game
-          ended
+          ended, and the figure beside it what it was worth
         </Text>
         <View className="flex-1" />
         {hidden > 0 ? (

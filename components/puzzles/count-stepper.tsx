@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { View } from "react-native";
 
 import { Button, Input, Text } from "@/components/ui";
+import { useTypedNumber } from "@/lib/client/use-typed-number";
 import { clampInt } from "@/lib/puzzles/setup-parse";
 import { cn } from "@/lib/utils";
 
@@ -42,8 +42,12 @@ export function CountStepper({
   fieldClassName,
   className,
 }: CountStepperProps) {
-  const [typed, setTyped] = useState<{ text: string; from: number } | null>(null);
-  const text = typed?.from === value ? typed.text : String(value);
+  const field = useTypedNumber({
+    value,
+    onChange,
+    parse: (text) => Number.parseInt(text, 10),
+    clamp: (count) => clampInt(count, min, max),
+  });
 
   return (
     <View className={cn("flex-row items-center gap-xxs", className)}>
@@ -64,14 +68,9 @@ export function CountStepper({
         )}
         keyboardType="number-pad"
         accessibilityLabel={label}
-        value={text}
-        onChangeText={(next) => {
-          const parsed = Number.parseInt(next, 10);
-          const count = Number.isFinite(parsed) ? clampInt(parsed, min, max) : value;
-          setTyped({ text: next, from: count });
-          if (count !== value) onChange(count);
-        }}
-        onBlur={() => setTyped(null)}
+        value={field.text}
+        onChangeText={field.onChangeText}
+        onBlur={field.onBlur}
       />
       <Button
         variant="outline"

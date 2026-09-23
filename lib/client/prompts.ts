@@ -55,6 +55,8 @@ export function previewPrisonersDilemmaPrompt(
 }
 
 export type StPetersburgPromptRequest = {
+  /** Which framing opens the prompt: the thought experiment or the encounter. */
+  variant: StPetersburgConfig["variant"];
   /** What the voice says each face is worth, and whether it ends the game. */
   faces: StPetersburgConfig["faces"];
   maxFlips: number;

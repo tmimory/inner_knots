@@ -10,7 +10,7 @@ import { z } from "zod";
 
 import { characterIdSchema } from "./character";
 
-export const PUZZLE_IDS = ["trolley", "prisoners-dilemma", "adventure", "st-petersburg"] as const;
+export const PUZZLE_IDS = ["trolley", "prisoners-dilemma", "st-petersburg", "adventure"] as const;
 export type PuzzleId = (typeof PUZZLE_IDS)[number];
 
 export const RUN_LIMITS = {
@@ -27,6 +27,8 @@ export const RUN_LIMITS = {
   payoff: 60,
   /** What one face of the St. Petersburg coin is worth, as prose. */
   facePayoff: 120,
+  /** The most a numeric face may pay on the first flip, before any doubling. */
+  maxAmount: 1_000_000,
   /** How many times one game of the coin may be flipped, at most. */
   minFlips: 1,
   maxFlips: 15,
@@ -129,21 +131,49 @@ export type AdventureConfig = z.infer<typeof adventureConfigSchema>;
 
 // --- St. Petersburg ----------------------------------------------------------------
 
+export const ST_PETERSBURG_VARIANTS = ["thought-experiment", "encounter"] as const;
+export type StPetersburgVariant = (typeof ST_PETERSBURG_VARIANTS)[number];
+
 export const COIN_FACES = ["heads", "tails"] as const;
 export type CoinFace = (typeof COIN_FACES)[number];
 
 /**
- * One face of the coin: what the voice says happens when it lands this way, as
- * free text ("the pot doubles", "you lose everything you have won"), and whether
- * landing this way ends the game.
+ * What one face pays. `text` is prose the voice says verbatim ("a sandwich");
+ * `amount` is money, paid on every flip that lands this way and, when `doubles`,
+ * doubled for each flip after the first (so $2, $4, $8… — the escalation the
+ * paradox is named for); `forfeit` takes back everything won so far.
+ *
+ * A stored payoff from before the kinds existed was a plain string; it is read
+ * as `text`, so an older run's config still parses.
  */
+export const COIN_PAYOFF_KINDS = ["text", "amount", "forfeit"] as const;
+export type CoinPayoffKind = (typeof COIN_PAYOFF_KINDS)[number];
+
+const coinPayoffUnionSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("text"), text: z.string().min(1).max(RUN_LIMITS.facePayoff) }),
+  z.object({
+    kind: z.literal("amount"),
+    amount: z.number().min(0).max(RUN_LIMITS.maxAmount),
+    doubles: z.boolean(),
+  }),
+  z.object({ kind: z.literal("forfeit") }),
+]);
+export const coinPayoffSchema = z.preprocess(
+  (value) => (typeof value === "string" ? { kind: "text", text: value } : value),
+  coinPayoffUnionSchema,
+);
+export type CoinPayoff = z.infer<typeof coinPayoffUnionSchema>;
+
+/** One face of the coin: what it pays, and whether landing this way ends the game. */
 export const coinFaceRuleSchema = z.object({
-  payoff: z.string().min(1).max(RUN_LIMITS.facePayoff),
+  payoff: coinPayoffSchema,
   endsGame: z.boolean(),
 });
 export type CoinFaceRule = z.infer<typeof coinFaceRuleSchema>;
 
 export const stPetersburgConfigSchema = z.object({
+  /** Older runs were all framed as an encounter; a config without one reads as that. */
+  variant: z.enum(ST_PETERSBURG_VARIANTS).default("encounter"),
   faces: z.object({ heads: coinFaceRuleSchema, tails: coinFaceRuleSchema }),
   /** The most times one game may flip the coin; the game ends after this many. */
   maxFlips: z.number().int().min(RUN_LIMITS.minFlips).max(RUN_LIMITS.maxFlips),
@@ -174,8 +204,8 @@ export type RunProgress = z.infer<typeof runProgressSchema>;
 export const runConfigSchema = z.discriminatedUnion("puzzle", [
   z.object({ puzzle: z.literal("trolley"), ...trolleyConfigSchema.shape }),
   z.object({ puzzle: z.literal("prisoners-dilemma"), ...prisonersDilemmaConfigSchema.shape }),
-  z.object({ puzzle: z.literal("adventure"), ...adventureConfigSchema.shape }),
   z.object({ puzzle: z.literal("st-petersburg"), ...stPetersburgConfigSchema.shape }),
+  z.object({ puzzle: z.literal("adventure"), ...adventureConfigSchema.shape }),
 ]);
 export type RunConfig = z.infer<typeof runConfigSchema>;
 

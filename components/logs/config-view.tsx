@@ -2,8 +2,9 @@ import { View } from "react-native";
 
 import { ObjectGlyph } from "@/components/icons/objects";
 import { Separator, Text } from "@/components/ui";
-import type { CoinFaceRule, Payoffs, RunConfig } from "@/lib/domain/run";
+import type { CoinFaceRule, CoinPayoff, Payoffs, RunConfig } from "@/lib/domain/run";
 import type { ObjectEntry } from "@/lib/client/use-runs";
+import { formatMoney } from "@/lib/format";
 
 import { Field, FieldText } from "./field";
 
@@ -103,6 +104,28 @@ function PayoffTable({ payoffs }: { payoffs: Payoffs }) {
 }
 
 /**
+ * What a face pays, as one line.
+ *
+ * A payoff is three different things — prose the voice says verbatim, money that
+ * may double with every flip, or the loss of everything won so far — and a
+ * reader comparing two faces wants them in one shape, not three. So each kind
+ * becomes a short clause in the same place on the line, and the branch lives
+ * here rather than inside the component that draws it.
+ */
+function payoffLine(payoff: CoinPayoff): string {
+  switch (payoff.kind) {
+    case "text":
+      return payoff.text;
+    case "amount":
+      return payoff.doubles
+        ? `${formatMoney(payoff.amount)}, doubling each flip`
+        : `${formatMoney(payoff.amount)} each flip`;
+    case "forfeit":
+      return "forfeits the pot";
+  }
+}
+
+/**
  * One face of the coin: what the voice said it pays, and whether landing that
  * way stops the game. The second line is the rule, not the payoff, so it is set
  * as the quieter of the two — a reader scanning the two faces is looking for the
@@ -111,7 +134,7 @@ function PayoffTable({ payoffs }: { payoffs: Payoffs }) {
 function Face({ label, rule }: { label: string; rule: CoinFaceRule }) {
   return (
     <Field label={label}>
-      <Text variant="small">{rule.payoff}</Text>
+      <Text variant="small">{payoffLine(rule.payoff)}</Text>
       <Text variant="muted">{rule.endsGame ? "ends the game" : "play on"}</Text>
     </Field>
   );

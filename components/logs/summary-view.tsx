@@ -11,7 +11,7 @@ import {
   type StPetersburgSummary,
   type TrolleySummary,
 } from "@/lib/domain/summary";
-import { UNKNOWN, formatPercent, pluralize } from "@/lib/format";
+import { UNKNOWN, formatMoney, formatPercent, pluralize } from "@/lib/format";
 
 import { LabelText } from "./field";
 import { JsonTree } from "./json-tree";
@@ -362,6 +362,15 @@ function flipsCell(mean: number | undefined): string {
   return mean === undefined ? UNKNOWN : mean.toFixed(1);
 }
 
+/**
+ * A mean final pot, or a dash when there is none: no game has finished yet, or
+ * neither face of this run's coin was priced, in which case the column is empty
+ * for every character and the table drops it.
+ */
+function moneyCell(mean: number | undefined): string {
+  return mean === undefined ? UNKNOWN : formatMoney(mean);
+}
+
 function StPetersburgSummaryTable({
   summary,
   runs,
@@ -382,6 +391,7 @@ function StPetersburgSummaryTable({
       String(tally.heads),
       String(tally.tails),
       flipsCell(tally.meanFlipsPerGame),
+      moneyCell(tally.meanWinnings),
       meanCell(tally.meanWeights?.flip),
     ],
   }));
@@ -397,6 +407,7 @@ function StPetersburgSummaryTable({
         "Heads",
         "Tails",
         "μ flips",
+        "μ won",
         "μ flip",
       ]}
       rows={rows}

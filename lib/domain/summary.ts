@@ -169,6 +169,12 @@ export const stPetersburgFlipSummarySchema = z.object({
   choice: z.enum(ST_PETERSBURG_CHOICES).optional(),
   /** Set only when the character chose to flip and the coin was tossed. */
   face: z.enum(COIN_FACES).optional(),
+  /**
+   * What the toss did to the pot, when the face's payoff is money: the amount
+   * paid (doubling applied), or minus the whole pot for a forfeit. Absent for a
+   * walk, a failure, or a face whose payoff is prose the engine cannot price.
+   */
+  won: z.number().optional(),
   weights: weightsSchema.optional(),
   confidence: z.number().optional(),
   latencyMs: z.number().optional(),
@@ -182,6 +188,8 @@ export const stPetersburgGameSummarySchema = z.object({
   iteration: z.number().int(),
   /** Every turn so far, in order. */
   flips: z.array(stPetersburgFlipSummarySchema),
+  /** The pot as it stands: the sum of every `won` so far. Zero before the first. */
+  winnings: z.number().default(0),
   ending: z.enum(ST_PETERSBURG_ENDINGS).optional(),
 });
 export type StPetersburgGameSummary = z.infer<typeof stPetersburgGameSummarySchema>;
@@ -203,6 +211,11 @@ export const stPetersburgCharacterTallySchema = z.object({
   }),
   /** Mean number of tosses per finished game, over games that finished. */
   meanFlipsPerGame: z.number().optional(),
+  /**
+   * Mean final pot over finished games, when the coin pays money. Absent while
+   * no game has finished, and absent when neither face is priced.
+   */
+  meanWinnings: z.number().optional(),
   meanWeights: z.object({ flip: z.number(), walk: z.number() }).optional(),
 });
 export type StPetersburgCharacterTally = z.infer<typeof stPetersburgCharacterTallySchema>;

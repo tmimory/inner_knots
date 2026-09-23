@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import type { Character } from "@/lib/domain/character";
-import type { CoinFace } from "@/lib/domain/run";
+import type { CoinFace, StPetersburgConfig } from "@/lib/domain/run";
 import type { StPetersburgPlan } from "@/lib/engine/setup";
 import type { RunnerContext } from "@/lib/engine/types";
 import { ProviderError, type DecisionRequest } from "@/lib/providers/types";
@@ -28,8 +28,25 @@ function character(id: string): Character {
   };
 }
 
-/** Heads doubles and plays on; tails ends the game, as the classic paradox has it. */
-function plan(overrides: { maxFlips?: number; roster?: { id: string; runs: number }[] } = {}): StPetersburgPlan {
+/** The classic paradox: heads pays $2 and doubles, tails takes the pot and ends the game. */
+const PARADOX: StPetersburgConfig["faces"] = {
+  heads: { payoff: { kind: "amount", amount: 2, doubles: true }, endsGame: false },
+  tails: { payoff: { kind: "forfeit" }, endsGame: true },
+};
+
+/** The same coin said in words, which the engine cannot price. */
+const PROSE: StPetersburgConfig["faces"] = {
+  heads: { payoff: { kind: "text", text: "the pot doubles" }, endsGame: false },
+  tails: { payoff: { kind: "text", text: "you lose everything in the pot" }, endsGame: true },
+};
+
+type PlanOverrides = {
+  maxFlips?: number;
+  roster?: { id: string; runs: number }[];
+  faces?: StPetersburgConfig["faces"];
+};
+
+function plan(overrides: PlanOverrides = {}): StPetersburgPlan {
   const maxFlips = overrides.maxFlips ?? 3;
   const entries = overrides.roster ?? [{ id: "zeno", runs: 1 }];
   return {
@@ -38,10 +55,8 @@ function plan(overrides: { maxFlips?: number; roster?: { id: string; runs: numbe
     roster: entries.map((entry) => ({ character: character(entry.id), runs: entry.runs })),
     config: {
       puzzle: "st-petersburg",
-      faces: {
-        heads: { payoff: "the pot doubles", endsGame: false },
-        tails: { payoff: "you lose everything in the pot", endsGame: true },
-      },
+      variant: "encounter",
+      faces: overrides.faces ?? PARADOX,
       maxFlips,
       roster: entries.map((entry) => ({ characterId: entry.id, runs: entry.runs })),
     },
@@ -94,8 +109,8 @@ describe("St. Petersburg runner", () => {
 
     expect(prompts[0]).toContain("This is flip 1 of at most 3.");
     expect(prompts[0]).not.toContain("Flip 1: heads");
-    expect(prompts[1]).toContain("- Flip 1: heads — the pot doubles.");
-    expect(prompts[2]).toContain("- Flip 2: heads — the pot doubles.");
+    expect(prompts[1]).toContain("- Flip 1: heads — you won $2.");
+    expect(prompts[2]).toContain("- Flip 2: heads — you won $4.");
     expect(prompts[2]).toContain("This is flip 3 of at most 3.");
   });
 
@@ -141,6 +156,51 @@ describe("St. Petersburg runner", () => {
       errors: 1,
       endings: { walked: 0, face: 0, limit: 0, error: 1 },
     });
+  });
+
+  it("pays a doubling face more every flip, and carries the pot into the next prompt", async () => {
+    const prompts = answers("flip");
+
+    const events = await collect(createStPetersburgRunner(plan({ maxFlips: 3 }), { flip: loadedCoin("heads") }));
+
+    expect(events.map((event) => event.data.won)).toEqual([2, 4, 8]);
+    expect(events.every((event) => event.data.priced)).toBe(true);
+    expect(prompts[2]).toContain("Your winnings stand at $6.");
+
+    const summary = events.reduce(reduce, emptySummary(plan().config));
+    expect(summary.games[0]?.winnings).toBe(14);
+    expect(summary.games[0]?.flips.map((turn) => turn.won)).toEqual([2, 4, 8]);
+    expect(summary.perCharacter.zeno?.meanWinnings).toBe(14);
+  });
+
+  it("takes the whole pot back on a forfeit, and leaves the game at nothing", async () => {
+    const coin = vi.fn<() => CoinFace>();
+    coin.mockReturnValueOnce("heads").mockReturnValueOnce("heads").mockReturnValue("tails");
+    answers("flip");
+
+    const events = await collect(createStPetersburgRunner(plan({ maxFlips: 5 }), { flip: coin }));
+
+    expect(events.map((event) => event.data.won)).toEqual([2, 4, -6]);
+    expect(events[2]?.data.ending).toBe("face");
+
+    const summary = events.reduce(reduce, emptySummary(plan().config));
+    expect(summary.games[0]?.winnings).toBe(0);
+    expect(summary.perCharacter.zeno?.meanWinnings).toBe(0);
+  });
+
+  it("prices nothing when both faces are only words", async () => {
+    answers("flip");
+
+    const events = await collect(
+      createStPetersburgRunner(plan({ maxFlips: 2, faces: PROSE }), { flip: loadedCoin("heads") }),
+    );
+
+    expect(events.every((event) => event.data.won === undefined)).toBe(true);
+    expect(events.every((event) => event.data.priced)).toBe(false);
+
+    const summary = events.reduce(reduce, emptySummary(plan().config));
+    expect(summary.games[0]?.winnings).toBe(0);
+    expect(summary.perCharacter.zeno?.meanWinnings).toBeUndefined();
   });
 
   it("plays one game per run of every character on the roster", async () => {

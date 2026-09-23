@@ -8,6 +8,7 @@ import { RunFooter } from "@/components/puzzles/run-footer";
 import { Section } from "@/components/puzzles/section";
 import { FacePanel, StPetersburgResults } from "@/components/puzzles/st-petersburg";
 import { Subsection } from "@/components/puzzles/subsection";
+import { VariantSelect, type VariantOption } from "@/components/puzzles/variant-select";
 import { Screen } from "@/components/shell";
 import { Button, Label, Text } from "@/components/ui";
 import { previewStPetersburgPrompt } from "@/lib/client/prompts";
@@ -15,7 +16,13 @@ import { useCharacters } from "@/lib/client/use-characters";
 import { usePersistedState } from "@/lib/client/use-persisted-state";
 import { seatedCharacters, usePromptPreview } from "@/lib/client/use-prompt-preview";
 import { useRun, useRunStarter } from "@/lib/client/use-run";
-import { COIN_FACES, RUN_LIMITS, type CoinFace, type CoinFaceRule } from "@/lib/domain/run";
+import {
+  COIN_FACES,
+  RUN_LIMITS,
+  type CoinFace,
+  type CoinFaceRule,
+  type StPetersburgVariant,
+} from "@/lib/domain/run";
 import type { StPetersburgSummary } from "@/lib/domain/summary";
 import { pluralize } from "@/lib/format";
 import {
@@ -27,6 +34,25 @@ import {
   type StPetersburgSetup,
 } from "@/lib/puzzles/st-petersburg/ui-helpers";
 import { indexById } from "@/lib/utils";
+
+/**
+ * How the two framings are described in the interface.
+ *
+ * UI copy: what the model reads lives in `prompts/st-petersburg/variant-*.md`
+ * and is never duplicated here.
+ */
+const VARIANTS: readonly VariantOption<StPetersburgVariant>[] = [
+  {
+    id: "thought-experiment",
+    label: "Thought experiment",
+    description: "A gamble stated as one. There is no coin and nobody is paying.",
+  },
+  {
+    id: "encounter",
+    label: "Encounter",
+    description: "You are walking somewhere ordinary and there is a coin on the ground.",
+  },
+];
 
 export default function StPetersburgScreen() {
   const { characters } = useCharacters();
@@ -124,6 +150,19 @@ export default function StPetersburgScreen() {
         }
       >
         <View className="gap-3xl">
+          {/*
+            The framing comes first because it is what the rest of the section is
+            read inside: a stake of $2 means one thing put as a gamble on paper
+            and another said out loud over a coin in the road.
+          */}
+          <Subsection title="Framing">
+            <VariantSelect
+              value={setup.variant}
+              onChange={(variant) => patch({ variant })}
+              options={VARIANTS}
+            />
+          </Subsection>
+
           {/*
             The two faces are one object seen from both sides, so they sit beside
             each other wherever there is room for two columns of prose and stack

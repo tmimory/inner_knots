@@ -31,6 +31,7 @@ export const VARIANT_LABELS: Record<string, string> = {
   employee: "Employee framing",
   bystander: "Bystander framing",
   interrogation: "Interrogation room",
+  encounter: "Encounter",
 };
 
 /** A run config's framing in prose, or the raw id when the puzzle has none. */

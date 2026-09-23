@@ -9,6 +9,7 @@ import {
   formatDay,
   formatDuration,
   formatElapsed,
+  formatMoney,
   formatPercent,
   formatRelative,
   formatStamp,
@@ -212,5 +213,36 @@ describe("formatClock", () => {
   it("is what formatTime is built from", () => {
     const iso = new Date(2026, 8, 21, 14, 32, 7).toISOString();
     expect(formatTime(iso)).toBe(formatClock(iso, { seconds: true }));
+  });
+});
+
+describe("formatMoney", () => {
+  it("says whole dollars without cents", () => {
+    expect(formatMoney(2)).toBe("$2");
+    expect(formatMoney(0)).toBe("$0");
+  });
+
+  it("keeps the cents when there are any", () => {
+    expect(formatMoney(2.5)).toBe("$2.50");
+    expect(formatMoney(0.05)).toBe("$0.05");
+  });
+
+  it("groups thousands the en-US way, whatever the reader's locale", () => {
+    expect(formatMoney(1024)).toBe("$1,024");
+    expect(formatMoney(1_048_576)).toBe("$1,048,576");
+  });
+
+  it("keeps at most two decimals", () => {
+    expect(formatMoney(1.005)).toBe("$1.01");
+    expect(formatMoney(2 / 3)).toBe("$0.67");
+  });
+
+  it("signs a sum taken back", () => {
+    expect(formatMoney(-6)).toBe("-$6");
+  });
+
+  it("refuses a value it cannot read", () => {
+    expect(formatMoney(Number.NaN)).toBe(UNKNOWN);
+    expect(formatMoney(Number.POSITIVE_INFINITY)).toBe(UNKNOWN);
   });
 });

@@ -211,3 +211,25 @@ export function pluralize(count: number, singular: string, plural?: string): str
 export function countNote(count: number, singular: string, plural?: string): string | undefined {
   return count === 0 ? undefined : pluralize(count, singular, plural);
 }
+
+/**
+ * Money the way a voice would say it: `$2`, `$2.50`, `$1,024`.
+ *
+ * Fixed to en-US because the sums are dollars in the prompt's own words — the
+ * model is told "$2", and the screens and the ledger have to say the same thing
+ * the model was told, whatever locale the reader is in. Cents are shown when
+ * there are any and dropped when there are none, so a whole-dollar pot does not
+ * read as an invoice.
+ */
+const MONEY = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+export function formatMoney(amount: number): string {
+  if (!Number.isFinite(amount)) return UNKNOWN;
+  const text = MONEY.format(amount);
+  return text.endsWith(".00") ? text.slice(0, -3) : text;
+}
