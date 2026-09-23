@@ -45,6 +45,8 @@ Run-wide knobs, also in `.env.example`:
 
 **Characters** (`/characters`) are the cast list every puzzle page seats its own roster from: an identifier (unique, no spaces), an avatar (shape + color), a provider and model, an output mode (structured JSON vs. a forced tool call — tool mode is disabled when the model doesn't support it), an optional effort level, and a steering mode — `raw` (no system prompt), `bio` ("You are ..."), or `full` (bio plus lists of principles and values). The editor's Final Prompt panel shows the exact steering text a run will send, composed live from the same prompt fragments a run uses.
 
+![Zeno, as Jev character](screen_shots/character.png)
+
 **Puzzles:**
 
 - **Trolley** (`/puzzles/trolley`) — drag objects from a searchable, tag-filterable catalogue (people, relations, animals, singular items) onto two tracks, pick a framing variant (thought experiment / trolley-company employee / bystander), add a roster of 1–5 characters with a run count each, and pull the lever. Results show a per-character histogram of Track 1 vs. Track 2 with mean Jev weights where a provider reports them.
@@ -52,7 +54,11 @@ Run-wide knobs, also in `.env.example`:
 - **Coin of St. Petersburg** (`/puzzles/st-petersburg`) — a coin, and a voice that says what each face is worth. A face pays prose ("a sandwich"), an amount of money — optionally doubling with every flip — or forfeits everything won so far; per face, whether landing that way ends the game. The default is the paradox itself: heads pays $2, doubling each flip; tails forfeits the pot and ends the game. Either framing will do — a thought experiment, or an encounter with a coin on the ground — and you set how many times one game may flip (up to 15) and how many games each roster character plays. The engine tosses the coin after every decision to flip and carries the face, and the pot it leaves behind, into the next turn's prompt, so the character decides again knowing how it has gone. Results show flip vs. walk per character, how each game ended, and a grid of the tosses.
 - **Choose your own adventure** (`/puzzles/adventure`) — build a decision tree with a React Flow canvas: each node has context, a decision prompt, and up to five options (each an edge to another node or an ending). An amnesia toggle controls whether a walk remembers its own history. Running it walks the tree per roster character and shows an outcome view — a read-only graph with node hit counts and option frequencies — plus a per-walk step list.
 
+![Coin of St. Petersburg](screen_shots/puzzle.png)
+
 **Logs** (`/logs`) list every run, grouped by day and filterable by puzzle, character and status. Opening a run shows its stored configuration, its summary, the full span tree (run -> character -> iteration -> provider call), and — per span — the exact system prompt, messages, schema or tool definition sent, the raw provider response, and the normalized decision with weights. A run can be exported as a single JSONL bundle (`<runId>.jsonl`, one tagged line per run/span/log record).
+
+![Example log](screen_shots/logs.png)
 
 ## Where your data lives
 
