@@ -12,6 +12,7 @@ export const PUZZLE_LABELS: Record<PuzzleId, string> = {
   trolley: "Trolley problem",
   "prisoners-dilemma": "Prisoner's dilemma",
   adventure: "Adventure",
+  "st-petersburg": "Coin of St. Petersburg",
 };
 
 /** The puzzles in menu order, as the `{ value, label }` pairs a Select takes. */

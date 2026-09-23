@@ -18,6 +18,12 @@ import {
   type PrisonersDilemmaVariant,
   type RosterEntry,
 } from "@/lib/domain/run";
+import {
+  parseFlag,
+  parseNumber,
+  parseRoster,
+  parseText,
+} from "@/lib/puzzles/setup-parse";
 
 /** The two seats, in order, as the screen and the prompts name them. */
 export const PLAYER_LABELS = ["Player A", "Player B"] as const;
@@ -168,43 +174,13 @@ export const DEFAULT_SETUP: PrisonersDilemmaSetup = {
   runs: 1,
 };
 
-function clamp(value: number, min: number, max: number): number {
-  if (!Number.isFinite(value)) return min;
-  return Math.min(max, Math.max(min, Math.round(value)));
-}
-
-/** A stored value only counts when it is a string; anything else takes the default. */
-function text(value: unknown, fallback: string, limit: number): string {
-  return typeof value === "string" ? value.slice(0, limit) : fallback;
-}
-
-function flag(value: unknown, fallback: boolean): boolean {
-  return typeof value === "boolean" ? value : fallback;
-}
-
-function number(value: unknown, fallback: number, min: number, max: number): number {
-  return typeof value === "number" ? clamp(value, min, max) : fallback;
-}
-
 function pair(value: unknown, fallback: PayoffPair): PayoffPair {
   if (typeof value !== "object" || value === null) return fallback;
   const { a, b } = value as { a?: unknown; b?: unknown };
   return {
-    a: text(a, fallback.a, RUN_LIMITS.payoff),
-    b: text(b, fallback.b, RUN_LIMITS.payoff),
+    a: parseText(a, fallback.a, RUN_LIMITS.payoff),
+    b: parseText(b, fallback.b, RUN_LIMITS.payoff),
   };
-}
-
-function parseRoster(value: unknown): RosterEntry[] {
-  if (!Array.isArray(value)) return [];
-  return value
-    .flatMap((entry): RosterEntry[] => {
-      if (typeof entry !== "object" || entry === null) return [];
-      const { characterId } = entry as { characterId?: unknown };
-      if (typeof characterId !== "string" || characterId === "") return [];
-      return [{ characterId, runs: RUN_LIMITS.minRuns }];
-    })
-    .slice(0, PLAYER_COUNT);
 }
 
 /**
@@ -221,20 +197,20 @@ export function parseSetup(raw: unknown): PrisonersDilemmaSetup | undefined {
   const asymmetricPayoffs = (value.asymmetricPayoffs ?? {}) as Record<string, unknown>;
 
   return {
-    roster: parseRoster(value.roster),
+    roster: parseRoster(value.roster, { max: PLAYER_COUNT, runs: "fixed" }),
     variant:
       PRISONERS_DILEMMA_VARIANTS.find((entry) => entry === value.variant) ?? DEFAULT_SETUP.variant,
-    relationshipsEnabled: flag(value.relationshipsEnabled, DEFAULT_SETUP.relationshipsEnabled),
-    relationshipA: text(value.relationshipA, "", RUN_LIMITS.relationship),
-    relationshipB: text(value.relationshipB, "", RUN_LIMITS.relationship),
-    crime: text(value.crime, DEFAULT_CRIME, RUN_LIMITS.crime),
-    crimeUnlocked: flag(value.crimeUnlocked, DEFAULT_SETUP.crimeUnlocked),
-    symmetric: flag(value.symmetric, DEFAULT_SETUP.symmetric),
-    playersAware: flag(value.playersAware, DEFAULT_SETUP.playersAware),
+    relationshipsEnabled: parseFlag(value.relationshipsEnabled, DEFAULT_SETUP.relationshipsEnabled),
+    relationshipA: parseText(value.relationshipA, "", RUN_LIMITS.relationship),
+    relationshipB: parseText(value.relationshipB, "", RUN_LIMITS.relationship),
+    crime: parseText(value.crime, DEFAULT_CRIME, RUN_LIMITS.crime),
+    crimeUnlocked: parseFlag(value.crimeUnlocked, DEFAULT_SETUP.crimeUnlocked),
+    symmetric: parseFlag(value.symmetric, DEFAULT_SETUP.symmetric),
+    playersAware: parseFlag(value.playersAware, DEFAULT_SETUP.playersAware),
     symmetricPayoffs: Object.fromEntries(
       SYMMETRIC_PAYOFF_FIELDS.map((field) => [
         field,
-        text(symmetricPayoffs[field], DEFAULT_SYMMETRIC_PAYOFFS[field], RUN_LIMITS.payoff),
+        parseText(symmetricPayoffs[field], DEFAULT_SYMMETRIC_PAYOFFS[field], RUN_LIMITS.payoff),
       ]),
     ) as SymmetricPayoffValues,
     asymmetricPayoffs: Object.fromEntries(
@@ -243,14 +219,14 @@ export function parseSetup(raw: unknown): PrisonersDilemmaSetup | undefined {
         pair(asymmetricPayoffs[field], DEFAULT_ASYMMETRIC_PAYOFFS[field]),
       ]),
     ) as AsymmetricPayoffValues,
-    iterated: flag(value.iterated, DEFAULT_SETUP.iterated),
-    rounds: number(
+    iterated: parseFlag(value.iterated, DEFAULT_SETUP.iterated),
+    rounds: parseNumber(
       value.rounds,
       DEFAULT_SETUP.rounds,
       MIN_ITERATED_ROUNDS,
       RUN_LIMITS.maxIterations,
     ),
-    runs: number(value.runs, DEFAULT_SETUP.runs, RUN_LIMITS.minRuns, RUN_LIMITS.maxRuns),
+    runs: parseNumber(value.runs, DEFAULT_SETUP.runs, RUN_LIMITS.minRuns, RUN_LIMITS.maxRuns),
   };
 }
 

@@ -7,12 +7,12 @@
 import type { AdventurePromptResponse } from "@/app/api/prompts/adventure+api";
 import type { FragmentSummary } from "@/app/api/prompts/fragments+api";
 import type { PrisonersDilemmaPromptResponse } from "@/app/api/prompts/prisoners-dilemma+api";
+import type { StPetersburgPromptResponse } from "@/app/api/prompts/st-petersburg+api";
 import type { TrolleyPromptResponse } from "@/app/api/prompts/trolley+api";
 
 import type { Character } from "../domain/character";
 import type { DecisionStyle } from "../domain/enums";
-import type { TrolleyVariant } from "../domain/run";
-import type { PrisonersDilemmaConfig } from "../domain/run";
+import type { PrisonersDilemmaConfig, StPetersburgConfig, TrolleyVariant } from "../domain/run";
 import { apiFetch } from "./api";
 
 export type { FragmentSummary };
@@ -52,6 +52,20 @@ export function previewPrisonersDilemmaPrompt(
   config: Partial<PrisonersDilemmaConfig> & { decisionStyle?: DecisionStyle },
 ): Promise<PrisonersDilemmaPromptResponse> {
   return post<PrisonersDilemmaPromptResponse>("/api/prompts/prisoners-dilemma", { config });
+}
+
+export type StPetersburgPromptRequest = {
+  /** What the voice says each face is worth, and whether it ends the game. */
+  faces: StPetersburgConfig["faces"];
+  maxFlips: number;
+  decisionStyle?: DecisionStyle;
+};
+
+/** The first turn's prompt for a coin, with nothing flipped yet. */
+export function previewStPetersburgPrompt(
+  config: StPetersburgPromptRequest,
+): Promise<StPetersburgPromptResponse> {
+  return post<StPetersburgPromptResponse>("/api/prompts/st-petersburg", { config });
 }
 
 /** The briefing plus the first node's prompt for an adventure. */

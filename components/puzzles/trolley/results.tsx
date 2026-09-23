@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 import { View } from "react-native";
 
-import { Avatar } from "@/components/avatars";
 import { Histogram, type HistogramGroupSpec, type HistogramSeriesSpec } from "@/components/charts";
 import { ResultsFooter } from "@/components/puzzles/results-footer";
-import { characterDisplayName, type Character } from "@/lib/domain/character";
+import { rosterGroups } from "@/components/puzzles/roster-groups";
+import type { Character } from "@/lib/domain/character";
 import type { RosterEntry } from "@/lib/domain/run";
 import type { TrolleySummary } from "@/lib/domain/summary";
 import { countNote, pluralize } from "@/lib/format";
@@ -44,32 +44,21 @@ export function TrolleyResults({
   runId,
   className,
 }: TrolleyResultsProps) {
-  const groups = useMemo((): HistogramGroupSpec[] => {
-    const perCharacter = summary?.perCharacter ?? {};
-    // The roster is the order on screen; anything the summary knows about and the
-    // roster does not (a character removed mid-run) is appended rather than lost.
-    const ids = [
-      ...roster.map((entry) => entry.characterId),
-      ...Object.keys(perCharacter).filter(
-        (id) => !roster.some((entry) => entry.characterId === id),
+  const groups = useMemo(
+    (): HistogramGroupSpec[] =>
+      rosterGroups(roster, summary?.perCharacter ?? {}, characters).map(
+        (group) =>
+          ({
+            id: group.id,
+            label: group.name,
+            values: { track1: group.tally?.track1 ?? 0, track2: group.tally?.track2 ?? 0 },
+            weights: group.tally?.meanWeights,
+            note: countNote(group.tally?.errors ?? 0, "error"),
+            accessory: group.accessory,
+          }) satisfies HistogramGroupSpec,
       ),
-    ];
-
-    return ids.map((id) => {
-      const tally = perCharacter[id];
-      const character = characters.get(id);
-      return {
-        id,
-        label: character ? characterDisplayName(character) : id,
-        values: { track1: tally?.track1 ?? 0, track2: tally?.track2 ?? 0 },
-        weights: tally?.meanWeights,
-        note: countNote(tally?.errors ?? 0, "error"),
-        accessory: character ? (
-          <Avatar shape={character.avatar.shape} color={character.avatar.color} size="sm" />
-        ) : undefined,
-      } satisfies HistogramGroupSpec;
-    });
-  }, [characters, roster, summary]);
+    [characters, roster, summary],
+  );
 
   const answered = summary?.decisions.length ?? 0;
 

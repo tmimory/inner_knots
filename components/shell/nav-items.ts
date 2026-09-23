@@ -44,6 +44,12 @@ export const navItems: NavItem[] = [
         href: "/puzzles/adventure",
         match: "/puzzles/adventure",
       },
+      {
+        kind: "leaf",
+        label: "Coin of St. Petersburg",
+        href: "/puzzles/st-petersburg",
+        match: "/puzzles/st-petersburg",
+      },
     ],
   },
   { kind: "leaf", label: "Logs", href: "/logs", match: "/logs" },

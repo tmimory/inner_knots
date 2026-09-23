@@ -29,6 +29,7 @@ app/                     Expo Router routes
   puzzles/trolley.tsx
   puzzles/prisoners-dilemma.tsx
   puzzles/adventure/     list, builder, run
+  puzzles/st-petersburg.tsx
   logs/                  run list, run detail (spans + logs)
   api/                   server routes (characters, objects, adventures, runs, providers, prompts)
 components/
@@ -65,6 +66,7 @@ prompts/                 markdown prompt fragments (editable without touching co
                          relationship.md, payoffs-symmetric.md,
                          payoffs-asymmetric-{aware,own}.md, history.md, question.md
   adventure/             briefing.md, history.md, node.md
+  st-petersburg/         situation.md, history.md, question.md
   shared/                decision-{structured,tool,judgment}.md
 data/                    local JSONL data (gitignored). Created on first run.
 docs/                    this documentation
@@ -77,7 +79,7 @@ All entities carry `id`, `createdAt`, `updatedAt`.
 - **Character**: `id` (user identifier, no spaces, unique; defaults to UUID), `avatar: { shape, color }`, `provider`, `model`, `outputMode: "structured" | "tool"`, `effort?`, `steering: { mode: "raw" | "bio" | "full", bio?, principles: string[], values: string[] }`. The composed steering prompt is derived, never stored.
 - **TrolleyObject**: `id`, `label`, `prompt` (≤250 chars), `icon` (key into the SVG set), `builtIn: boolean`, `tags`.
 - **Adventure**: `id`, `name`, `briefing` (≤1000), `startNodeId`, `nodes[]`. Node = `{ id, position: {x,y}, context ≤1000, decision ≤500, options: [{ id, label ≤100, outcome? ≤500, nextNodeId | null }] }` (max 5 options). There is no separate `edges[]`: an option *is* the edge, and React Flow derives its edges from `nextNodeId`. `validateAdventure(adventure)` reports the structural problems a graph can have — missing start, unreachable node, dangling `nextNodeId`, node without options, duplicate node id — so the builder can show them without refusing to store a half-built graph. The canvas writes nothing but `nextNodeId`: dragging from an option's handle points it at a card (and re-points it if it already led somewhere), dragging either end of an edge moves the line — or cuts it, if it is dropped on the pane — and the edge you are pointing at carries an × that cuts it. Deleting a *card* is the one edit the canvas will not make: Backspace, Delete and the selected card's toolbar all call `onRequestDeleteNode`, and the screen confirms it once and applies `removeNode`, because removing a card also cuts every option that led to it.
-- **Run**: `id`, `puzzle: "trolley" | "prisoners-dilemma" | "adventure"`, `config` (full puzzle configuration snapshot incl. roster and per-character run counts, a discriminated union on `puzzle`), `status`, `progress: { done, total }`, `startedAt`, `finishedAt`, `summary` (puzzle-specific reducer output: histogram counts, per-node frequencies). Prisoner's-dilemma payoffs are free text ("5 years", "walk free"), symmetric or per-player.
+- **Run**: `id`, `puzzle: "trolley" | "prisoners-dilemma" | "adventure" | "st-petersburg"`, `config` (full puzzle configuration snapshot incl. roster and per-character run counts, a discriminated union on `puzzle`), `status`, `progress: { done, total }`, `startedAt`, `finishedAt`, `summary` (puzzle-specific reducer output: histogram counts, per-node frequencies). Prisoner's-dilemma payoffs are free text ("5 years", "walk free"), symmetric or per-player. The St. Petersburg config is a coin: two faces, each with a free-text payoff ("the pot doubles") and a flag saying whether landing that way ends the game, a maximum number of flips per game (up to 15), and a roster whose per-character run counts are games played.
 - **Span**: `runId`, `spanId`, `parentSpanId`, `name` (run / character / iteration / provider-call), `characterId`, `iteration`, `startedAt`, `endedAt`, `status`, `input` (exact system + messages + tool/schema sent), `output` (raw provider response), `decision` (normalized: `choice`, `weights?` for Jev probabilities, `usage`, `latencyMs`), `error?`.
 - **LogEvent**: `runId`, `ts`, `level`, `message`, `data?`.
 
@@ -124,6 +126,7 @@ Every builder closes with `renderDecisionInstructions(options, decisionStyle)`, 
 - **Trolley** — `buildTrolleyPrompt({ variant, track1, track2, decisionStyle })`. Track contents arrive already resolved to objects, so the builder is testable without the store. `joinNaturalLanguage` produces "a, b and c"; an empty track renders as an empty string and `trolley/situation.md` supplies the wording, so the phrase for a bare track stays in markdown.
 - **Prisoner's dilemma** — `buildPrisonersDilemmaPrompt({ config, player, decisionStyle, round?, history? })`. Each player gets their own prompt: relationships are per side, and the stored `a`/`b` payoff matrix is re-keyed as "you" / "your partner". When `playersAware` is false a player is shown only their own consequences.
 - **Adventure** — `buildAdventurePrompt({ briefing, node, history?, amnesia, decisionStyle })`. Each node call is stateless, so the briefing is repeated every time; amnesia simply omits the history section.
+- **St. Petersburg** — `buildStPetersburgPrompt({ config, decisionStyle, flip?, history? })`. One prompt per turn, assembled the same way each time: `situation.md` states the coin and the voice's terms (what each face pays, and which face ends the game), `history.md` says which flip this is and lists the tosses so far with the payoff each one landed on, `question.md` asks whether the character flips, and the shared decision instructions close it. The engine, not the model, tosses the coin — a random number after a `flip` answer — and the face it shows joins the history the next turn carries.
 
 ## API routes (app/api, lib/api)
 
@@ -159,7 +162,7 @@ Every provider call is wrapped in a span that records the exact request body and
 
 ### Engine
 
-`POST /api/runs` validates the config, resolves everything it names and answers **202** with the queued run; execution continues in the process that served the request, so screens poll `GET /api/runs/:id`. `prepareRun(config)` (`lib/engine/setup.ts`) is the resolution step and is called twice on purpose — once by the route, so a missing character, object or adventure is a 400 naming it before a run exists, and once by the engine when it starts, because the store may have changed. It also computes `progress.total`: trolley Σ runs, prisoner's dilemma runs × iterations × 2, adventure Σ runs (a path is the unit, whatever its length). Trolley object ids resolve against the user's objects first and the built-in catalogue second.
+`POST /api/runs` validates the config, resolves everything it names and answers **202** with the queued run; execution continues in the process that served the request, so screens poll `GET /api/runs/:id`. `prepareRun(config)` (`lib/engine/setup.ts`) is the resolution step and is called twice on purpose — once by the route, so a missing character, object or adventure is a 400 naming it before a run exists, and once by the engine when it starts, because the store may have changed. It also computes `progress.total`: trolley Σ runs, prisoner's dilemma runs × iterations × 2, adventure Σ runs (a path is the unit, whatever its length), St. Petersburg Σ runs (a game is the unit, whatever its length). Trolley object ids resolve against the user's objects first and the built-in catalogue second.
 
 A puzzle supplies a `PuzzleRunner`: a total, an `emptySummary()`, a pure `reduce()` and an async generator of `DecisionEvent`s. The engine knows nothing else about the puzzle. For every event it does the same four things — write its spans, fold it into the summary, persist `progress` **and the partial summary**, log it — which is what lets a screen animate a run: the summary read mid-run has the final shape with fewer decisions in it. `updateRunSummary` appends a `summary` run event for this, so a progress tick and a summary rewrite stay two short lines rather than a rewritten run.
 
@@ -174,7 +177,7 @@ run
 
 Adventures use a `node` span per step in place of the innermost `iteration`. The span a decision belongs to carries the final `DecisionRecord`; each `provider-call` span carries the exact request body as `input` and the raw response as `output`, so a run can be read back call by call.
 
-**Concurrency.** `mergePool` (`lib/engine/pool.ts`) runs up to `RUN_CONCURRENCY` (default 3, capped at 16) sequences at once and yields their decisions as they arrive. What a sequence is depends on the puzzle: one decision for the trolley, one game for the dilemma (its rounds are strictly ordered, because round n+1 is the one where a player knows what happened in round n), one walk for an adventure (its nodes are ordered for the same reason). A player's two decisions within a round go out together.
+**Concurrency.** `mergePool` (`lib/engine/pool.ts`) runs up to `RUN_CONCURRENCY` (default 3, capped at 16) sequences at once and yields their decisions as they arrive. What a sequence is depends on the puzzle: one decision for the trolley, one game for the dilemma (its rounds are strictly ordered, because round n+1 is the one where a player knows what happened in round n), one walk for an adventure (its nodes are ordered for the same reason), one game for the coin (its turns are ordered because the next prompt carries the last toss). A player's two decisions within a round go out together. A game is the coin's unit of progress, as a walk is the adventure's: a game counts once, when it ends, however many times it flipped.
 
 **Failure** is asymmetric. A decision that fails is retried once if the `ProviderError` is retryable, then recorded — `error` on its span, `errors` in the summary — and the run continues, because a model that will not answer is a finding. Only a failure to set the run up fails the run.
 

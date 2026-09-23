@@ -20,6 +20,7 @@ import type { RunSummary } from "@/lib/domain/summary";
 import { errorMessage } from "@/lib/errors";
 import { createAdventureRunner } from "@/lib/puzzles/adventure/runner";
 import { createPrisonersDilemmaRunner } from "@/lib/puzzles/prisoners-dilemma/runner";
+import { createStPetersburgRunner } from "@/lib/puzzles/st-petersburg/runner";
 import { createTrolleyRunner } from "@/lib/puzzles/trolley/runner";
 import {
   appendLog,
@@ -107,6 +108,8 @@ export async function executeRun(run: Run, options: ExecuteRunOptions = {}): Pro
       return drive(run, rootSpanId, createPrisonersDilemmaRunner(plan), context, stop);
     case "adventure":
       return drive(run, rootSpanId, createAdventureRunner(plan), context, stop);
+    case "st-petersburg":
+      return drive(run, rootSpanId, createStPetersburgRunner(plan), context, stop);
   }
 }
 

@@ -160,6 +160,7 @@ export function runCharacterIds(config: RunConfig): string[] {
   switch (config.puzzle) {
     case "trolley":
     case "adventure":
+    case "st-petersburg":
       return config.roster.map((entry) => entry.characterId);
     case "prisoners-dilemma":
       return [config.playerA, config.playerB];

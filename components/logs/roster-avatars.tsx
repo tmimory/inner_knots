@@ -19,6 +19,7 @@ export function rosterOf(config: RunConfig): RosterSeat[] {
   switch (config.puzzle) {
     case "trolley":
     case "adventure":
+    case "st-petersburg":
       return config.roster.map((entry) => ({ characterId: entry.characterId, runs: entry.runs }));
     case "prisoners-dilemma":
       return [

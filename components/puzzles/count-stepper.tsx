@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View } from "react-native";
 
 import { Button, Input, Text } from "@/components/ui";
+import { clampInt } from "@/lib/puzzles/setup-parse";
 import { cn } from "@/lib/utils";
 
 export type CountStepperProps = {
@@ -17,12 +18,6 @@ export type CountStepperProps = {
   fieldClassName?: string;
   className?: string;
 };
-
-/** The nearest whole count inside the bounds; anything unreadable falls to `min`. */
-export function clampCount(value: number, min: number, max: number): number {
-  if (!Number.isFinite(value)) return min;
-  return Math.min(max, Math.max(min, Math.round(value)));
-}
 
 /**
  * A small whole-number field with a minus and a plus.
@@ -58,7 +53,7 @@ export function CountStepper({
         className="h-control-sm w-control-sm"
         accessibilityLabel={`${label}: one fewer`}
         disabled={value <= min}
-        onPress={() => onChange(clampCount(value - step, min, max))}
+        onPress={() => onChange(clampInt(value - step, min, max))}
       >
         <Text className="font-mono">−</Text>
       </Button>
@@ -72,7 +67,7 @@ export function CountStepper({
         value={text}
         onChangeText={(next) => {
           const parsed = Number.parseInt(next, 10);
-          const count = Number.isFinite(parsed) ? clampCount(parsed, min, max) : value;
+          const count = Number.isFinite(parsed) ? clampInt(parsed, min, max) : value;
           setTyped({ text: next, from: count });
           if (count !== value) onChange(count);
         }}
@@ -84,7 +79,7 @@ export function CountStepper({
         className="h-control-sm w-control-sm"
         accessibilityLabel={`${label}: one more`}
         disabled={value >= max}
-        onPress={() => onChange(clampCount(value + step, min, max))}
+        onPress={() => onChange(clampInt(value + step, min, max))}
       >
         <Text className="font-mono">+</Text>
       </Button>

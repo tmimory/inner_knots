@@ -57,7 +57,14 @@ export type AdventurePlan = {
   adventure: Adventure;
 };
 
-export type RunPlan = TrolleyPlan | PrisonersDilemmaPlan | AdventurePlan;
+export type StPetersburgPlan = {
+  puzzle: "st-petersburg";
+  config: Extract<RunConfig, { puzzle: "st-petersburg" }>;
+  total: number;
+  roster: RosterMember[];
+};
+
+export type RunPlan = TrolleyPlan | PrisonersDilemmaPlan | AdventurePlan | StPetersburgPlan;
 
 function quote(ids: readonly string[]): string {
   return ids.map((id) => `"${id}"`).join(", ");
@@ -161,6 +168,12 @@ export async function prepareRun(config: RunConfig): Promise<RunPlan> {
         );
       }
       return { puzzle: "adventure", config, total, roster, adventure };
+    }
+
+    case "st-petersburg": {
+      // A game is the unit of progress here, however many times it turns out to flip.
+      const { roster, total } = await resolveRoster(config.roster);
+      return { puzzle: "st-petersburg", config, total, roster };
     }
   }
 }

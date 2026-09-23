@@ -33,6 +33,7 @@ import { RUN_LIMITS, TROLLEY_VARIANTS, type RosterEntry, type TrolleyVariant } f
 import type { TrolleySummary } from "@/lib/domain/summary";
 import type { TrolleyObject } from "@/lib/puzzles/trolley/catalogue";
 import { randomSelection } from "@/lib/puzzles/trolley/catalogue";
+import { parseRoster } from "@/lib/puzzles/setup-parse";
 import { indexById } from "@/lib/utils";
 import { randomTracks } from "@/lib/puzzles/trolley/search";
 
@@ -82,20 +83,12 @@ function parseBoard(raw: unknown): Board | undefined {
   const variant = TROLLEY_VARIANTS.find((entry) => entry === value.variant);
   const ids = (input: unknown): string[] =>
     Array.isArray(input) ? input.filter((id): id is string => typeof id === "string") : [];
-  const roster = Array.isArray(value.roster)
-    ? value.roster.flatMap((entry): RosterEntry[] => {
-        if (typeof entry !== "object" || entry === null) return [];
-        const { characterId, runs } = entry as { characterId?: unknown; runs?: unknown };
-        if (typeof characterId !== "string" || typeof runs !== "number") return [];
-        return [{ characterId, runs: Math.max(RUN_LIMITS.minRuns, Math.round(runs)) }];
-      })
-    : [];
 
   return {
     variant: variant ?? EMPTY_BOARD.variant,
     track1: ids(value.track1),
     track2: ids(value.track2),
-    roster: roster.slice(0, RUN_LIMITS.maxRoster),
+    roster: parseRoster(value.roster, { max: RUN_LIMITS.maxRoster, runs: "stored" }),
   };
 }
 

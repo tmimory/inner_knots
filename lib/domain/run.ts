@@ -10,7 +10,7 @@ import { z } from "zod";
 
 import { characterIdSchema } from "./character";
 
-export const PUZZLE_IDS = ["trolley", "prisoners-dilemma", "adventure"] as const;
+export const PUZZLE_IDS = ["trolley", "prisoners-dilemma", "adventure", "st-petersburg"] as const;
 export type PuzzleId = (typeof PUZZLE_IDS)[number];
 
 export const RUN_LIMITS = {
@@ -25,6 +25,11 @@ export const RUN_LIMITS = {
   crime: 1000,
   relationship: 250,
   payoff: 60,
+  /** What one face of the St. Petersburg coin is worth, as prose. */
+  facePayoff: 120,
+  /** How many times one game of the coin may be flipped, at most. */
+  minFlips: 1,
+  maxFlips: 15,
 } as const;
 
 /** Prose for the crime when the user has not written their own. */
@@ -122,6 +127,31 @@ export const adventureConfigSchema = z.object({
 });
 export type AdventureConfig = z.infer<typeof adventureConfigSchema>;
 
+// --- St. Petersburg ----------------------------------------------------------------
+
+export const COIN_FACES = ["heads", "tails"] as const;
+export type CoinFace = (typeof COIN_FACES)[number];
+
+/**
+ * One face of the coin: what the voice says happens when it lands this way, as
+ * free text ("the pot doubles", "you lose everything you have won"), and whether
+ * landing this way ends the game.
+ */
+export const coinFaceRuleSchema = z.object({
+  payoff: z.string().min(1).max(RUN_LIMITS.facePayoff),
+  endsGame: z.boolean(),
+});
+export type CoinFaceRule = z.infer<typeof coinFaceRuleSchema>;
+
+export const stPetersburgConfigSchema = z.object({
+  faces: z.object({ heads: coinFaceRuleSchema, tails: coinFaceRuleSchema }),
+  /** The most times one game may flip the coin; the game ends after this many. */
+  maxFlips: z.number().int().min(RUN_LIMITS.minFlips).max(RUN_LIMITS.maxFlips),
+  /** Each entry's `runs` is how many games that character plays. */
+  roster: rosterSchema,
+});
+export type StPetersburgConfig = z.infer<typeof stPetersburgConfigSchema>;
+
 // --- Run ---------------------------------------------------------------------------
 
 export const RUN_STATUSES = ["queued", "running", "finished", "failed", "cancelled"] as const;
@@ -145,6 +175,7 @@ export const runConfigSchema = z.discriminatedUnion("puzzle", [
   z.object({ puzzle: z.literal("trolley"), ...trolleyConfigSchema.shape }),
   z.object({ puzzle: z.literal("prisoners-dilemma"), ...prisonersDilemmaConfigSchema.shape }),
   z.object({ puzzle: z.literal("adventure"), ...adventureConfigSchema.shape }),
+  z.object({ puzzle: z.literal("st-petersburg"), ...stPetersburgConfigSchema.shape }),
 ]);
 export type RunConfig = z.infer<typeof runConfigSchema>;
 

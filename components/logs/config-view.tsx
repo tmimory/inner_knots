@@ -2,7 +2,7 @@ import { View } from "react-native";
 
 import { ObjectGlyph } from "@/components/icons/objects";
 import { Separator, Text } from "@/components/ui";
-import type { Payoffs, RunConfig } from "@/lib/domain/run";
+import type { CoinFaceRule, Payoffs, RunConfig } from "@/lib/domain/run";
 import type { ObjectEntry } from "@/lib/client/use-runs";
 
 import { Field, FieldText } from "./field";
@@ -102,6 +102,21 @@ function PayoffTable({ payoffs }: { payoffs: Payoffs }) {
   );
 }
 
+/**
+ * One face of the coin: what the voice said it pays, and whether landing that
+ * way stops the game. The second line is the rule, not the payoff, so it is set
+ * as the quieter of the two — a reader scanning the two faces is looking for the
+ * one that ends things.
+ */
+function Face({ label, rule }: { label: string; rule: CoinFaceRule }) {
+  return (
+    <Field label={label}>
+      <Text variant="small">{rule.payoff}</Text>
+      <Text variant="muted">{rule.endsGame ? "ends the game" : "play on"}</Text>
+    </Field>
+  );
+}
+
 export type ConfigViewProps = {
   config: RunConfig;
   objects: ReadonlyMap<string, ObjectEntry>;
@@ -159,6 +174,14 @@ export function ConfigView({ config, objects, adventureName }: ConfigViewProps) 
         <View className="flex-row flex-wrap gap-xl">
           <FieldText label="Adventure" value={adventureName ?? config.adventureId} />
           <FieldText label="Memory" value={config.amnesia ? "amnesia — each node alone" : "full history"} />
+        </View>
+      ) : null}
+
+      {config.puzzle === "st-petersburg" ? (
+        <View className="flex-row flex-wrap gap-xl">
+          <FieldText label="Flips at most" value={String(config.maxFlips)} />
+          <Face label="Heads" rule={config.faces.heads} />
+          <Face label="Tails" rule={config.faces.tails} />
         </View>
       ) : null}
     </View>

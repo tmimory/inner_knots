@@ -12,6 +12,8 @@
  */
 import { z } from "zod";
 
+import { COIN_FACES } from "./run";
+
 /** Per-option probability mass, when the provider reports a distribution (Jev). */
 const weightsSchema = z.record(z.string(), z.number());
 
@@ -147,12 +149,79 @@ export const adventureSummarySchema = z.object({
 });
 export type AdventureSummary = z.infer<typeof adventureSummarySchema>;
 
+// --- St. Petersburg ----------------------------------------------------------------
+
+export const ST_PETERSBURG_CHOICES = ["flip", "walk"] as const;
+export type StPetersburgChoice = (typeof ST_PETERSBURG_CHOICES)[number];
+
+/**
+ * Why a game stopped. `walked`: the character chose not to flip. `face`: the coin
+ * landed on a face that ends the game. `limit`: it flipped the last allowed time.
+ * `error`: a decision produced no answer. Absent while the game is still going.
+ */
+export const ST_PETERSBURG_ENDINGS = ["walked", "face", "limit", "error"] as const;
+export type StPetersburgEnding = (typeof ST_PETERSBURG_ENDINGS)[number];
+
+/** One turn of one game: the decision, and the face the coin showed if it was flipped. */
+export const stPetersburgFlipSummarySchema = z.object({
+  /** 1-based turn within the game. */
+  flip: z.number().int(),
+  choice: z.enum(ST_PETERSBURG_CHOICES).optional(),
+  /** Set only when the character chose to flip and the coin was tossed. */
+  face: z.enum(COIN_FACES).optional(),
+  weights: weightsSchema.optional(),
+  confidence: z.number().optional(),
+  latencyMs: z.number().optional(),
+  error: z.string().optional(),
+});
+export type StPetersburgFlipSummary = z.infer<typeof stPetersburgFlipSummarySchema>;
+
+export const stPetersburgGameSummarySchema = z.object({
+  characterId: z.string(),
+  /** 1-based index within that character's run count. */
+  iteration: z.number().int(),
+  /** Every turn so far, in order. */
+  flips: z.array(stPetersburgFlipSummarySchema),
+  ending: z.enum(ST_PETERSBURG_ENDINGS).optional(),
+});
+export type StPetersburgGameSummary = z.infer<typeof stPetersburgGameSummarySchema>;
+
+export const stPetersburgCharacterTallySchema = z.object({
+  /** Turns on which the character chose to flip, and on which it walked away. */
+  flip: z.number().int(),
+  walk: z.number().int(),
+  errors: z.number().int(),
+  /** How the coin landed, over every toss this character made. */
+  heads: z.number().int(),
+  tails: z.number().int(),
+  /** Finished games, by how they ended. */
+  endings: z.object({
+    walked: z.number().int(),
+    face: z.number().int(),
+    limit: z.number().int(),
+    error: z.number().int(),
+  }),
+  /** Mean number of tosses per finished game, over games that finished. */
+  meanFlipsPerGame: z.number().optional(),
+  meanWeights: z.object({ flip: z.number(), walk: z.number() }).optional(),
+});
+export type StPetersburgCharacterTally = z.infer<typeof stPetersburgCharacterTallySchema>;
+
+export const stPetersburgSummarySchema = z.object({
+  kind: z.literal("st-petersburg"),
+  /** Every game started so far, in the order each first turn completed. */
+  games: z.array(stPetersburgGameSummarySchema),
+  perCharacter: z.record(z.string(), stPetersburgCharacterTallySchema),
+});
+export type StPetersburgSummary = z.infer<typeof stPetersburgSummarySchema>;
+
 // --- Union -------------------------------------------------------------------------
 
 export const runSummarySchema = z.discriminatedUnion("kind", [
   trolleySummarySchema,
   prisonersDilemmaSummarySchema,
   adventureSummarySchema,
+  stPetersburgSummarySchema,
 ]);
 export type RunSummary = z.infer<typeof runSummarySchema>;
 

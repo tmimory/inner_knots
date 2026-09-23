@@ -8,6 +8,7 @@ import {
   parseRunSummary,
   type AdventureSummary,
   type PrisonersDilemmaSummary,
+  type StPetersburgSummary,
   type TrolleySummary,
 } from "@/lib/domain/summary";
 import { UNKNOWN, formatPercent, pluralize } from "@/lib/format";
@@ -31,6 +32,22 @@ function trolleyTotals(summary: TrolleySummary): { track1: number; track2: numbe
     errors += tally.errors;
   }
   return { track1, track2, errors };
+}
+
+function stPetersburgTotals(summary: StPetersburgSummary): {
+  flip: number;
+  walk: number;
+  errors: number;
+} {
+  let flip = 0;
+  let walk = 0;
+  let errors = 0;
+  for (const tally of Object.values(summary.perCharacter)) {
+    flip += tally.flip;
+    walk += tally.walk;
+    errors += tally.errors;
+  }
+  return { flip, walk, errors };
 }
 
 /** `6/10` — how often a player testified out of the rounds they were asked. */
@@ -76,6 +93,10 @@ export function summaryLine(run: Run): string | undefined {
       const endings = endingsOf(summary);
       return `${pluralize(paths, "path")} · ${pluralize(endings, "ending")}`;
     }
+    case "st-petersburg": {
+      const totals = stPetersburgTotals(summary);
+      return `Flipped ×${totals.flip} · Walked ×${totals.walk}`;
+    }
   }
 }
 
@@ -97,6 +118,8 @@ export function runFailures(run: Run): number {
       return summary.perPlayer.a.errors + summary.perPlayer.b.errors;
     case "adventure":
       return Object.values(summary.perCharacter).reduce((total, tally) => total + tally.errors, 0);
+    case "st-petersburg":
+      return stPetersburgTotals(summary).errors;
   }
 }
 
@@ -134,13 +157,14 @@ function withoutEmptyColumns(
 }
 
 /**
- * What is said in place of the columns a provider did not fill.
+ * What is said in place of the columns nothing filled.
  *
- * Every column that can be dropped is a mean weight, so one sentence covers all
- * of them, and it says what was missing rather than naming the symbols the table
- * would have used for it.
+ * Every column that can be dropped is a mean — a score the provider did not
+ * report, or an average no finished game has produced yet — so one sentence
+ * covers all of them, and it says what was missing rather than naming the
+ * symbols the table would have used for it.
  */
-const OMITTED_NOTE = "Mean scores per track were not reported by this provider.";
+const OMITTED_NOTE = "Means with nothing behind them yet are left out of this table.";
 
 /** A label column and a set of right-aligned numeric columns. */
 function Table({ headers, rows }: { headers: string[]; rows: TableRow[] }) {
@@ -333,6 +357,53 @@ function AdventureSummaryTable({
   );
 }
 
+/** A mean number of flips, to one decimal, or a dash when no game has finished. */
+function flipsCell(mean: number | undefined): string {
+  return mean === undefined ? UNKNOWN : mean.toFixed(1);
+}
+
+function StPetersburgSummaryTable({
+  summary,
+  runs,
+  characters,
+}: {
+  summary: StPetersburgSummary;
+  runs: ReadonlyMap<string, number>;
+  characters: ReadonlyMap<string, Character>;
+}) {
+  const rows: TableRow[] = Object.entries(summary.perCharacter).map(([characterId, tally]) => ({
+    key: characterId,
+    label: <CharacterLabel characterId={characterId} characters={characters} />,
+    values: [
+      String(runs.get(characterId) ?? UNKNOWN),
+      String(tally.flip),
+      String(tally.walk),
+      String(tally.errors),
+      String(tally.heads),
+      String(tally.tails),
+      flipsCell(tally.meanFlipsPerGame),
+      meanCell(tally.meanWeights?.flip),
+    ],
+  }));
+
+  return (
+    <Table
+      headers={[
+        "Character",
+        "Games",
+        "Flips",
+        "Walks",
+        "Errors",
+        "Heads",
+        "Tails",
+        "μ flips",
+        "μ flip",
+      ]}
+      rows={rows}
+    />
+  );
+}
+
 // --- entry point -------------------------------------------------------------------
 
 export type SummaryViewProps = {
@@ -377,5 +448,7 @@ export function SummaryView({ run, characters }: SummaryViewProps) {
       );
     case "adventure":
       return <AdventureSummaryTable summary={summary} runs={runs} characters={characters} />;
+    case "st-petersburg":
+      return <StPetersburgSummaryTable summary={summary} runs={runs} characters={characters} />;
   }
 }

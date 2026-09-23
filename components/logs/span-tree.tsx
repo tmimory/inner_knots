@@ -87,6 +87,8 @@ export function spanLabel(span: Span, puzzle: PuzzleId | undefined, depth: numbe
     case "iteration":
       // run (0) > character (1) > game (2) > round (3).
       if (puzzle === "prisoners-dilemma") return depth <= 2 ? "game" : "round";
+      // The coin nests the same way: run (0) > character (1) > game (2) > flip (3).
+      if (puzzle === "st-petersburg") return depth <= 2 ? "game" : "flip";
       return "iteration";
   }
 }
