@@ -14,14 +14,16 @@ import { cn } from "@/lib/utils";
  * selected would shove the label two pixels sideways — and gives the current page
  * a mark strong enough to find at a glance, which the tan fill alone was not.
  *
- * Rows under a group are no longer indented past it: a group is a label over a
- * list, not a branch of a tree, so its entries stand on the rail's one text axis
- * like every other destination and the active bar sits 12px from the word it
- * marks instead of 25.
+ * Rows under a group step in one spacing unit past the top-level axis, so the
+ * four puzzles read as a list under their heading rather than as peers of it.
+ * The bar stays on the rail's left edge in both depths: only the label moves.
+ * A grouped row gives back a step on the right: the rail is 264px, and with the
+ * indent and a full right pad the longest puzzle name wrapped by a pixel.
  */
-function rowClasses(selected: boolean): string {
+function rowClasses(selected: boolean, depth: 0 | 1): string {
   return cn(
-    "flex-row items-center gap-sm rounded-sm border-l-thick py-xs pl-md pr-md transition-colors duration-fast",
+    "flex-row items-center gap-sm rounded-sm border-l-thick py-xs transition-colors duration-fast",
+    depth === 0 ? "pl-md pr-md" : "pl-xl pr-sm",
     selected ? "border-l-primary" : "border-l-transparent",
     !selected && "web:hover:bg-muted/subtle",
   );
@@ -57,8 +59,8 @@ function labelClasses(depth: 0 | 1, active: boolean): string {
  * weight it was indistinguishable from the three links under it, and every
  * reviewer tried to click it.
  *
- * The left padding matches a row's bar plus its indent, so the label's first
- * letter lands on the same axis as every nav word in the rail.
+ * The left padding matches a top-level row's bar plus its indent, so the label's first
+ * letter lands on the top-level axis; the rows beneath it step in from there.
  */
 function GroupLabel({ label }: { label: string }) {
   return (
@@ -102,7 +104,7 @@ function MenuLink({
         role="link"
         aria-current={active ? "page" : undefined}
         onPress={onNavigate}
-        className={rowClasses(active)}
+        className={rowClasses(active, depth)}
       >
         <Text className={labelClasses(depth, active)}>{item.label}</Text>
       </Pressable>
