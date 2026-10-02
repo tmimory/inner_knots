@@ -26,6 +26,8 @@ export type TrolleyPromptInput = {
   /** What the trolley hits if the switch is left alone. */
   track1: readonly TrackItem[];
   track2: readonly TrackItem[];
+  /** An optional additional consequence caused by throwing the switch. */
+  switchTradeoff?: string;
   decisionStyle: DecisionStyle;
 };
 
@@ -51,6 +53,7 @@ export async function buildTrolleyPrompt(input: TrolleyPromptInput): Promise<Puz
   const situation = await render("trolley/situation", {
     track1: describeTrack(input.track1),
     track2: describeTrack(input.track2),
+    switchTradeoff: input.switchTradeoff?.trim() ?? "",
   });
 
   const question = await render("trolley/question");

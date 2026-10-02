@@ -11,6 +11,8 @@
  * Server only: it reads the JSONL store.
  */
 import { validateAdventure, type Adventure, type AdventureIssue } from "@/lib/domain/adventure";
+import { validateOrganDonationConfig } from "@/lib/domain/organ-donation";
+import { validateScarceAllocationConfig } from "@/lib/domain/scarce-allocation";
 import type { Character } from "@/lib/domain/character";
 import type { RosterEntry, RunConfig } from "@/lib/domain/run";
 import { buildCatalogue } from "@/lib/puzzles/trolley/catalogue";
@@ -64,7 +66,21 @@ export type StPetersburgPlan = {
   roster: RosterMember[];
 };
 
-export type RunPlan = TrolleyPlan | PrisonersDilemmaPlan | AdventurePlan | StPetersburgPlan;
+export type OrganDonationPlan = {
+  puzzle: "organ-donation";
+  config: Extract<RunConfig, { puzzle: "organ-donation" }>;
+  total: number;
+  roster: RosterMember[];
+};
+
+export type ScarceAllocationPlan = {
+  puzzle: "scarce-allocation";
+  config: Extract<RunConfig, { puzzle: "scarce-allocation" }>;
+  total: number;
+  roster: RosterMember[];
+};
+
+export type RunPlan = OrganDonationPlan | ScarceAllocationPlan | TrolleyPlan | PrisonersDilemmaPlan | AdventurePlan | StPetersburgPlan;
 
 function quote(ids: readonly string[]): string {
   return ids.map((id) => `"${id}"`).join(", ");
@@ -129,6 +145,18 @@ export async function resolveTrolleyObjects(
 /** Resolves a config into everything the runner needs, or throws `RunSetupError`. */
 export async function prepareRun(config: RunConfig): Promise<RunPlan> {
   switch (config.puzzle) {
+    case "organ-donation": {
+      const issues = validateOrganDonationConfig(config);
+      if (issues.length) throw new RunSetupError(issues.join(" "));
+      const { roster, total } = await resolveRoster(config.roster);
+      return { puzzle: "organ-donation", config, total, roster };
+    }
+    case "scarce-allocation": {
+      const error = validateScarceAllocationConfig(config);
+      if (error) throw new RunSetupError(error);
+      const { roster, total } = await resolveRoster(config.roster);
+      return { puzzle: "scarce-allocation", config, total, roster };
+    }
     case "trolley": {
       const { roster, total } = await resolveRoster(config.roster);
       const [track1, track2] = await Promise.all([

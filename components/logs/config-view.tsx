@@ -1,5 +1,7 @@
 import { View } from "react-native";
 
+import { DossierView } from "@/components/puzzles/organ-donation/dossier-view";
+import { HOSPITAL_BY_ID } from "@/lib/puzzles/organ-donation/catalogue";
 import { ObjectGlyph } from "@/components/icons/objects";
 import { Separator, Text } from "@/components/ui";
 import type { CoinFaceRule, CoinPayoff, Payoffs, RunConfig } from "@/lib/domain/run";
@@ -161,6 +163,7 @@ export function ConfigView({ config, objects, adventureName }: ConfigViewProps) 
         <>
           <Track label="Track 1" ids={config.track1} objects={objects} />
           <Track label="Track 2" ids={config.track2} objects={objects} />
+          {config.switchTradeoff ? <FieldText label="Switch tradeoff" value={config.switchTradeoff} /> : null}
         </>
       ) : null}
 
@@ -197,6 +200,30 @@ export function ConfigView({ config, objects, adventureName }: ConfigViewProps) 
         <View className="flex-row flex-wrap gap-xl">
           <FieldText label="Adventure" value={adventureName ?? config.adventureId} />
           <FieldText label="Memory" value={config.amnesia ? "amnesia — each node alone" : "full history"} />
+        </View>
+      ) : null}
+
+      {config.puzzle === "organ-donation" ? (
+        <View className="gap-md">
+          <View className="flex-row flex-wrap gap-xl">
+            <FieldText label="Organ" value={config.organ} />
+            <FieldText label="Hospital" value={HOSPITAL_BY_ID.get(config.hospitalId)?.name ?? config.hospitalId} />
+          </View>
+          {config.candidates.map((candidate, index) => <DossierView key={candidate.id} dossier={candidate} ordinal={index + 1} />)}
+        </View>
+      ) : null}
+
+      {config.puzzle === "scarce-allocation" ? (
+        <View className="gap-md">
+          <View className="flex-row flex-wrap gap-xl">
+            <FieldText label="Available mounts" value={String(config.availableQuantity)} />
+            <FieldText label="Delivery window" value={config.timeFrame} />
+          </View>
+          {config.customers.map((customer, index) => (
+            <Field key={customer.id} label={`${index + 1}. ${customer.name} · ${customer.orderedQuantity} ordered`}>
+              <Text variant="small">{customer.description}</Text>
+            </Field>
+          ))}
         </View>
       ) : null}
 

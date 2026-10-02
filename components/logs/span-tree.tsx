@@ -89,6 +89,8 @@ export function spanLabel(span: Span, puzzle: PuzzleId | undefined, depth: numbe
       if (puzzle === "prisoners-dilemma") return depth <= 2 ? "game" : "round";
       // The coin nests the same way: run (0) > character (1) > game (2) > flip (3).
       if (puzzle === "st-petersburg") return depth <= 2 ? "game" : "flip";
+      if (puzzle === "organ-donation") return "selection";
+      if (puzzle === "scarce-allocation") return "allocation";
       return "iteration";
   }
 }

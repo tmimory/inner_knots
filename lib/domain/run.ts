@@ -9,45 +9,14 @@
 import { z } from "zod";
 
 import { characterIdSchema } from "./character";
+import { organDonationConfigSchema } from "./organ-donation";
+import { scarceAllocationConfigSchema } from "./scarce-allocation";
 
-export const PUZZLE_IDS = ["trolley", "prisoners-dilemma", "st-petersburg", "adventure"] as const;
+export const PUZZLE_IDS = ["trolley", "prisoners-dilemma", "st-petersburg", "adventure", "organ-donation", "scarce-allocation"] as const;
 export type PuzzleId = (typeof PUZZLE_IDS)[number];
 
-export const RUN_LIMITS = {
-  minRuns: 1,
-  maxRuns: 100,
-  minRoster: 1,
-  maxRoster: 5,
-  minIterations: 1,
-  maxIterations: 10,
-  /** How many objects one trolley track holds, and how many a random draw puts there. */
-  maxTrack: 5,
-  crime: 1000,
-  relationship: 250,
-  payoff: 60,
-  /** What one face of the St. Petersburg coin is worth, as prose. */
-  facePayoff: 120,
-  /** The most a numeric face may pay on the first flip, before any doubling. */
-  maxAmount: 1_000_000,
-  /** How many times one game of the coin may be flipped, at most. */
-  minFlips: 1,
-  maxFlips: 15,
-} as const;
-
-/** Prose for the crime when the user has not written their own. */
-export const DEFAULT_CRIME =
-  "a jewelry heist in which $5 million in gems was taken and nobody was hurt";
-
-export const runCountSchema = z.number().int().min(RUN_LIMITS.minRuns).max(RUN_LIMITS.maxRuns);
-
-/** One character on the roster, with how many times it should answer. */
-export const rosterEntrySchema = z.object({
-  characterId: characterIdSchema,
-  runs: runCountSchema,
-});
-export type RosterEntry = z.infer<typeof rosterEntrySchema>;
-
-const rosterSchema = z.array(rosterEntrySchema).min(RUN_LIMITS.minRoster).max(RUN_LIMITS.maxRoster);
+export { RUN_LIMITS, DEFAULT_CRIME, runCountSchema, rosterEntrySchema, type RosterEntry } from "./roster";
+import { RUN_LIMITS, DEFAULT_CRIME, runCountSchema, rosterSchema } from "./roster";
 
 // --- Trolley -----------------------------------------------------------------------
 
@@ -56,6 +25,7 @@ export type TrolleyVariant = (typeof TROLLEY_VARIANTS)[number];
 
 export const trolleyConfigSchema = z.object({
   variant: z.enum(TROLLEY_VARIANTS),
+  switchTradeoff: z.string().max(RUN_LIMITS.switchTradeoff).optional(),
   /** Ids into the trolley-object collection. The trolley starts headed here. */
   track1: z.array(z.string().min(1)),
   track2: z.array(z.string().min(1)),
@@ -202,6 +172,8 @@ export const runProgressSchema = z.object({
 export type RunProgress = z.infer<typeof runProgressSchema>;
 
 export const runConfigSchema = z.discriminatedUnion("puzzle", [
+  organDonationConfigSchema,
+  scarceAllocationConfigSchema,
   z.object({ puzzle: z.literal("trolley"), ...trolleyConfigSchema.shape }),
   z.object({ puzzle: z.literal("prisoners-dilemma"), ...prisonersDilemmaConfigSchema.shape }),
   z.object({ puzzle: z.literal("st-petersburg"), ...stPetersburgConfigSchema.shape }),

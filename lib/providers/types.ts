@@ -28,7 +28,7 @@ export type DecisionRequest = {
   system?: string;
   /** The puzzle prompt, plus prior turns for iterated puzzles. */
   messages: ChatMessage[];
-  /** Two to five alternatives. */
+  /** The puzzle’s offered alternatives (one to ten for organ donation). */
   options: DecisionOption[];
   outputMode: OutputMode;
   effort?: EffortLevel;

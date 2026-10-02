@@ -4,7 +4,7 @@ An exploration of philosophical puzzles that push the limits of AI models, to fi
 
 ## What it is
 
-inner_knots is a local research bench for running AI "characters" — a model, a provider, an output mode, and an optional steering prompt — through philosophical puzzles (the trolley problem, the prisoner's dilemma, a coin that may always be flipped once more, a choose-your-own-adventure tree) and comparing the choices they make. It is unrealistic by design: options are named and bounded, payoffs are spelled out, and every prompt sent and every response received is recorded and readable afterward. The point is to see what a model does when a dilemma is stripped down to a forced choice, not to build a realistic simulation.
+inner_knots is a local research bench for running AI "characters" — a model, a provider, an output mode, and an optional steering prompt — through philosophical puzzles (the trolley problem, the prisoner's dilemma, a coin that may always be flipped once more, a choose-your-own-adventure tree, organ donation, and scarce product allocation) and comparing the choices they make. It is unrealistic by design: options are named and bounded, payoffs are spelled out, and every prompt sent and every response received is recorded and readable afterward. The point is to see what a model does when a dilemma is stripped down to a forced choice, not to build a realistic simulation.
 
 ## Quick start
 
@@ -49,9 +49,11 @@ Run-wide knobs, also in `.env.example`:
 
 **Puzzles:**
 
-- **Trolley** (`/puzzles/trolley`) — drag objects from a searchable, tag-filterable catalogue (people, relations, animals, singular items) onto two tracks, pick a framing variant (thought experiment / trolley-company employee / bystander), add a roster of 1–5 characters with a run count each, and pull the lever. Results show a per-character histogram of Track 1 vs. Track 2 with mean Jev weights where a provider reports them.
+- **Trolley** (`/puzzles/trolley`) — drag objects from a searchable, tag-filterable catalogue (people, relations, animals, singular items) onto two tracks, pick a framing variant (thought experiment / trolley-company employee / bystander), add a roster of 1–5 characters with a run count each, optionally describe a free-text consequence of switching to track 2, and pull the lever. Results show a per-character histogram of Track 1 vs. Track 2 with mean Jev weights where a provider reports them.
 - **Prisoner's dilemma** (`/puzzles/prisoners-dilemma`) — exactly two players (Player A / Player B), an optional relationship phrase for each, a framing variant (thought experiment / interrogation room), an editable crime description, a payoff matrix (symmetric or per-player, with an awareness toggle for whether each player sees the other's consequences), and single or iterated rounds (up to 10, with prior rounds fed back into each next prompt). Results show side-by-side histograms and per-round outcomes.
 - **Coin of St. Petersburg** (`/puzzles/st-petersburg`) — a coin, and a voice that says what each face is worth. A face pays prose ("a sandwich"), an amount of money — optionally doubling with every flip — or forfeits everything won so far; per face, whether landing that way ends the game. The default is the paradox itself: heads pays $2, doubling each flip; tails forfeits the pot and ends the game. Either framing will do — a thought experiment, or an encounter with a coin on the ground — and you set how many times one game may flip (up to 15) and how many games each roster character plays. The engine tosses the coin after every decision to flip and carries the face, and the pot it leaves behind, into the next turn's prompt, so the character decides again knowing how it has gone. Results show flip vs. walk per character, how each game ended, and a grid of the tosses.
+- **Organ donation** (`/puzzles/organ-donation`) — select a heart, lungs, liver, or kidney and one of 20 real hospitals worldwide, then compare 1–10 anonymous candidates. Choose from 40 fictional dossiers or create and save your own. Each dossier is formatted as a medical-review summary with surgery survival, good years gained, lifetime and quality of life without transplant, demographics, family circumstances, religion, locality, and other factors. Thought-experiment and real-operator variants use the same candidate evidence. Hospital names set the scenario; the dossiers are synthetic, not real medical records.
+- **Scarce allocation** (`/puzzles/scarce-allocation`) — set the available number of high-quality magnet mounts and delivery window after a production outage. Add 1–15 customers with their order quantities and needs, arranged by order receipt. The model chooses between allocating stock and raising prices until cancellations reduce demand; when allocating, it selects exact quantities, including partial orders. Bounded quantity choices keep this workflow compatible with every provider. A run may make several model calls per customer; the final allocation uses all available stock without exceeding any order. Each choice and resulting allocation is recorded.
 - **Choose your own adventure** (`/puzzles/adventure`) — build a decision tree with a React Flow canvas: each node has context, a decision prompt, and up to five options (each an edge to another node or an ending). An amnesia toggle controls whether a walk remembers its own history. Running it walks the tree per roster character and shows an outcome view — a read-only graph with node hit counts and option frequencies — plus a per-walk step list.
 
 ![Coin of St. Petersburg](screen_shots/puzzle.png)
@@ -72,6 +74,8 @@ data/runs/index.jsonl        one event per run status change (created/progress/f
 data/runs/<runId>/spans.jsonl
 data/runs/<runId>/logs.jsonl
 ```
+
+Custom organ dossiers and puzzle setup are also saved in this browser’s local storage. Starting a run snapshots its dossiers and customer orders into the run configuration.
 
 Inspect it with `jq`, e.g. `jq -c 'select(.op=="upsert")' data/characters.jsonl` or `jq -c 'select(.kind=="span")' data/runs/<runId>/spans.jsonl` after exporting.
 

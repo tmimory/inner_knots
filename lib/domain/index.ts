@@ -12,3 +12,5 @@ export * from "./run";
 export * from "./span";
 export * from "./summary";
 export * from "./trolley-object";
+export * from "./organ-donation";
+export * from "./scarce-allocation";

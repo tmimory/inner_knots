@@ -33,6 +33,7 @@ describe("buildTrolleyPrompt", () => {
       variant: "bystander",
       track1: [daughter, cow],
       track2: [money],
+      switchTradeoff: "Diverting the trolley delays 150,000 commuters by one hour.",
       decisionStyle: "structured",
     });
 
@@ -41,6 +42,9 @@ describe("buildTrolleyPrompt", () => {
     expect(prompt.user).toContain("walking beside the tracks");
     expect(prompt.user).toContain("On Track 1: your neighbour's eldest daughter and a cow.");
     expect(prompt.user).toContain("On Track 2: a million dollars.");
+    expect(prompt.user).toContain(
+      "Throwing the switch also has this consequence: Diverting the trolley delays 150,000 commuters by one hour.",
+    );
     expect(prompt.user).toContain("Which track does the trolley go down?");
     expect(prompt.user).toContain("`track1` — Track 1");
     expect(prompt.user).toContain("`choice` field");
@@ -55,6 +59,18 @@ describe("buildTrolleyPrompt", () => {
     });
     expect(prompt.user).toContain("On Track 2: nothing at all.");
     expect(prompt.user).toContain("Meridian Line");
+  });
+
+  it("omits the switch tradeoff paragraph when none is supplied", async () => {
+    const prompt = await buildTrolleyPrompt({
+      variant: "employee",
+      track1: [cow],
+      track2: [money],
+      switchTradeoff: "   ",
+      decisionStyle: "structured",
+    });
+
+    expect(prompt.user).not.toContain("Throwing the switch also has this consequence");
   });
 
   it("uses the thought-experiment framing when asked for it", async () => {

@@ -31,6 +31,8 @@ export const navItems: NavItem[] = [
     label: "Puzzles",
     match: "/puzzles",
     children: [
+      { kind: "leaf", label: "Organ donation", href: "/puzzles/organ-donation", match: "/puzzles/organ-donation" },
+      { kind: "leaf", label: "Scarce allocation", href: "/puzzles/scarce-allocation", match: "/puzzles/scarce-allocation" },
       { kind: "leaf", label: "Trolley problem", href: "/puzzles/trolley", match: "/puzzles/trolley" },
       {
         kind: "leaf",
