@@ -155,6 +155,9 @@ export async function prepareRun(config: RunConfig): Promise<RunPlan> {
       const error = validateScarceAllocationConfig(config);
       if (error) throw new RunSetupError(error);
       const { roster, total } = await resolveRoster(config.roster);
+      if (config.mode === "free" && roster.some(({ character }) => character.provider === "typesafe")) {
+        throw new RunSetupError("TypeSafe is unavailable for free allocation. Use specified plans or remove TypeSafe characters.");
+      }
       return { puzzle: "scarce-allocation", config, total, roster };
     }
     case "trolley": {

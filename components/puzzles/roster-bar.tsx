@@ -34,6 +34,7 @@ export type RosterBarProps = {
   onChange: (value: RosterEntry[]) => void;
   /** Every character on the roster screen, for the picker and the medallions. */
   characters: readonly Character[];
+  canSelect?: (character: Character) => boolean;
   /** Most characters the puzzle accepts. Defaults to `RUN_LIMITS.maxRoster`. */
   max?: number;
   /** Fewest the puzzle accepts; below this the remove control is withheld. */
@@ -238,6 +239,7 @@ export function RosterBar({
   value,
   onChange,
   characters,
+  canSelect,
   max = RUN_LIMITS.maxRoster,
   min = RUN_LIMITS.minRoster,
   showRuns = true,
@@ -267,10 +269,11 @@ export function RosterBar({
     );
     return characters.filter(
       (character) =>
+        (canSelect?.(character) ?? true) &&
         (character.id === replacing || !taken.has(character.id)) &&
         matchesCharacterQuery(character, search),
     );
-  }, [allowDuplicates, characters, picking, search, value]);
+  }, [allowDuplicates, canSelect, characters, picking, search, value]);
 
   function put(index: number, characterId: string) {
     const next = value.map((entry) => ({ ...entry }));
@@ -398,7 +401,7 @@ export function RosterBar({
             ))}
             {candidates.length === 0 ? (
               <Text variant="muted">
-                Every character is already on the roster.
+                No eligible characters match.
               </Text>
             ) : null}
           </ScrollView>

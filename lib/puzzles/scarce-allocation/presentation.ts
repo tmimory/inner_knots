@@ -7,7 +7,7 @@ export function allocationStatus(decision: ScarceAllocationDecisionSummary): str
     return "Raise prices until cancellations reduce outstanding orders below capacity.";
   }
   const quantities = `${decision.allocatedQuantity} allocated · ${decision.unallocatedQuantity} unallocated`;
-  return decision.complete ? quantities : `Partial allocation · ${quantities}`;
+  return decision.complete ? `${decision.selectedPlanName ? `${decision.selectedPlanName} · ` : ""}${quantities}` : `Partial allocation · ${quantities}`;
 }
 
 export function allocationRows(

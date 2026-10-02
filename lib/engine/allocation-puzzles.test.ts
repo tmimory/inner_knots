@@ -25,6 +25,7 @@ const organ: RunConfig = {
 const scarce: RunConfig = {
   puzzle: "scarce-allocation", variant: "real-operator", availableQuantity: 7,
   timeFrame: "the next week", roster,
+  mode: "plans", plans: [{ id: "p1", name: "Plan 1", allocations: [{ customerId: "earlier", quantity: 3 }, { customerId: "later", quantity: 4 }] }],
   customers: [
     { id: "earlier", name: "Stage equipment", orderedQuantity: 8, description: "Touring production equipment" },
     { id: "later", name: "Clinic supplier", orderedQuantity: 6, description: "Replacement medical equipment mounts" },
@@ -85,17 +86,7 @@ describe("allocation puzzle engine integration", () => {
   });
 
   it("records model-selected partial orders without exceeding stock or demand", async () => {
-    let target = 3;
-    answer((request) => {
-      if (request.options.some((option) => option.id === "allocate")) return "allocate";
-      const option = request.options.find((entry) => {
-        const [min, max] = entry.id.split(":").map(Number);
-        return min! <= target && max! >= target;
-      });
-      if (!option) throw new Error("Expected a quantity range covering the target");
-      if (option.id === `${target}:${target}`) target = 4;
-      return option.id;
-    });
+    answer(() => "plan:p1");
     const finished = await run(scarce);
     expect(finished.status).toBe("finished");
     expect(finished.progress).toEqual({ done: 1, total: 1 });
@@ -104,21 +95,32 @@ describe("allocation puzzle engine integration", () => {
     ] });
   });
 
-  it("honors stored cancellation after the strategy call and preserves partial results", async () => {
+  it("honors stored cancellation during a call while preserving the returned decision", async () => {
     const plan = await prepareRun(scarce);
     const created = await createRun({ config: scarce, total: plan.total });
     mocks.decide.mockImplementation(async () => {
       await cancelRun(created.id);
-      return { choice: "allocate", latencyMs: 1 };
+      return { choice: "plan:p1", latencyMs: 1 };
     });
     await executeRun(created);
     const cancelled = await getRun(created.id);
     expect(cancelled?.status).toBe("cancelled");
-    expect(cancelled?.progress).toEqual({ done: 0, total: 1 });
+    expect(cancelled?.progress).toEqual({ done: 1, total: 1 });
     expect(mocks.decide).toHaveBeenCalledTimes(1);
     expect(parseRunSummary(cancelled?.summary)).toMatchObject({
-      kind: "scarce-allocation", decisions: [{ complete: false, allocations: [] }],
+      kind: "scarce-allocation", decisions: [{ complete: true, selectedPlanId: "p1" }],
     });
+  });
+
+  it("persists a free allocation and its quantities in the decision span", async () => {
+    if (scarce.puzzle !== "scarce-allocation") throw new Error("fixture");
+    const allocations = [{ customerId: "earlier", quantity: 2 }, { customerId: "later", quantity: 5 }];
+    mocks.decide.mockResolvedValue({ choice: "allocate", allocations, latencyMs: 1 });
+    const finished = await run({ ...scarce, mode: "free", plans: [] });
+    expect(mocks.decide).toHaveBeenCalledTimes(1);
+    expect(parseRunSummary(finished.summary)).toMatchObject({ kind: "scarce-allocation", decisions: [{ complete: true, allocations }] });
+    const spans = await listSpans(finished.id);
+    expect(spans.find((span) => span.decision)?.decision).toMatchObject({ choice: "allocate", allocations });
   });
 
   it("rejects ambiguous duplicate recipients before starting a run", async () => {
@@ -126,4 +128,14 @@ describe("allocation puzzle engine integration", () => {
     await expect(prepareRun({ ...organ, candidates: [organ.candidates[0]!, organ.candidates[0]!] })).rejects.toThrow(/repeat|unique/i);
     await expect(prepareRun({ ...scarce, customers: [scarce.customers[0]!, scarce.customers[0]!] })).rejects.toThrow(/unique/i);
   });
+});
+
+it("rejects TypeSafe in free allocation before any model call", async () => {
+  const store = await useTempDataDir();
+  try {
+    await characters.upsert({ id: "allocation-test", provider: "typesafe", model: "jev-latest", outputMode: "structured", avatar: { shape: "owl", color: "rubric" }, steering: { mode: "raw", bio: "", principles: [], values: [] } });
+    if (scarce.puzzle !== "scarce-allocation") throw new Error("fixture");
+    await expect(prepareRun({ ...scarce, mode: "free" })).rejects.toThrow(/TypeSafe/);
+    await expect(prepareRun(scarce)).resolves.toMatchObject({ puzzle: "scarce-allocation" });
+  } finally { await store.cleanup(); }
 });

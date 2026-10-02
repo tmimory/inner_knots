@@ -1,3 +1,4 @@
+import type { AllocationConstraints } from "../../domain/scarce-allocation";
 /**
  * Request shaping and response reading for OpenAI-compatible `/chat/completions`.
  *
@@ -24,6 +25,7 @@ import { withSystemMessage } from "./messages";
 export type StructuredVia = "json_schema" | "json_object";
 
 export type ChatBodyInput = {
+  allocationConstraints?: AllocationConstraints;
   model: string;
   system?: string;
   messages: ChatMessage[];
@@ -47,7 +49,7 @@ export function buildChatBody(input: ChatBodyInput): ChatBody {
   const structured = input.outputMode === "structured";
   const system =
     structured && via === "json_object"
-      ? [input.system, jsonObjectInstruction(input.options)].filter((part) => part && part.trim() !== "").join("\n\n")
+      ? [input.system, jsonObjectInstruction(input.options, input.allocationConstraints)].filter((part) => part && part.trim() !== "").join("\n\n")
       : input.system;
 
   const body: ChatBody = {
@@ -63,7 +65,7 @@ export function buildChatBody(input: ChatBodyInput): ChatBody {
             type: "json_schema",
             json_schema: {
               name: DECISION_SCHEMA_NAME,
-              schema: buildStrictDecisionSchema(input.options),
+              schema: buildStrictDecisionSchema(input.options, input.allocationConstraints),
               strict: true,
             },
           }
@@ -71,7 +73,7 @@ export function buildChatBody(input: ChatBodyInput): ChatBody {
     return body;
   }
 
-  const tool = buildDecisionTool(input.options);
+  const tool = buildDecisionTool(input.options, false, input.allocationConstraints);
   body.tools = [
     { type: "function", function: { name: tool.name, description: tool.description, parameters: tool.parameters } },
   ];
@@ -111,14 +113,15 @@ export function parseChatCompletion(
   response: unknown,
   options: DecisionOption[],
   provider: ProviderId,
+  allocationConstraints?: AllocationConstraints,
 ): ParsedChoice {
   const message = firstMessage(response);
   if (!message) {
     throw new ProviderError(provider, "Response contained no choices", { retryable: false });
   }
   const args = toolArguments(message);
-  if (args !== undefined) return parseChoice(args, options, provider);
-  if (typeof message.content === "string") return parseChoice(message.content, options, provider);
+  if (args !== undefined) return parseChoice(args, options, provider, allocationConstraints);
+  if (typeof message.content === "string") return parseChoice(message.content, options, provider, allocationConstraints);
   throw new ProviderError(provider, "Response contained neither a tool call nor text content", { retryable: false });
 }
 

@@ -32,7 +32,7 @@ export function CustomerEditor({ customer, index, count, onChange, onMove, onRem
       </View>
       <View className="gap-xs">
         <Label>Business and need</Label>
-        <Textarea rows={3} accessibilityLabel={`${customer.name || `Customer ${index + 1}`} business and need`} value={customer.description} onChangeText={(description) => onChange({ ...customer, description })} maxLength={SCARCE_ALLOCATION_LIMITS.description} />
+        <Textarea rows={2} accessibilityLabel={`${customer.name || `Customer ${index + 1}`} business and need`} value={customer.description} onChangeText={(description) => onChange({ ...customer, description })} maxLength={SCARCE_ALLOCATION_LIMITS.description} />
       </View>
     </View>
   );

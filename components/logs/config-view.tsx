@@ -216,9 +216,11 @@ export function ConfigView({ config, objects, adventureName }: ConfigViewProps) 
       {config.puzzle === "scarce-allocation" ? (
         <View className="gap-md">
           <View className="flex-row flex-wrap gap-xl">
+            <FieldText label="Allocation mode" value={config.mode === "free" ? "Free allocation" : config.plans.length ? "Specified plans" : "Legacy allocation"} />
             <FieldText label="Available mounts" value={String(config.availableQuantity)} />
             <FieldText label="Delivery window" value={config.timeFrame} />
           </View>
+          {config.mode === "plans" ? config.plans.map((plan) => <Field key={plan.id} label={plan.name}><Text variant="small">{plan.allocations.map((entry) => `${config.customers.find((customer) => customer.id === entry.customerId)?.name ?? entry.customerId}: ${entry.quantity}`).join(" · ")}</Text></Field>) : null}
           {config.customers.map((customer, index) => (
             <Field key={customer.id} label={`${index + 1}. ${customer.name} · ${customer.orderedQuantity} ordered`}>
               <Text variant="small">{customer.description}</Text>

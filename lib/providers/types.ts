@@ -23,6 +23,7 @@ export type ChatMessage = {
 
 /** Everything needed to ask one model for one choice. */
 export type DecisionRequest = {
+  allocationConstraints?: import("../domain/scarce-allocation").AllocationConstraints;
   model: string;
   /** Character steering. Undefined for a raw, unsteered character. */
   system?: string;
@@ -46,6 +47,7 @@ export type DecisionUsage = {
 
 /** The normalized answer: which option, how sure, and what it cost. */
 export type DecisionRecord = {
+  allocations?: import("../domain/scarce-allocation").ScarceAllocationAmount[];
   /** The id of the chosen option. */
   choice: string;
   /** Probability mass per option id, when the provider reports a distribution. */

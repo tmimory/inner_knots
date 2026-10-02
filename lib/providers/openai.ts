@@ -126,12 +126,12 @@ export function buildResponsesBody(req: DecisionRequest): Record<string, unknown
       format: {
         type: "json_schema",
         name: DECISION_SCHEMA_NAME,
-        schema: buildStrictDecisionSchema(req.options),
+        schema: buildStrictDecisionSchema(req.options, req.allocationConstraints),
         strict: true,
       },
     };
   } else {
-    const tool = buildDecisionTool(req.options, true);
+    const tool = buildDecisionTool(req.options, true, req.allocationConstraints);
     body.tools = [
       { type: "function", name: tool.name, description: tool.description, parameters: tool.parameters, strict: true },
     ];
@@ -180,7 +180,7 @@ export function createOpenAIAdapter(): ProviderAdapter {
         );
       }
 
-      const parsed = parseChoice(source, req.options, PROVIDER);
+      const parsed = parseChoice(source, req.options, PROVIDER, req.allocationConstraints);
       const usage = readTokenUsage(response, { input: "input_tokens", output: "output_tokens" });
       return buildDecisionRecord(parsed, usage, tracer);
     },

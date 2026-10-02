@@ -155,3 +155,8 @@ describe("listModels", () => {
     expect(models.map((model) => model.id)).toEqual([DEFAULT_TYPESAFE_MODEL, "jev-mini"]);
   });
 });
+
+it("rejects free allocation before contacting TypeSafe", async () => {
+  await expect(createTypeSafeAdapter().decide(request({ allocationConstraints: { availableQuantity: 1, customers: [{ id: "a", orderedQuantity: 2 }] } }))).rejects.toThrow(/free allocation/);
+  expect(mocks.systemOne).not.toHaveBeenCalled();
+});

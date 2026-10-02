@@ -149,6 +149,7 @@ export function buildDecisionRecord(
 ): DecisionRecord {
   return {
     choice: parsed.choice,
+    ...(parsed.allocations === undefined ? {} : { allocations: parsed.allocations }),
     ...(parsed.rationale === undefined ? {} : { rationale: parsed.rationale }),
     ...(usage === undefined ? {} : { usage }),
     latencyMs: tracer.elapsedMs(),

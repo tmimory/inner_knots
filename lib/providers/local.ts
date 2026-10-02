@@ -67,7 +67,7 @@ export function createLocalAdapter(): ProviderAdapter {
           { requestNote: note },
         );
 
-      const base = { model: req.model, system: req.system, messages: req.messages, options: req.options, outputMode: req.outputMode, maxTokens };
+      const base = { model: req.model, system: req.system, messages: req.messages, options: req.options, allocationConstraints: req.allocationConstraints, outputMode: req.outputMode, maxTokens };
       let response: unknown;
       try {
         response = await create(buildChatBody(base));
@@ -78,7 +78,7 @@ export function createLocalAdapter(): ProviderAdapter {
         });
       }
 
-      const parsed = parseChatCompletion(response, req.options, PROVIDER);
+      const parsed = parseChatCompletion(response, req.options, PROVIDER, req.allocationConstraints);
       const usage = readTokenUsage(response, { input: "prompt_tokens", output: "completion_tokens" });
       return buildDecisionRecord(parsed, usage, tracer);
     },
