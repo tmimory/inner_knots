@@ -5,6 +5,8 @@
 .env.development
 .env.production
 .env.test
+.env.*
+!.env.example
 
 # Dependencies and build output (React Native / Expo)
 node_modules/
@@ -35,10 +37,14 @@ yarn-error.log*
 .vscode/
 coverage/
 
-# Claude Code config and instructions (local only)
+# Harness config, instructions, adapters, and memories (local only)
 .claude/
+.codex/
+.agents/
 CLAUDE.md
 CLAUDE.local.md
+AGENTS.md
+AGENTS.override.md
 
 # Local run data (JSONL stores created on first run)
 data/

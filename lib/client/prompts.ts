@@ -8,6 +8,7 @@ import type { AdventurePromptResponse } from "@/app/api/prompts/adventure+api";
 import type { FragmentSummary } from "@/app/api/prompts/fragments+api";
 import type { PrisonersDilemmaPromptResponse } from "@/app/api/prompts/prisoners-dilemma+api";
 import type { StPetersburgPromptResponse } from "@/app/api/prompts/st-petersburg+api";
+import type { ScarceAllocationPromptResponse } from "@/app/api/prompts/scarce-allocation+api";
 import type { TrolleyPromptResponse } from "@/app/api/prompts/trolley+api";
 
 import type { Character } from "../domain/character";
@@ -32,6 +33,7 @@ export type TrolleyPromptRequest = {
   /** Object ids; the server resolves them through the objects collection. */
   track1: string[];
   track2: string[];
+  switchTradeoff?: string;
   decisionStyle?: DecisionStyle;
 };
 
@@ -68,6 +70,12 @@ export function previewStPetersburgPrompt(
   config: StPetersburgPromptRequest,
 ): Promise<StPetersburgPromptResponse> {
   return post<StPetersburgPromptResponse>("/api/prompts/st-petersburg", { config });
+}
+
+export function previewScarceAllocationPrompt(
+  config: Omit<import("../domain/scarce-allocation").ScarceAllocationConfig, "roster"> & { decisionStyle?: DecisionStyle },
+): Promise<ScarceAllocationPromptResponse> {
+  return post<ScarceAllocationPromptResponse>("/api/prompts/scarce-allocation", { config });
 }
 
 /** The briefing plus the first node's prompt for an adventure. */

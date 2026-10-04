@@ -21,6 +21,8 @@ import { errorMessage } from "@/lib/errors";
 import { createAdventureRunner } from "@/lib/puzzles/adventure/runner";
 import { createPrisonersDilemmaRunner } from "@/lib/puzzles/prisoners-dilemma/runner";
 import { createStPetersburgRunner } from "@/lib/puzzles/st-petersburg/runner";
+import { createOrganDonationRunner } from "@/lib/puzzles/organ-donation/runner";
+import { createScarceAllocationRunner } from "@/lib/puzzles/scarce-allocation/runner";
 import { createTrolleyRunner } from "@/lib/puzzles/trolley/runner";
 import {
   appendLog,
@@ -102,6 +104,10 @@ export async function executeRun(run: Run, options: ExecuteRunOptions = {}): Pro
   const context: RunnerContext = { signal: stop.signal, log, concurrency: runConcurrency() };
 
   switch (plan.puzzle) {
+    case "organ-donation":
+      return drive(run, rootSpanId, createOrganDonationRunner(plan), context, stop);
+    case "scarce-allocation":
+      return drive(run, rootSpanId, createScarceAllocationRunner(plan), context, stop);
     case "trolley":
       return drive(run, rootSpanId, createTrolleyRunner(plan), context, stop);
     case "prisoners-dilemma":

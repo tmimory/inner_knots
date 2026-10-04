@@ -137,3 +137,12 @@ describe("listModels", () => {
     });
   });
 });
+
+it.each(["structured", "tool"] as const)("preserves all free-allocation quantities in %s mode", async (outputMode) => {
+  const allocations = [{ customerId: "a", quantity: 3 }, { customerId: "b", quantity: 4 }];
+  const payload = JSON.stringify({ choice: "allocate", allocations });
+  mocks.chatCreate.mockResolvedValue({ choices: [{ message: outputMode === "tool" ? { tool_calls: [{ function: { name: "choose", arguments: payload } }] } : { content: payload } }] });
+  const record = await createLocalAdapter().decide(request({ outputMode, options: [{ id: "allocate", label: "Allocate" }, { id: "raise-prices", label: "Raise prices" }], allocationConstraints: { availableQuantity: 7, customers: [{ id: "a", orderedQuantity: 8 }, { id: "b", orderedQuantity: 6 }] } }));
+  expect(record.allocations).toEqual(allocations);
+  expect(mocks.chatCreate).toHaveBeenCalledTimes(1);
+});

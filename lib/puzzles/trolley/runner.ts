@@ -29,6 +29,7 @@ export function createTrolleyRunner(plan: TrolleyPlan): PuzzleRunner<TrolleyEven
       variant: plan.config.variant,
       track1: plan.track1,
       track2: plan.track2,
+      switchTradeoff: plan.config.switchTradeoff,
       decisionStyle,
     });
     prompts.set(decisionStyle, built);

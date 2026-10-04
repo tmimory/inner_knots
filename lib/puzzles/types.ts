@@ -12,6 +12,7 @@ import { render } from "@/lib/prompts/compose";
 export type PromptOption = { id: string; label: string };
 
 export type PuzzlePrompt = {
+  allocationConstraints?: import("../domain/scarce-allocation").AllocationConstraints;
   /** Set only when the puzzle itself needs a system message; usually absent. */
   system?: string;
   user: string;

@@ -100,7 +100,7 @@ export function createOpenRouterAdapter(): ProviderAdapter {
         model: req.model,
         system: req.system,
         messages: req.messages,
-        options: req.options,
+        options: req.options, allocationConstraints: req.allocationConstraints,
         outputMode: req.outputMode,
         maxTokens: clampMaxTokens(req.maxTokens),
       });
@@ -112,7 +112,7 @@ export function createOpenRouterAdapter(): ProviderAdapter {
         api.chat.completions.create(body as unknown as Parameters<OpenAI["chat"]["completions"]["create"]>[0]),
       );
 
-      const parsed = parseChatCompletion(response, req.options, PROVIDER);
+      const parsed = parseChatCompletion(response, req.options, PROVIDER, req.allocationConstraints);
       const usage = readTokenUsage(response, { input: "prompt_tokens", output: "completion_tokens" });
       return buildDecisionRecord(parsed, usage, tracer);
     },

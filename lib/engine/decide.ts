@@ -65,6 +65,7 @@ export async function decideForCharacter(input: DecideInput): Promise<DecideOutc
 
   const request: DecisionRequest = {
     model: character.model,
+    allocationConstraints: prompt.allocationConstraints,
     system: mergeSystemPrompts(steering, prompt.system),
     messages: [{ role: "user" as const, content: prompt.user }],
     options: prompt.options,

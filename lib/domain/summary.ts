@@ -12,6 +12,9 @@
  */
 import { z } from "zod";
 
+import { organDonationSummarySchema } from "./organ-donation";
+import { scarceAllocationSummarySchema } from "./scarce-allocation";
+
 import { COIN_FACES } from "./run";
 
 /** Per-option probability mass, when the provider reports a distribution (Jev). */
@@ -231,6 +234,8 @@ export type StPetersburgSummary = z.infer<typeof stPetersburgSummarySchema>;
 // --- Union -------------------------------------------------------------------------
 
 export const runSummarySchema = z.discriminatedUnion("kind", [
+  organDonationSummarySchema,
+  scarceAllocationSummarySchema,
   trolleySummarySchema,
   prisonersDilemmaSummarySchema,
   adventureSummarySchema,

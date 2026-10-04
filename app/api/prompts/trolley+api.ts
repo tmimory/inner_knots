@@ -7,7 +7,7 @@
  * exact wording a run would send, and an id neither half knows is a 400 naming
  * it rather than a silently missing item in the middle of a prompt.
  *
- * Body: `{ config: { variant, track1: string[], track2: string[], decisionStyle? } }`
+ * Body: `{ config: { variant, track1: string[], track2: string[], switchTradeoff?, decisionStyle? } }`
  * Returns: `{ prompt: { user, options, question } }`
  */
 import { z } from "zod";
@@ -45,6 +45,7 @@ export const POST = handle(async (request: Request) => {
     variant: config.variant,
     track1,
     track2,
+    switchTradeoff: config.switchTradeoff,
     decisionStyle: config.decisionStyle,
   });
 

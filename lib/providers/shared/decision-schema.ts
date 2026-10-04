@@ -1,3 +1,5 @@
+import { scarceAllocationAmountSchema, validateAllocation, type AllocationConstraints, type ScarceAllocationAmount } from "../../domain/scarce-allocation";
+import { z } from "zod";
 /**
  * The one shape every provider is asked to produce: a choice, optionally a reason.
  *
@@ -23,6 +25,7 @@ export type DecisionSchema = {
   properties: {
     choice: { type: "string"; enum: string[]; description: string };
     rationale: { type: string | string[]; description: string };
+    allocations?: Record<string, unknown>;
   };
   required: string[];
   additionalProperties: false;
@@ -43,14 +46,15 @@ function optionIds(options: DecisionOption[]): string[] {
  * The decision schema. `rationale` is optional so a model may omit it; the output
  * token clamp, not the schema, is what keeps it short.
  */
-export function buildDecisionSchema(options: DecisionOption[]): DecisionSchema {
+export function buildDecisionSchema(options: DecisionOption[], allocationConstraints?: AllocationConstraints): DecisionSchema {
   return {
     type: "object",
     properties: {
+      ...(allocationConstraints ? { allocations: allocationSchema(allocationConstraints) } : {}),
       choice: { type: "string", enum: optionIds(options), description: CHOICE_DESCRIPTION },
       rationale: { type: "string", description: RATIONALE_DESCRIPTION },
     },
-    required: ["choice"],
+    required: allocationConstraints ? ["choice", "allocations"] : ["choice"],
     additionalProperties: false,
   };
 }
@@ -60,24 +64,21 @@ export function buildDecisionSchema(options: DecisionOption[]): DecisionSchema {
  * appear in `required`. `rationale` becomes nullable instead of optional, which is
  * the only way OpenAI-style strict schemas express "may be omitted".
  */
-export function buildStrictDecisionSchema(options: DecisionOption[]): DecisionSchema {
+export function buildStrictDecisionSchema(options: DecisionOption[], allocationConstraints?: AllocationConstraints): DecisionSchema {
+  const schema = buildDecisionSchema(options, allocationConstraints);
   return {
-    type: "object",
-    properties: {
-      choice: { type: "string", enum: optionIds(options), description: CHOICE_DESCRIPTION },
-      rationale: { type: ["string", "null"], description: RATIONALE_DESCRIPTION },
-    },
-    required: ["choice", "rationale"],
-    additionalProperties: false,
+    ...schema,
+    properties: { ...schema.properties, rationale: { type: ["string", "null"], description: RATIONALE_DESCRIPTION } },
+    required: [...schema.required, "rationale"],
   };
 }
 
 /** The `choose` tool, carrying whichever schema variant the provider needs. */
-export function buildDecisionTool(options: DecisionOption[], strict = false): DecisionTool {
+export function buildDecisionTool(options: DecisionOption[], strict = false, allocationConstraints?: AllocationConstraints): DecisionTool {
   return {
     name: DECISION_TOOL_NAME,
     description: TOOL_DESCRIPTION,
-    parameters: strict ? buildStrictDecisionSchema(options) : buildDecisionSchema(options),
+    parameters: strict ? buildStrictDecisionSchema(options, allocationConstraints) : buildDecisionSchema(options, allocationConstraints),
   };
 }
 
@@ -91,7 +92,8 @@ export function describeOptions(options: DecisionOption[]): string {
 }
 
 /** The instruction appended when a server can only promise "some JSON object". */
-export function jsonObjectInstruction(options: DecisionOption[]): string {
+export function jsonObjectInstruction(options: DecisionOption[], allocationConstraints?: AllocationConstraints): string {
+  if (allocationConstraints) return JSON.stringify(buildStrictDecisionSchema(options, allocationConstraints));
   return [
     "Answer with a single JSON object and nothing else:",
     '{"choice": "<one of the ids below>", "rationale": "<one short sentence>"}',
@@ -122,11 +124,12 @@ function matchOption(value: string, options: DecisionOption[]): DecisionOption |
 
 /** What a provider actually said, once the wrapper has been peeled off. */
 export type ParsedChoice = {
+  allocations?: ScarceAllocationAmount[];
   choice: string;
   rationale?: string;
 };
 
-function coerce(source: unknown, provider: ProviderId): { choice: unknown; rationale?: unknown } {
+function coerce(source: unknown, provider: ProviderId): { choice: unknown; rationale?: unknown; allocations?: unknown } {
   if (typeof source === "string") {
     const text = source.trim();
     if (text === "") {
@@ -135,7 +138,7 @@ function coerce(source: unknown, provider: ProviderId): { choice: unknown; ratio
     try {
       const parsed: unknown = JSON.parse(text);
       if (parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)) {
-        return parsed as { choice: unknown; rationale?: unknown };
+        return parsed as { choice: unknown; rationale?: unknown; allocations?: unknown };
       }
       return { choice: parsed };
     } catch {
@@ -144,7 +147,7 @@ function coerce(source: unknown, provider: ProviderId): { choice: unknown; ratio
     }
   }
   if (source !== null && typeof source === "object" && !Array.isArray(source)) {
-    return source as { choice: unknown; rationale?: unknown };
+    return source as { choice: unknown; rationale?: unknown; allocations?: unknown };
   }
   throw new ProviderError(provider, `Model returned an unusable response of type ${typeof source}`, {
     retryable: false,
@@ -156,7 +159,7 @@ function coerce(source: unknown, provider: ProviderId): { choice: unknown; ratio
  * the same id in any case, or the option's label as a fallback for models that
  * echo what they saw rather than the id.
  */
-export function parseChoice(source: unknown, options: DecisionOption[], provider: ProviderId): ParsedChoice {
+export function parseChoice(source: unknown, options: DecisionOption[], provider: ProviderId, allocationConstraints?: AllocationConstraints): ParsedChoice {
   const payload = coerce(source, provider);
   const raw = payload.choice;
   if (typeof raw !== "string") {
@@ -173,5 +176,30 @@ export function parseChoice(source: unknown, options: DecisionOption[], provider
     );
   }
   const rationale = typeof payload.rationale === "string" && payload.rationale.trim() !== "" ? payload.rationale.trim() : undefined;
-  return rationale === undefined ? { choice: matched.id } : { choice: matched.id, rationale };
+  const result: ParsedChoice = { choice: matched.id, ...(rationale === undefined ? {} : { rationale }) };
+  if (allocationConstraints) {
+    const parsed = z.array(scarceAllocationAmountSchema).safeParse(payload.allocations);
+    if (!parsed.success) throw new ProviderError(provider, "Model returned an invalid allocations array", { retryable: false });
+    const error = matched.id === "raise-prices"
+      ? (parsed.data.length ? "Raise prices must return an empty allocation." : null)
+      : validateAllocation(parsed.data, allocationConstraints);
+    if (error) throw new ProviderError(provider, error, { retryable: false });
+    result.allocations = parsed.data;
+  }
+  return result;
+}
+
+function allocationSchema(constraints: AllocationConstraints): Record<string, unknown> {
+  return {
+    type: "array",
+    items: {
+      type: "object",
+      properties: {
+        customerId: { type: "string", enum: constraints.customers.map((customer) => customer.id) },
+        quantity: { type: "integer", minimum: 0, maximum: constraints.availableQuantity },
+      },
+      required: ["customerId", "quantity"],
+      additionalProperties: false,
+    },
+  };
 }

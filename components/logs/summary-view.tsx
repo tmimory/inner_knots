@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { View } from "react-native";
 
+import { allocationRows, allocationStatus } from "@/lib/puzzles/scarce-allocation/presentation";
 import { Text } from "@/components/ui";
 import type { Character } from "@/lib/domain/character";
 import type { Run } from "@/lib/domain/run";
@@ -93,6 +94,10 @@ export function summaryLine(run: Run): string | undefined {
       const endings = endingsOf(summary);
       return `${pluralize(paths, "path")} · ${pluralize(endings, "ending")}`;
     }
+    case "organ-donation":
+      return `${pluralize(summary.decisions.filter((d) => d.candidateId !== undefined).length, "selection")} · ${pluralize(Object.values(summary.perCandidate).filter((count) => count > 0).length, "candidate")}`;
+    case "scarce-allocation":
+      return `Allocated ×${summary.decisions.filter((d) => d.strategy === "allocate" && d.complete && !d.error).length} · Raised prices ×${summary.decisions.filter((d) => d.strategy === "raise-prices" && d.complete && !d.error).length}`;
     case "st-petersburg": {
       const totals = stPetersburgTotals(summary);
       return `Flipped ×${totals.flip} · Walked ×${totals.walk}`;
@@ -118,6 +123,10 @@ export function runFailures(run: Run): number {
       return summary.perPlayer.a.errors + summary.perPlayer.b.errors;
     case "adventure":
       return Object.values(summary.perCharacter).reduce((total, tally) => total + tally.errors, 0);
+    case "organ-donation":
+      return summary.errors;
+    case "scarce-allocation":
+      return summary.decisions.filter((decision) => decision.error !== undefined).length;
     case "st-petersburg":
       return stPetersburgTotals(summary).errors;
   }
@@ -459,6 +468,37 @@ export function SummaryView({ run, characters }: SummaryViewProps) {
       );
     case "adventure":
       return <AdventureSummaryTable summary={summary} runs={runs} characters={characters} />;
+    case "organ-donation":
+      return (
+        <Table
+          headers={["Character / selection", "Run", "Confidence"]}
+          rows={summary.decisions.map((decision) => {
+            const candidates = run.config.puzzle === "organ-donation" ? run.config.candidates : [];
+            const index = candidates.findIndex((candidate) => candidate.id === decision.candidateId);
+            return {
+              key: `${decision.characterId}-${decision.iteration}`,
+              label: <View className="gap-xs"><CharacterLabel characterId={decision.characterId} characters={characters} /><Text variant="small">{decision.error ?? (index >= 0 ? `Candidate ${index + 1}` : decision.candidateId ?? "No selection")}</Text></View>,
+              values: [String(decision.iteration), meanCell(decision.confidence)],
+            };
+          })}
+        />
+      );
+    case "scarce-allocation":
+      return (
+        <View className="gap-lg">
+          {summary.decisions.map((decision) => (
+            <View key={`${decision.characterId}-${decision.iteration}`} className="gap-sm">
+              <CharacterLabel characterId={decision.characterId} characters={characters} />
+              <Text variant="small">Run {decision.iteration} · {allocationStatus(decision)}</Text>
+              {decision.strategy === "allocate" ? <Table headers={["Customer", "Allocated"]} rows={allocationRows(decision, run.config.puzzle === "scarce-allocation" ? run.config : undefined).map((allocation) => ({
+                key: allocation.id,
+                label: <TextLabel text={allocation.name} />,
+                values: [String(allocation.quantity)],
+              }))} /> : null}
+            </View>
+          ))}
+        </View>
+      );
     case "st-petersburg":
       return <StPetersburgSummaryTable summary={summary} runs={runs} characters={characters} />;
   }

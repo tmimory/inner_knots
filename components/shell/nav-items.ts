@@ -44,6 +44,8 @@ export const navItems: NavItem[] = [
         href: "/puzzles/st-petersburg",
         match: "/puzzles/st-petersburg",
       },
+      { kind: "leaf", label: "Organ donation", href: "/puzzles/organ-donation", match: "/puzzles/organ-donation" },
+      { kind: "leaf", label: "Scarce allocation", href: "/puzzles/scarce-allocation", match: "/puzzles/scarce-allocation" },
       {
         kind: "leaf",
         label: "Adventure",

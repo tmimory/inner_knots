@@ -90,10 +90,10 @@ type MessagesBody = Record<string, unknown>;
 
 /** The forced `choose` tool, used by tool mode and by the structured fallback. */
 function withForcedTool(body: MessagesBody, req: DecisionRequest): MessagesBody {
-  const tool = buildDecisionTool(req.options);
+  const tool = buildDecisionTool(req.options, false, req.allocationConstraints);
   return {
     ...body,
-    tools: [{ name: tool.name, description: tool.description, input_schema: buildDecisionSchema(req.options) }],
+    tools: [{ name: tool.name, description: tool.description, input_schema: buildDecisionSchema(req.options, req.allocationConstraints) }],
     tool_choice: { type: "tool", name: tool.name },
   };
 }
@@ -131,7 +131,7 @@ export function buildMessagesBody(req: DecisionRequest): { body: MessagesBody; p
 
   if (req.outputMode === "structured") {
     const outputConfig: Record<string, unknown> = {
-      format: { type: "json_schema", schema: buildStrictDecisionSchema(req.options) },
+      format: { type: "json_schema", schema: buildStrictDecisionSchema(req.options, req.allocationConstraints) },
     };
     if (plan.outputConfigEffort) outputConfig.effort = plan.outputConfigEffort;
     body.output_config = outputConfig;
@@ -239,7 +239,7 @@ export function createAnthropicAdapter(): ProviderAdapter {
         );
       }
 
-      const parsed = parseChoice(source, req.options, PROVIDER);
+      const parsed = parseChoice(source, req.options, PROVIDER, req.allocationConstraints);
       const usage = readTokenUsage(response, { input: "input_tokens", output: "output_tokens" });
       return buildDecisionRecord(parsed, usage, tracer);
     },

@@ -1,3 +1,4 @@
+import { scarceAllocationAmountSchema } from "./scarce-allocation";
 /**
  * Tracing records. A run writes one span per unit of work and one log line per
  * notable event, both append-only, so the logs screen can reconstruct exactly
@@ -16,6 +17,7 @@ export type SpanStatus = (typeof SPAN_STATUSES)[number];
  * this shape; the domain only needs to store it.
  */
 export const decisionRecordSchema = z.object({
+  allocations: z.array(scarceAllocationAmountSchema).optional(),
   /** The id of the chosen option. */
   choice: z.string(),
   /** Per-option probabilities, when the provider exposes them (e.g. Jev). */

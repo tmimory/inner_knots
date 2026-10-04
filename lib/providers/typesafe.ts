@@ -90,6 +90,9 @@ export function createTypeSafeAdapter(): ProviderAdapter {
     },
 
     async decide(req: DecisionRequest, ctx?: TraceContext): Promise<DecisionRecord> {
+      if (req.allocationConstraints) {
+        throw new ProviderError(PROVIDER, "TypeSafe is unavailable for free allocation. Use specified plans or choose another provider.", { retryable: false });
+      }
       if (req.outputMode === "tool") {
         throw new ProviderError(PROVIDER, "TypeSafe answers questions and does not call tools; use structured mode", {
           retryable: false,

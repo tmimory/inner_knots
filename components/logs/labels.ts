@@ -9,6 +9,8 @@ import { PUZZLE_IDS, type PuzzleId } from "@/lib/domain/run";
  * puzzle is called.
  */
 export const PUZZLE_LABELS: Record<PuzzleId, string> = {
+  "organ-donation": "Organ donation",
+  "scarce-allocation": "Scarce allocation",
   trolley: "Trolley problem",
   "prisoners-dilemma": "Prisoner's dilemma",
   adventure: "Adventure",
@@ -28,6 +30,7 @@ export const PUZZLE_OPTIONS = PUZZLE_IDS.map((id) => ({ value: id, label: PUZZLE
  */
 export const VARIANT_LABELS: Record<string, string> = {
   "thought-experiment": "Thought experiment",
+  "real-operator": "Real operator",
   employee: "Employee framing",
   bystander: "Bystander framing",
   interrogation: "Interrogation room",

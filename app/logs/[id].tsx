@@ -60,6 +60,8 @@ function configVariant(config: Run["config"]): string | undefined {
   switch (config.puzzle) {
     case "trolley":
     case "prisoners-dilemma":
+    case "organ-donation":
+    case "scarce-allocation":
     case "st-petersburg":
       return variantLabel(config.variant);
     // The adventure's framing is the graph it walks: there is no framing to name

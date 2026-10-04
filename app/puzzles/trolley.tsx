@@ -21,7 +21,7 @@ import {
   type TrackZoneId,
 } from "@/components/puzzles/trolley";
 import { VariantSelect, type VariantOption } from "@/components/puzzles/variant-select";
-import { Button, Text } from "@/components/ui";
+import { Button, Field, Switch, Text, Textarea } from "@/components/ui";
 import { previewTrolleyPrompt } from "@/lib/client/prompts";
 import { useCatalogue } from "@/lib/client/use-catalogue";
 import { useCharacters } from "@/lib/client/use-characters";
@@ -63,6 +63,8 @@ const VARIANTS: readonly VariantOption<TrolleyVariant>[] = [
 
 type Board = {
   variant: TrolleyVariant;
+  switchTradeoffEnabled: boolean;
+  switchTradeoff: string;
   track1: string[];
   track2: string[];
   roster: RosterEntry[];
@@ -70,6 +72,8 @@ type Board = {
 
 const EMPTY_BOARD: Board = {
   variant: "thought-experiment",
+  switchTradeoffEnabled: false,
+  switchTradeoff: "",
   track1: [],
   track2: [],
   roster: [],
@@ -86,6 +90,8 @@ function parseBoard(raw: unknown): Board | undefined {
 
   return {
     variant: variant ?? EMPTY_BOARD.variant,
+    switchTradeoffEnabled: value.switchTradeoffEnabled === true,
+    switchTradeoff: typeof value.switchTradeoff === "string" ? value.switchTradeoff : "",
     track1: ids(value.track1),
     track2: ids(value.track2),
     roster: parseRoster(value.roster, { max: RUN_LIMITS.maxRoster, runs: "stored" }),
@@ -103,6 +109,8 @@ export default function TrolleyScreen() {
   /** A tile is in the air, or one has been tapped: the board shows its places. */
   const [dragging, setDragging] = useState(false);
   const [armed, setArmed] = useState(false);
+
+  const switchTradeoff = board.switchTradeoffEnabled ? board.switchTradeoff : undefined;
 
   const characterIndex = useMemo(() => indexById(characters), [characters]);
 
@@ -122,6 +130,7 @@ export default function TrolleyScreen() {
     async (viewpoint) => {
       const { prompt: composed } = await previewTrolleyPrompt({
         variant: board.variant,
+        switchTradeoff,
         track1: board.track1,
         track2: board.track2,
         decisionStyle: viewpoint?.decisionStyle,
@@ -224,6 +233,7 @@ export default function TrolleyScreen() {
     await starter.start({
       puzzle: "trolley",
       variant: board.variant,
+      switchTradeoff,
       track1: board.track1,
       track2: board.track2,
       roster: board.roster,
@@ -315,6 +325,30 @@ export default function TrolleyScreen() {
           onCreate={() => setCreatorOpen(true)}
         />
         {catalogue.error ? <Text className="text-destructive">{catalogue.error}</Text> : null}
+
+        <Field
+          label="Tradeoff for throwing the switch"
+          hint={board.switchTradeoffEnabled ? "Additional consequence of diverting to Track 2." : undefined}
+          action={
+            <Switch
+              checked={board.switchTradeoffEnabled}
+              onCheckedChange={(switchTradeoffEnabled) => patch({ switchTradeoffEnabled })}
+              accessibilityLabel="Include tradeoff for throwing the switch"
+            />
+          }
+          className={board.switchTradeoffEnabled ? "w-full" : "self-start"}
+        >
+          {board.switchTradeoffEnabled ? (
+            <Textarea
+              rows={3}
+              maxLength={RUN_LIMITS.switchTradeoff}
+              value={board.switchTradeoff}
+              onChangeText={(switchTradeoff) => patch({ switchTradeoff })}
+              placeholder="Diverting the trolley will delay its arrival by one hour, affecting 150,000 commuters."
+              accessibilityLabel="Tradeoff for throwing the switch"
+            />
+          ) : null}
+        </Field>
 
         {/*
           The run belongs to the board: a heading and a rule over one button made a

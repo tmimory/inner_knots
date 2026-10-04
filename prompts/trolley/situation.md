@@ -1,7 +1,7 @@
 ---
 id: trolley/situation
-description: The tracks, what stands on each of them, and the only two actions available. `track1` and `track2` are natural-language lists built from the placed objects.
-variables: [track1, track2]
+description: The tracks, what stands on each of them, the optional tradeoff caused by throwing the switch, and the only two actions available. `track1` and `track2` are natural-language lists built from the placed objects.
+variables: [track1, track2, switchTradeoff]
 ---
 A runaway trolley is coming down the line. It cannot be stopped and it cannot be slowed. A little way ahead the line forks, and a switch decides which way the trolley takes the fork.
 
@@ -15,3 +15,5 @@ Nothing on either track can be moved, warned or carried clear in the time there 
 
 1. Leave the switch where it is, and the trolley continues onto Track 1.
 2. Throw the switch, and the trolley is diverted onto Track 2.
+
+{{#if switchTradeoff}}Throwing the switch also has this consequence: {{switchTradeoff}}{{/if}}
